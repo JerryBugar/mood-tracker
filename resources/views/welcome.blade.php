@@ -1,10 +1,11 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
         <title>{{ config('app.name', 'Laravel') }}</title>
+        <link rel="icon" type="image/png" href="{{ asset('logo/favicons.png') }}">
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
@@ -21,7 +22,21 @@
         @endif
     </head>
     <body class="antialiased d-flex align-items-center justify-content-center min-vh-100">
-        <img src="{{ asset('logo/logo.png') }}" alt="Logo" class="img-fluid splash-logo">
+        <div class="account-icon" aria-label="Profil akun">
+            <img src="{{ asset('logo/person.png') }}" alt="Ikon akun" />
+        </div>
+        <div class="center-content d-flex flex-column align-items-center justify-content-center text-center">
+            <img src="{{ asset('logo/icon.jpeg') }}" alt="Ikon utama aplikasi" class="center-icon img-fluid">
+            <h1 class="hero-title mt-4 text-center">
+                Bagaimana <br> perasaanmu hari ini?
+            </h1>
+            <a href="#" class="btn btn-lg tracking-btn mt-4" role="button">
+                Mulai Tracking
+            </a>
+            <p class="tracking-subtext mt-3">
+                <span>Apa mood Anda hari ini?</span>
+                <span>Mulai lacak sekarang <img src="{{ asset('logo/love.png') }}" alt="Ikon hati"></span>
+            </p>
+        </div>
     </body>
 </html>
-

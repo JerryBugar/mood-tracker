@@ -1,4 +1,5 @@
-@import 'bootstrap/dist/css/bootstrap.min.css';
+﻿@import 'bootstrap/dist/css/bootstrap.min.css';
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
@@ -11,23 +12,103 @@
 }
 
 body {
-  background: linear-gradient(to bottom, #f81818, #ffd1d1);
+  background-color: #ffffff;
+  font-family: 'Poppins', sans-serif;
   min-height: 100vh;
+  margin: 0;
+  position: relative;
 }
+
 .splash-logo {
-    opacity: 0;
-    transform: scale(0.95);
-    max-width: 240px;
-    width: 100%;
-    height: auto;
-    animation: splashFadeScale 1s ease-out forwards;
+  display: none;
 }
 
-@keyframes splashFadeScale {
-    to {
-        opacity: 1;
-        transform: scale(1);
-    }
+.account-icon {
+  align-items: center;
+  background-color: #82272c;
+  border: 2px solid #000000;
+  border-radius: 50%;
+  box-sizing: border-box;
+  display: flex;
+  height: 48px;
+  justify-content: center;
+  position: absolute;
+  right: 24px;
+  top: 24px;
+  width: 48px;
 }
 
+.account-icon img {
+  height: 28px;
+  width: 28px;
+  object-fit: contain;
+}
 
+.center-content {
+  padding: 0 24px;
+  width: 100%;
+  max-width: 520px;
+}
+
+.center-icon {
+  width: clamp(180px, 45vw, 260px);
+  height: auto;
+  display: block;
+}
+
+.hero-title {
+  color: #82242d;
+  font-size: clamp(28px, 6vw, 42px);
+  font-weight: 600;
+  line-height: 1.2;
+  margin: 24px auto 0;
+  text-align: center;
+}
+
+.hero-title br {
+  display: block;
+}
+
+.tracking-btn {
+  background-color: #83282f;
+  border-color: #83282f;
+  border-radius: 999px;
+  color: #ffffff;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  padding: 12px 32px;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.tracking-btn:hover,
+.tracking-btn:focus,
+.tracking-btn:active {
+  background-color: #6d2026;
+  border-color: #6d2026;
+  color: #ffffff;
+}
+
+.tracking-subtext {
+  color: #4a4a4a;
+  font-size: clamp(14px, 3.5vw, 16px);
+  line-height: 1.5;
+  margin-top: 16px;
+  max-width: 360px;
+  text-align: center;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.tracking-subtext span:last-child {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tracking-subtext img {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
