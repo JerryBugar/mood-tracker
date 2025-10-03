@@ -1,4 +1,4 @@
-﻿@import 'bootstrap/dist/css/bootstrap.min.css';
+@import 'bootstrap/dist/css/bootstrap.min.css';
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
@@ -111,4 +111,13 @@ body {
   width: 20px;
   height: 20px;
   object-fit: contain;
+}
+@media (min-width: 768px) {
+  .tracking-subtext {
+    max-width: 520px;
+  }
+
+  .tracking-subtext span:last-child {
+    white-space: nowrap;
+  }
 }
