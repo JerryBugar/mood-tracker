@@ -121,3 +121,29 @@ body {
     white-space: nowrap;
   }
 }
+
+/* Styles for the dynamic splash screen */
+#splash-logo-container {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%); /* Start centered */
+    z-index: 10000;
+    opacity: 0; /* Start invisible */
+    transition: opacity 0.2s ease-in; /* Quick fade-in */
+}
+
+.splash-logo-animated {
+    width: clamp(180px, 45vw, 260px);
+    height: auto;
+    transition: opacity 0.5s ease-out; /* For fade-out */
+}
+
+#main-content-wrapper.hidden {
+    visibility: hidden;
+    opacity: 0;
+}
+
+#main-content-wrapper {
+    transition: opacity 1s ease-in-out;
+}
