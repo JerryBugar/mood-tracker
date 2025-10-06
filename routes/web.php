@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\GoogleLoginController;
+use App\Http\Controllers\VerificationController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -17,3 +18,6 @@ Route::get('/auth/google/callback', [GoogleLoginController::class, 'callback']);
 Route::get('/home', function () {
     return view('home-page.index');
 });
+
+Route::get('/auth/verify', [VerificationController::class, 'show'])->name('verification.show');
+Route::post('/auth/verify', [VerificationController::class, 'verify'])->name('verification.verify');

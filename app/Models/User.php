@@ -22,6 +22,10 @@ class User extends Authenticatable
         'email',
         'password',
         'google_id',
+        'division', // Tambahkan ini
+        'role',       // Tambahkan ini
+        'jenis_kelamin',
+        'is_verified',// Tambahkan ini
     ];
 
     /**

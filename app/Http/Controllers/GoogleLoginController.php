@@ -7,6 +7,7 @@ use Laravel\Socialite\Facades\Socialite;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Session;
 
 class GoogleLoginController extends Controller
 {
@@ -20,17 +21,21 @@ class GoogleLoginController extends Controller
         try {
             $googleUser = Socialite::driver('google')->user();
 
-            $user = User::updateOrCreate([
+            // Cek jika user sudah ada DAN terverifikasi
+            $user = User::where('google_id', $googleUser->getId())->where('is_verified', true)->first();
+
+            if ($user) {
+                Auth::login($user);
+                return redirect('/dashboard'); // Langsung ke dashboard jika sudah terverifikasi
+            }
+
+            // Jika belum, simpan data Google di session dan arahkan ke verifikasi
+            Session::put('google_user_data', [
+                'id' => $googleUser->getId(),
                 'email' => $googleUser->getEmail(),
-            ], [
-                'name' => $googleUser->getName(),
-                'google_id' => $googleUser->getId(),
-                'password' => bcrypt(Str::random(16)) // Set a random password for users created via Google
             ]);
 
-            Auth::login($user);
-
-            return redirect('/home');
+            return redirect()->route('verification.show');
 
         } catch (\Exception $e) {
             // You can log the error or redirect to an error page
