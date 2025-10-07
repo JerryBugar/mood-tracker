@@ -25,11 +25,16 @@ class VerificationController extends Controller
         }
 
         $request->validate([
-            'name' => 'required|string|max:255',
-            'division' => 'required|string|max:255',
-            'role' => 'required|string|max:255',
+            'name' => ['required', 'string', 'max:60', 'regex:/^[a-zA-Z\\s]+$/'],
+            'division' => ['required', 'string', 'max:60'],
+            'role' => ['required', 'string', 'max:60'],
             'jenis_kelamin' => 'required|string|in:Cowok,Cewek',
             'company_code' => 'required|string',
+        ],[
+            'name.regex' => 'Nama Lengkap hanya boleh berisi huruf dan spasi.',
+            'name.max' => 'Nama Lengkap tidak boleh lebih dari :max karakter.',
+            'division.max' => 'Divisi tidak boleh lebih dari :max karakter.',
+            'role.max' => 'Role / Jabatan tidak boleh lebih dari :max karakter.',
         ]);
 
         // Bandingkan kode yang diinput dengan yang ada di .env
@@ -56,6 +61,6 @@ class VerificationController extends Controller
         Session::forget('google_user_data');
         Auth::login($user);
 
-        return redirect('/dashboard');
+        return redirect('/home');
     }
 }

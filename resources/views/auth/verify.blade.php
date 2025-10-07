@@ -54,10 +54,15 @@
                         </div>
 
                         <div class="mb-4">
-                            <label for="company_code" class="form-label">Kode Unik Perusahaan</label>
-                            <input id="company_code" type="text" name="company_code" class="form-control @error('company_code') is-invalid @enderror" required>
+                            <label for="company_code_inputs" class="form-label">Kode Unik Perusahaan</label>
+                            <div id="company_code_inputs" class="d-flex justify-content-between gap-2">
+                                @for ($i = 0; $i < 8; $i++)
+                                    <input type="text" name="code_part[]" class="form-control text-center code-input" inputmode="text" pattern="[a-zA-Z0-9]" maxlength="1" style="width: 3rem; height: 3rem; font-size: 1.2rem; border: 1px solid #000;" required>
+                                @endfor
+                            </div>
+                            <input type="hidden" name="company_code" id="company_code">
                             @error('company_code')
-                                <div class="invalid-feedback">{{ $message }}</div>
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
                             @enderror
                         </div>
 
@@ -72,4 +77,56 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const form = document.querySelector('form[action="{{ route('verification.verify') }}"]');
+    const inputs = document.querySelectorAll('.code-input');
+    const hiddenInput = document.getElementById('company_code');
+
+    if (form && inputs.length > 0 && hiddenInput) {
+        inputs.forEach((input, index) => {
+            input.addEventListener('input', (e) => {
+                // Sanitize input to be alphanumeric
+                e.target.value = e.target.value.replace(/[^a-zA-Z0-9]/g, '');
+
+                // Automatically move to the next input
+                if (e.target.value.length === 1 && index < inputs.length - 1) {
+                    inputs[index + 1].focus();
+                }
+            });
+
+            input.addEventListener('keydown', (e) => {
+                // Move to the previous input on backspace if the current input is empty
+                if (e.key === 'Backspace' && e.target.value.length === 0 && index > 0) {
+                    inputs[index - 1].focus();
+                }
+            });
+
+            // Handle paste
+            input.addEventListener('paste', (e) => {
+                e.preventDefault();
+                const pasteData = e.clipboardData.getData('text').replace(/[^a-zA-Z0-9]/g, '').slice(0, inputs.length - index);
+                
+                pasteData.split('').forEach((char, i) => {
+                    if (index + i < inputs.length) {
+                        inputs[index + i].value = char;
+                    }
+                });
+
+                const nextFocusIndex = Math.min(index + pasteData.length, inputs.length - 1);
+                inputs[nextFocusIndex].focus();
+            });
+        });
+
+        form.addEventListener('submit', (e) => {
+            let code = '';
+            inputs.forEach(input => {
+                code += input.value;
+            });
+            hiddenInput.value = code;
+        });
+    }
+});
+</script>
 @endsection

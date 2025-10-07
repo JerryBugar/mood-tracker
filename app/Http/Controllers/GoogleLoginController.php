@@ -13,13 +13,14 @@ class GoogleLoginController extends Controller
 {
     public function redirect()
     {
+        Session::forget('google_user_data');
         return Socialite::driver('google')->redirect();
     }
 
     public function callback()
     {
         try {
-            $googleUser = Socialite::driver('google')->user();
+            $googleUser = Socialite::driver('google')->stateless()->user();
 
             // Cek jika user sudah ada DAN terverifikasi
             $user = User::where('google_id', $googleUser->getId())->where('is_verified', true)->first();
