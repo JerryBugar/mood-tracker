@@ -1,3 +1,4 @@
+import * as Turbo from '@hotwired/turbo';
 import './bootstrap';
 import '../css/app.css';
 

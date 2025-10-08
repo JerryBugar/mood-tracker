@@ -21,3 +21,16 @@ Route::get('/home', function () {
 
 Route::get('/auth/verify', [VerificationController::class, 'show'])->name('verification.show');
 Route::post('/auth/verify', [VerificationController::class, 'verify'])->name('verification.verify');
+
+Route::get('/record', function () {
+    return view('record.index');
+});
+
+Route::get('/notif', function () {
+    return view('notif.index');
+});
+
+Route::get('/profile', function () {
+    return view('profile.index');
+});
+

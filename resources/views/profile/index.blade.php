@@ -2,8 +2,6 @@
 
 @section('main-content')
     <div class="container">
-        <h1>Welcome to Home Page!</h1>
+        <h1>Profile Page</h1>
     </div>
-
-
 @endsection

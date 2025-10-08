@@ -27,7 +27,7 @@ class GoogleLoginController extends Controller
 
             if ($user) {
                 Auth::login($user);
-                return redirect('/dashboard'); // Langsung ke dashboard jika sudah terverifikasi
+                return redirect('/home'); // Langsung ke dashboard jika sudah terverifikasi
             }
 
             // Jika belum, simpan data Google di session dan arahkan ke verifikasi
