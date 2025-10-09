@@ -182,15 +182,29 @@ body {
 
     display: flex;
 
-    flex-direction: column;
+    flex-direction: row;
 
     align-items: center;
 
-    color: #95a5a6;
+    justify-content: center;
+
+    color: #bdc3c7;
 
     text-decoration: none;
 
-    font-size: 12px;
+    font-size: 14px;
+
+    height: 50px;
+
+    width: 50px;
+
+    border-radius: 50px;
+
+    transition: all 0.3s ease-in-out;
+
+    position: relative;
+
+    z-index: 1;
 
 }
 
@@ -200,13 +214,71 @@ body {
 
     font-size: 24px;
 
+    transition: all 0.2s ease-in-out;
+
+}
+
+
+
+.nav-text {
+
+    width: 0;
+
+    overflow: hidden;
+
+    opacity: 0;
+
+    margin-left: 0;
+
+    transition: all 0.3s ease-in-out;
+
+    white-space: nowrap;
+
 }
 
 
 
 .nav-item.active {
 
-    color: #82242d;
+    width: auto;
+
+    padding: 0 20px;
+
+    color: #ffffff;
+
+}
+
+
+
+.nav-active-background {
+
+    position: absolute;
+
+    top: 10px;
+
+    height: 50px;
+
+    border-radius: 50px;
+
+    background-color: rgba(255, 255, 255, 0.2);
+
+    transition: all 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+
+    z-index: 0;
+
+    opacity: 0;
+
+}
+
+
+
+.nav-item.active .nav-text {
+
+    width: auto;
+
+    opacity: 1;
+
+    margin-left: 10px;
 
 }
 
