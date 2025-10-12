@@ -9,9 +9,6 @@
 <!-- Main content, initially hidden -->
 <div id="main-content-wrapper" class="hidden">
     <div class="d-flex flex-column align-items-center justify-content-center min-vh-100 text-center">
-        <div class="account-icon" aria-label="Profil akun">
-            <img src="{{ asset('logo/person.png') }}" alt="Ikon akun" />
-        </div>
         <img id="final-logo-position" src="{{ asset('logo/icon.jpeg') }}" alt="Ikon utama aplikasi" class="center-icon img-fluid">
         <h1 class="hero-title mt-5 text-center">
             Selamat datang, <br> Tim Hebat Cerebrum!

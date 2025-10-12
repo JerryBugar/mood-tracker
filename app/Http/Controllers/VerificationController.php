@@ -50,6 +50,7 @@ class VerificationController extends Controller
             [
                 'name' => $request->name,
                 'google_id' => $googleUserData['id'],
+                'avatar' => $googleUserData['avatar'],
                 'password' => Hash::make(now()),
                 'division' => $request->division,
                 'role' => $request->role,

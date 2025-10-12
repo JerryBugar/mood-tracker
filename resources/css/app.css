@@ -23,27 +23,6 @@ body {
   display: none;
 }
 
-.account-icon {
-  align-items: center;
-  background-color: #82272c;
-  border: 2px solid #000000;
-  border-radius: 50%;
-  box-sizing: border-box;
-  display: flex;
-  height: 48px;
-  justify-content: center;
-  position: absolute;
-  right: 24px;
-  top: 24px;
-  width: 48px;
-}
-
-.account-icon img {
-  height: 28px;
-  width: 28px;
-  object-fit: contain;
-}
-
 .center-content {
   padding: 0 24px;
   width: 100%;
@@ -158,11 +137,13 @@ body {
 
     position: fixed;
 
-    bottom: 0;
+    bottom: 10px;
 
-    left: 0;
+    left: 10px;
 
-    width: 100%;
+    right: 10px;
+
+    width: auto;
 
     background-color: #ffffff;
 
@@ -172,7 +153,9 @@ body {
 
     padding: 10px 0;
 
-    box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+
+    border-radius: 15px;
 
 }
 
@@ -260,9 +243,9 @@ body {
 
     border-radius: 50px;
 
-    background-color: rgba(255, 255, 255, 0.2);
+        background-color: rgba(255, 255, 255, 0.2);
 
-    transition: all 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+        transition: all 0.15s linear;
 
     z-index: 0;
 
@@ -288,4 +271,65 @@ body {
 
     margin-top: 4px;
 
+}
+
+/* Mood Input Box */
+.mood-input-container {
+    margin-top: 8px;
+    margin-left: auto;
+    margin-right: auto;
+    box-sizing: border-box;
+}
+
+.mood-input-box {
+    height: auto;
+    min-height: 100px; /* Added min-height */
+    background-color: #83282f;
+    border-radius: 15px;
+    width: 100%;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+}
+
+.mood-avatar {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0; /* Prevent avatar from shrinking */
+}
+
+.mood-text-content {
+    color: #ffffff; /* Text needs to be white on the dark background */
+}
+
+.mood-text-content h3 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.mood-quote {
+    margin: 8px 0;
+    font-size: 0.9rem;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.mood-author {
+    font-size: 0.8rem;
+    font-style: italic;
+}
+
+/* Responsive adjustments for mobile */
+@media (max-width: 576px) {
+    .mood-input-box {
+        justify-content: flex-start; /* Align content to the left */
+        /* Keep flex-direction: row and align-items: center from desktop */
+    }
 }

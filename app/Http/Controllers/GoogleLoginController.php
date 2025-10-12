@@ -34,6 +34,7 @@ class GoogleLoginController extends Controller
             Session::put('google_user_data', [
                 'id' => $googleUser->getId(),
                 'email' => $googleUser->getEmail(),
+                'avatar' => $googleUser->getAvatar(),
             ]);
 
             return redirect()->route('verification.show');
