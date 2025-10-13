@@ -83,6 +83,42 @@ document.addEventListener('DOMContentLoaded', function () {
     const form = document.querySelector('form[action="{{ route('verification.verify') }}"]');
     const inputs = document.querySelectorAll('.code-input');
     const hiddenInput = document.getElementById('company_code');
+    const jenisKelaminSelect = document.getElementById('jenis_kelamin');
+    const emoticonPreview = document.getElementById('emoticon-preview');
+
+    // Mapping emoticon untuk cowok (tanpa angka) dan cewek (dengan angka 1)
+    const emoticonMap = {
+        'Cowok': {
+            'netral': '{{ asset('logo/netral.png') }}',
+            'senyum': '{{ asset('logo/senyum.png') }}',
+            'sedih': '{{ asset('logo/sedih.png') }}',
+            'nervous': '{{ asset('logo/nervous.png') }}',
+            'marah': '{{ asset('logo/marah.png') }}'
+        },
+        'Cewek': {
+            'netral': '{{ asset('logo/netral1.png') }}',
+            'senyum': '{{ asset('logo/senyum1.png') }}',
+            'sedih': '{{ asset('logo/sedih1.png') }}',
+            'nervous': '{{ asset('logo/nervous1.png') }}',
+            'marah': '{{ asset('logo/marah1.png') }}'
+        }
+    };
+
+    // Fungsi untuk mengganti emoticon berdasarkan jenis kelamin
+    function updateEmoticon() {
+        const selectedGender = jenisKelaminSelect.value;
+        if (selectedGender === 'Cowok' || selectedGender === 'Cewek') {
+            // Pilih emoticon netral sebagai contoh
+            const emoticonKey = 'netral';
+            const emoticonPath = emoticonMap[selectedGender][emoticonKey];
+            emoticonPreview.src = emoticonPath;
+        }
+    }
+
+    // Tambahkan event listener untuk perubahan jenis kelamin
+    if (jenisKelaminSelect && emoticonPreview) {
+        jenisKelaminSelect.addEventListener('change', updateEmoticon);
+    }
 
     if (form && inputs.length > 0 && hiddenInput) {
         inputs.forEach((input, index) => {
@@ -127,6 +163,9 @@ document.addEventListener('DOMContentLoaded', function () {
             hiddenInput.value = code;
         });
     }
+
+    // Update emoticon saat halaman dimuat jika sudah ada nilai yang dipilih
+    updateEmoticon();
 });
 </script>
 @endsection
