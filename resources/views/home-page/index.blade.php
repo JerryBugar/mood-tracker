@@ -20,6 +20,10 @@
                 </div>
             </div>
         </div>
+
+        <div style="background-color: #d98695; border-radius: 15px; padding: 20px; margin-top: 20px; text-align: center;">
+            <h3 style="font-weight: bold; color: white;">Bagaimana kabarmu hari ini?</h3>
+        </div>
     </div>
 
 
