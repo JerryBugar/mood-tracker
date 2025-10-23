@@ -72,12 +72,12 @@
                     
                     <div class="d-md-none text-center">
                         <div class="emoticon-background">
-                            <img src="{{ Auth::check() && Auth::user()->jenis_kelamin === 'Cewek' ? asset('logo/nervous1.png') : asset('logo/nervous.png') }}" alt="Nervous" class="mood-emoticon emoticon-clickable" style="width: 50px; height: 50px; transition: transform 0.2s ease;" onclick="this.style.transform='scale(1.2)'; setTimeout(() => this.style.transform='scale(1)', 300);">
+                            <img src="{{ Auth::check() && Auth::user()->jenis_kelamin === 'Cewek' ? asset('logo/lelah1.png') : asset('logo/lelah.png') }}" alt="lelah" class="mood-emoticon emoticon-clickable" style="width: 50px; height: 50px; transition: transform 0.2s ease;" onclick="this.style.transform='scale(1.2)'; setTimeout(() => this.style.transform='scale(1)', 300);">
                         </div>
                     </div>
                     <div class="d-none d-md-block text-center">
                         <div class="emoticon-background">
-                            <img src="{{ Auth::check() && Auth::user()->jenis_kelamin === 'Cewek' ? asset('logo/nervous1.png') : asset('logo/nervous.png') }}" alt="Nervous" class="mood-emoticon emoticon-clickable" style="width: 70px; height: 70px; transition: transform 0.2s ease;" onclick="this.style.transform='scale(1.2)'; setTimeout(() => this.style.transform='scale(1)', 300);">
+                            <img src="{{ Auth::check() && Auth::user()->jenis_kelamin === 'Cewek' ? asset('logo/lelah1.png') : asset('logo/lelah.png') }}" alt="lelah" class="mood-emoticon emoticon-clickable" style="width: 70px; height: 70px; transition: transform 0.2s ease;" onclick="this.style.transform='scale(1.2)'; setTimeout(() => this.style.transform='scale(1)', 300);">
                         </div>
                     </div>
                     

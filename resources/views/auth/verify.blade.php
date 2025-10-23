@@ -92,14 +92,14 @@ document.addEventListener('DOMContentLoaded', function () {
             'netral': '{{ asset('logo/netral.png') }}',
             'senyum': '{{ asset('logo/senyum.png') }}',
             'sedih': '{{ asset('logo/sedih.png') }}',
-            'nervous': '{{ asset('logo/nervous.png') }}',
+            'lelah': '{{ asset('logo/lelah.png') }}',
             'marah': '{{ asset('logo/marah.png') }}'
         },
         'Cewek': {
             'netral': '{{ asset('logo/netral1.png') }}',
             'senyum': '{{ asset('logo/senyum1.png') }}',
             'sedih': '{{ asset('logo/sedih1.png') }}',
-            'nervous': '{{ asset('logo/nervous1.png') }}',
+            'lelah': '{{ asset('logo/lelah1.png') }}',
             'marah': '{{ asset('logo/marah1.png') }}'
         }
     };
