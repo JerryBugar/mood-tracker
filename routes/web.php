@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\GoogleLoginController;
 use App\Http\Controllers\VerificationController;
+use App\Http\Controllers\MoodController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -33,4 +34,8 @@ Route::get('/notif', function () {
 Route::get('/profile', function () {
     return view('profile.index');
 });
+
+// Routes untuk mood
+Route::get('/mood/modal', [MoodController::class, 'showMoodModal'])->name('mood.modal');
+Route::post('/mood/save', [MoodController::class, 'saveMood'])->name('mood.save');
 
