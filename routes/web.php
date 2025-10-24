@@ -18,7 +18,7 @@ Route::get('/auth/google/callback', [GoogleLoginController::class, 'callback']);
 
 Route::get('/home', function () {
     return view('home-page.index');
-});
+})->middleware('auth');
 
 Route::get('/auth/verify', [VerificationController::class, 'show'])->name('verification.show');
 Route::post('/auth/verify', [VerificationController::class, 'verify'])->name('verification.verify');
@@ -36,6 +36,8 @@ Route::get('/profile', function () {
 });
 
 // Routes untuk mood
-Route::get('/mood/modal', [MoodController::class, 'showMoodModal'])->name('mood.modal');
-Route::post('/mood/save', [MoodController::class, 'saveMood'])->name('mood.save');
+Route::middleware('auth')->group(function () {
+    Route::get('/mood/modal', [MoodController::class, 'showMoodModal'])->name('mood.modal');
+    Route::post('/mood/save', [MoodController::class, 'saveMood'])->name('mood.save');
+});
 

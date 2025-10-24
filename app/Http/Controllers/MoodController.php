@@ -9,13 +9,30 @@ class MoodController extends Controller
 {
     public function showMoodModal(Request $request)
     {
+        // Pastikan user terautentikasi
+        if (!Auth::check()) {
+            return response()->json([
+                'error' => 'User not authenticated',
+                'message' => 'Anda harus login terlebih dahulu'
+            ], 401);
+        }
+
+        // Ambil user yang terautentikasi
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json([
+                'error' => 'User data not available',
+                'message' => 'Data pengguna tidak ditemukan'
+            ], 401);
+        }
+
         $mood = $request->input('mood');
         
         $moodData = [
             'netral' => [
-                'title' => 'Netral atau biasa saja',
-                'explanation' => 'Kenapa biasa saja? Coba ceritain...',
-                'suggestion' => 'Kira-kira apa yang bisa bikin kamu gak biasa aja?'
+                'title' => 'Biasa saja',
+                'explanation' => 'Kenapa Biasa saja? Coba ceritain...',
+                'suggestion' => 'Kira-kira apa yang bisa bikin kamu gak Biasa aja?'
             ],
             'senyum' => [
                 'title' => 'Senang',
@@ -44,9 +61,8 @@ class MoodController extends Controller
         $today = now();
         $formattedDate = $today->locale('id_ID')->translatedFormat('l, j F Y');
         
-        $userAvatar = Auth::check() && Auth::user()->avatar ? Auth::user()->avatar : '';
-        
-        $jenisKelamin = Auth::check() ? Auth::user()->jenis_kelamin : '';
+        $userAvatar = $user->avatar ? $user->avatar : '';
+        $jenisKelamin = $user->jenis_kelamin ?? '';
         
         $emoticonPath = '';
         switch($mood) {
