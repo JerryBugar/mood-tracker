@@ -1,3 +1,12 @@
+<style>
+    .mood-quote {
+        font-style: italic;
+    }
+    .mood-author {
+        font-style: italic;
+    }
+</style>
+
 <div class="mood-input-container" style="margin-bottom: 8px;">
     <div class="mood-input-box text-center" style="flex-direction: column;">
         @if (Auth::check() && Auth::user()->avatar)
@@ -5,8 +14,8 @@
         @endif
         <div class="mood-text-content">
             <h3 id="greeting-text"></h3>
-            <p class="mood-quote">Dibalik setiap kesulitan, tersimpan sebuah kesempatan.</p>
-            <small class="mood-author">- Albert Einstein</small>
+            <p id="moodQuote" class="mood-quote">Memuat kutipan...</p>
+            <small id="moodAuthor" class="mood-author">Memuat penulis...</small>
         </div>
     </div>
 </div>

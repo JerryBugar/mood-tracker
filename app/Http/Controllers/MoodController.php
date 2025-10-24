@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Models\MoodQuote;
 
 class MoodController extends Controller
 {
@@ -83,14 +84,63 @@ class MoodController extends Controller
                 break;
         }
         
+        // Ambil kutipan acak dari database
+        $randomQuote = MoodQuote::inRandomOrder()->first();
+        $quoteText = $randomQuote ? $randomQuote->quote : 'Dibalik setiap kesulitan, tersimpan sebuah kesempatan.';
+        $quoteAuthor = $randomQuote ? $randomQuote->author : 'Albert Einstein';
+
         return response()->json([
             'title' => $data['title'],
             'explanation' => $data['explanation'],
             'suggestion' => $data['suggestion'],
             'date' => $formattedDate,
             'avatar' => $userAvatar,
-            'emoticon' => $emoticonPath
+            'emoticon' => $emoticonPath,
+            'quote' => $quoteText,
+            'author' => $quoteAuthor
         ])->header('Content-Type', 'application/json');
+    }
+    
+    public function getRandomQuote()
+    {
+        // Periksa apakah sudah ada kutipan dalam sesi pengguna
+        $sessionKey = 'user_quote_' . Auth::id();
+        $quoteData = session()->get($sessionKey);
+        
+        if ($quoteData) {
+            // Jika kutipan sudah ada di sesi, gunakan yang ada
+            return response()->json([
+                'quote' => $quoteData['quote'],
+                'author' => $quoteData['author']
+            ]);
+        } else {
+            // Jika belum ada di sesi, ambil kutipan acak baru
+            $randomQuote = MoodQuote::inRandomOrder()->first();
+            
+            if ($randomQuote) {
+                // Simpan kutipan ke sesi pengguna
+                session()->put($sessionKey, [
+                    'quote' => $randomQuote->quote,
+                    'author' => $randomQuote->author
+                ]);
+                
+                return response()->json([
+                    'quote' => $randomQuote->quote,
+                    'author' => $randomQuote->author
+                ]);
+            } else {
+                // Fallback jika tidak ada kutipan di database
+                $fallbackQuote = [
+                    'quote' => 'Dibalik setiap kesulitan, tersimpan sebuah kesempatan.',
+                    'author' => 'Albert Einstein'
+                ];
+                
+                // Simpan fallback ke sesi juga
+                session()->put($sessionKey, $fallbackQuote);
+                
+                return response()->json($fallbackQuote);
+            }
+        }
     }
     
     public function saveMood(Request $request)

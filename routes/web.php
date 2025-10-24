@@ -39,5 +39,6 @@ Route::get('/profile', function () {
 Route::middleware('auth')->group(function () {
     Route::get('/mood/modal', [MoodController::class, 'showMoodModal'])->name('mood.modal');
     Route::post('/mood/save', [MoodController::class, 'saveMood'])->name('mood.save');
+    Route::get('/mood/quote', [MoodController::class, 'getRandomQuote'])->name('mood.quote');
 });
 

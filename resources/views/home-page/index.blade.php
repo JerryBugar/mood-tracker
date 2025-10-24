@@ -41,6 +41,46 @@
         // Update salam setiap 15 detik agar tetap akurat
         setInterval(updateGreeting, 15000);
         
+        // Fungsi untuk mengambil kutipan motivasi acak
+        function loadRandomQuote() {
+            fetch('{{ route("mood.quote") }}', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => {
+                console.log('Response status:', response.status);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Received quote data:', data);
+                document.getElementById('moodQuote').textContent = data.quote;
+                document.getElementById('moodAuthor').textContent = '- ' + data.author;
+            })
+            .catch(error => {
+                console.error('Error fetching quote:', error);
+                // Tampilkan kutipan default jika terjadi error
+                document.getElementById('moodQuote').textContent = 'Dibalik setiap kesulitan, tersimpan sebuah kesempatan.';
+                document.getElementById('moodAuthor').textContent = '- Albert Einstein';
+            });
+        }
+        
+        // Muat kutipan ketika halaman pertama kali dimuat
+        document.addEventListener('DOMContentLoaded', function() {
+            loadRandomQuote();
+        });
+        
+        // Muat ulang kutipan saat Turbo memuat ulang halaman
+        // Ini akan mengambil kutipan dari sesi (server-side), bukan mengacak ulang
+        document.addEventListener('turbo:load', function() {
+            loadRandomQuote();
+        });
+        
         // Fungsi untuk mengecek apakah Bootstrap siap
         function isBootstrapReady() {
             return typeof bootstrap !== 'undefined' && bootstrap.Modal;
