@@ -14,8 +14,8 @@
         @endif
         <div class="mood-text-content">
             <h3 id="greeting-text"></h3>
-            <p id="moodQuote" class="mood-quote">Memuat kutipan...</p>
-            <small id="moodAuthor" class="mood-author">Memuat penulis...</small>
+            <p id="moodQuote" class="mood-quote"></p>
+            <small id="moodAuthor" class="mood-author"></small>
         </div>
     </div>
 </div>
