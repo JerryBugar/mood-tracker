@@ -130,7 +130,8 @@ class MoodController extends Controller
             return response()->turboStreamRemove('mood_modal_content');
         }
 
-        return response('<turbo-stream action="remove" target="mood_modal_content"></turbo-stream>', 200)
-               ->header('Content-Type', Turbo::TURBO_STREAM_CONTENT_TYPE);
+        Log::error('Turbo class not found! Falling back to manual stream.'); // Tambahkan log error
+    return response('<turbo-stream action="remove" target="mood_modal_content"></turbo-stream>', 200)
+           ->header('Content-Type', 'text/vnd.turbo-stream.html'); // Perbaiki manual jika perlu
     }
 }
