@@ -21,7 +21,6 @@ class MoodRecord extends Model
      * Pastikan ini cocok dengan nama di form dan validasi.
      */
     protected $fillable = [
-        'user_id',
         'mood',
         'reason',
         'suggestion_action',
