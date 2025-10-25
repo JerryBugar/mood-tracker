@@ -41,33 +41,96 @@
         // Update salam setiap 15 detik agar tetap akurat
         setInterval(updateGreeting, 15000);
         
+        // Fungsi untuk memeriksa apakah cache masih valid (kurang dari 1 jam)
+        function isQuoteCacheValid() {
+            const cacheTimestamp = localStorage.getItem('moodQuoteTimestamp');
+            if (!cacheTimestamp) return false;
+            
+            const now = new Date().getTime();
+            const cacheTime = parseInt(cacheTimestamp);
+            const oneHour = 60 * 60 * 1000; // 1 jam dalam milidetik
+            
+            return (now - cacheTime) < oneHour;
+        }
+        
         // Fungsi untuk mengambil kutipan motivasi acak
         function loadRandomQuote() {
-            fetch('{{ route("mood.quote") }}', {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
+            // Cek apakah elemen quote ada di halaman ini
+            const moodQuoteElement = document.getElementById('moodQuote');
+            const moodAuthorElement = document.getElementById('moodAuthor');
+            
+            // Jika elemen tidak ditemukan, keluar dari fungsi
+            if (!moodQuoteElement || !moodAuthorElement) {
+                return;
+            }
+            
+            // Cek apakah cache valid
+            const isCacheValid = isQuoteCacheValid();
+            const cachedQuote = localStorage.getItem('moodQuote');
+            const cachedAuthor = localStorage.getItem('moodAuthor');
+            
+            // Jika cache valid dan ada datanya, tampilkan dulu
+            if (isCacheValid && cachedQuote && cachedAuthor) {
+                moodQuoteElement.textContent = cachedQuote;
+                moodAuthorElement.textContent = cachedAuthor;
+            }
+            
+            // Ambil data dari server untuk update cache (kecuali jika cache masih valid)
+            if (!isCacheValid) {
+                fetch('{{ route("mood.quote") }}', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => {
+                    console.log('Response status:', response.status);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Received quote data:', data);
+                    
+                    // Simpan data ke localStorage dengan timestamp
+                    localStorage.setItem('moodQuote', data.quote);
+                    localStorage.setItem('moodAuthor', '- ' + data.author);
+                    localStorage.setItem('moodQuoteTimestamp', new Date().getTime());
+                    
+                    // Tampilkan data yang baru (hanya jika elemen masih ada)
+                    const currentMoodQuoteElement = document.getElementById('moodQuote');
+                    const currentMoodAuthorElement = document.getElementById('moodAuthor');
+                    
+                    if (currentMoodQuoteElement && currentMoodAuthorElement) {
+                        currentMoodQuoteElement.textContent = data.quote;
+                        currentMoodAuthorElement.textContent = '- ' + data.author;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching quote:', error);
+                    // Jika gagal ambil dari server, tetap gunakan data dari localStorage
+                    // atau gunakan fallback jika tidak ada di localStorage
+                    if (!(cachedQuote && cachedAuthor)) {
+                        // Hanya tampilkan fallback jika elemen masih ada
+                        const currentMoodQuoteElement = document.getElementById('moodQuote');
+                        const currentMoodAuthorElement = document.getElementById('moodAuthor');
+                        
+                        if (currentMoodQuoteElement && currentMoodAuthorElement) {
+                            currentMoodQuoteElement.textContent = 'Dibalik setiap kesulitan, tersimpan sebuah kesempatan.';
+                            currentMoodAuthorElement.textContent = '- Albert Einstein';
+                        }
+                    }
+                });
+            } else {
+                // Jika cache valid, kita tidak perlu ambil dari server, tapi tetap bisa mengupdate nanti
+                // Cek apakah data sudah tampil, jika belum tampil maka tampilkan
+                if (cachedQuote && cachedAuthor) {
+                    moodQuoteElement.textContent = cachedQuote;
+                    moodAuthorElement.textContent = cachedAuthor;
                 }
-            })
-            .then(response => {
-                console.log('Response status:', response.status);
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log('Received quote data:', data);
-                document.getElementById('moodQuote').textContent = data.quote;
-                document.getElementById('moodAuthor').textContent = '- ' + data.author;
-            })
-            .catch(error => {
-                console.error('Error fetching quote:', error);
-                // Tampilkan kutipan default jika terjadi error
-                document.getElementById('moodQuote').textContent = 'Dibalik setiap kesulitan, tersimpan sebuah kesempatan.';
-                document.getElementById('moodAuthor').textContent = '- Albert Einstein';
-            });
+            }
         }
         
         // Muat kutipan ketika halaman pertama kali dimuat
@@ -79,6 +142,15 @@
         // Ini akan mengambil kutipan dari sesi (server-side), bukan mengacak ulang
         document.addEventListener('turbo:load', function() {
             loadRandomQuote();
+        });
+        
+        // Bersihkan cache yang sudah kadaluarsa saat halaman dimuat
+        window.addEventListener('load', function() {
+            if (!isQuoteCacheValid()) {
+                localStorage.removeItem('moodQuote');
+                localStorage.removeItem('moodAuthor');
+                localStorage.removeItem('moodQuoteTimestamp');
+            }
         });
         
         // Fungsi untuk mengecek apakah Bootstrap siap
