@@ -109,6 +109,9 @@ class MoodController extends Controller
         try {
             auth()->user()->moodRecords()->create($validated);
             Log::info('Mood record saved successfully for user: ' . auth()->id());
+            
+            // Kembalikan view sukses ke dalam turbo frame
+            return view('components._partials.mood_modal_success');
         } catch (\Exception $e) {
             Log::error('Failed to save mood record:', ['error' => $e->getMessage()]);
             // Jika gagal, kita harus merespons dengan pesan error
