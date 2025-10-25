@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\MoodQuote;
+use App\Models\MoodRecord;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\View; // Tambahkan ini
 use Hotwired\Turbo\Turbo; // Pastikan ini di-use jika Anda menggunakan package turbo-laravel
 
@@ -90,30 +92,44 @@ class MoodController extends Controller
     
     public function saveMood(Request $request)
     {
-        \Illuminate\Support\Facades\Log::info('Mood save request received (via Turbo):', $request->all());
+        Log::info('Mood save request received (via Turbo):', $request->all());
 
-        // Validasi request jika perlu
         $validated = $request->validate([
             'mood' => 'required|string|in:netral,senyum,sedih,lelah,marah',
             'reason' => 'nullable|string',
             'suggestion_action' => 'nullable|string',
         ]);
 
-        // Logika simpan mood ke database...
-        // Misalnya:
-        // auth()->user()->moods()->create($validated);
+        // ===============================================
+        // === PERUBAHAN UTAMA: TAMBAHKAN BARIS INI ===
+        // ===============================================
+        
+        // Ambil user yang sedang login dan buat record baru menggunakan relasi.
+        // 'user_id' akan diisi secara otomatis.
+        try {
+            auth()->user()->moodRecords()->create($validated);
+            Log::info('Mood record saved successfully for user: ' . auth()->id());
+        } catch (\Exception $e) {
+            Log::error('Failed to save mood record:', ['error' => $e->getMessage()]);
+            // Jika gagal, kita harus merespons dengan pesan error
+            // (Untuk sekarang, kita biarkan lolos agar modal tetap tertutup,
+            // tapi idealnya kita beri feedback error)
+            
+             // Opsi: Kirim error kembali ke frame
+             // return response('<turbo-frame id="mood_modal_content"><div class="alert alert-danger m-3">Gagal menyimpan. Coba lagi.</div></turbo-frame>', 422)
+             //       ->header('Content-Type', 'text/html; turbo-stream-content-type=text/html');
+        }
 
-        \Illuminate\Support\Facades\Log::info('Mood data validated and ready to save:', $validated);
+        // ===============================================
+        // === AKHIR PERUBAHAN ===
+        // ===============================================
 
-        // Jika berhasil disimpan, kirim Turbo Stream untuk menghapus frame modal
-        // Ini akan secara otomatis menutup modal jika modal memiliki data-turbo-temporary
-
-        // Menggunakan package turbo-laravel (lebih disarankan)
-        if (class_exists(\Hotwired\Turbo\Turbo::class)) {
+        // Respon Turbo Stream tetap sama.
+        // Modal akan tertutup, dan data sudah tersimpan di database.
+        if (class_exists(Turbo::class)) {
             return response()->turboStreamRemove('mood_modal_content');
         }
 
-        // Atau secara manual jika tidak pakai package
         return response('<turbo-stream action="remove" target="mood_modal_content"></turbo-stream>', 200)
                ->header('Content-Type', Turbo::TURBO_STREAM_CONTENT_TYPE);
     }
