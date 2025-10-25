@@ -2,7 +2,11 @@
     <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-header" style="background-color: #f8f9fa; border-bottom: 1px solid #dee2e6;">
-                <button type="button" class="btn-close position-absolute start-0 top-0 m-2" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close position-absolute start-0 top-0 m-2" style="background: none; border: none; cursor: pointer;" data-bs-dismiss="modal" aria-label="Close">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#4a4a4a">
+                        <path d="M400-80 0-480l400-400 71 71-329 329 329 329-71 71Z"/>
+                    </svg>
+                </button>
                 <div class="d-flex align-items-center ms-auto">
                     <img id="modalAvatar" src="" alt="Avatar" style="width: 30px; height: 30px; border-radius: 50%; margin-right: 10px; display: none;"> {{-- Awalnya disembunyikan --}}
                     <span id="modalDate" class="text-muted"></span>

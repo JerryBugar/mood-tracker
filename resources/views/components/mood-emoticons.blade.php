@@ -1,14 +1,50 @@
 <style>
-    .emoticon-background {
-        display: inline-block;
-        background-color: rgba(255, 255, 255, 0.2);
-        border-radius: 50%;
-        padding: 8px;
-        margin: 0;
+    .mood-emoticons-container {
+        padding: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        border: 1px solid #e0e0e0;
+        margin-bottom: 20px;
     }
 
-    .mood-emoticons-container {
-        padding: 20px;
+    .emoticon-background {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background-color: #f0f0f068;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border: 2px solid transparent;
+        /* 2. TAMBAHKAN INI: Transisi untuk hover dan animasi */
+        transition: transform 0.2s ease-out, border-color 0.2s ease-out;
+    }
+
+    .emoticon-link {
+        display: inline-block;
+        text-decoration: none;
+    }
+
+    /* 1. TAMBAHKAN INI: Definisi animasi float */
+    @keyframes floatAnimation {
+        0%, 100% {
+            transform: translateY(0);
+        }
+        50% {
+            transform: translateY(-8px); /* Bergerak ke atas 8px */
+        }
+    }
+
+    /* 3. TAMBAHKAN INI: Efek hover biasa (sedikit terangkat) */
+    .emoticon-link:hover .emoticon-background {
+        transform: translateY(-4px);
+        border-color: #d98695; /* Warna border saat di-hover */
+    }
+
+    /* 4. TAMBAHKAN INI: Animasi float SAAT DIKLIK (selama Turbo memuat) */
+    .emoticon-link[aria-busy="true"] .emoticon-background {
+        animation: floatAnimation 1.2s ease-in-out infinite;
+        /* Pastikan border tetap ada selama loading */
+        border-color: #d98695;
     }
 
     .mood-emoticons-grid > div > div {
@@ -27,7 +63,8 @@
         }
         
         .emoticon-background {
-            padding: 5px;
+            width: 50px;
+            height: 50px;
         }
         
         .mood-emoticons-container {
@@ -35,92 +72,70 @@
         }
     }
     
-    .emoticon-link { /* Tambahkan style untuk link jika perlu */
-        display: inline-block;
-        text-decoration: none;
-    }
 </style>
 
 <div class="mood-emoticons-container" style="background-color: #d98695; border-radius: 15px; margin-top: 0px; text-align: center;">
     <h3 class="d-none d-sm-block mb-0" style="color: white;">Bagaimana kabarmu hari ini?</h3>
     <h5 class="d-block d-sm-none mb-0" style="color: white;">Bagaimana kabarmu hari ini?</h5>
-    
+
     <div class="mood-emoticons-grid mt-3">
         <div class="d-flex justify-content-center align-items-center" style="flex-wrap: nowrap; margin: 0 -15px;">
-            <div class="d-md-none text-center">
+            
+            {{-- Netral --}}
+            <div class="text-center mx-2 mx-md-5">
                 <a href="{{ route('mood.modal', ['mood' => 'netral']) }}" data-turbo-frame="mood_modal_content" class="emoticon-link">
                     <div class="emoticon-background">
-                        <img src="{{ Auth::check() && Auth::user()->jenis_kelamin === 'Cewek' ? asset('logo/netral1.png') : asset('logo/netral.png') }}" alt="Netral" class="mood-emoticon emoticon-clickable" data-mood="netral" style="width: 45px; height: 45px; transition: transform 0.2s ease; display: block; cursor: pointer;">
+                        {{-- HAPUS 'transition' dari inline style --}}
+                        <img src="{{ Auth::check() && Auth::user()->jenis_kelamin === 'Cewek' ? asset('logo/netral1.png') : asset('logo/netral.png') }}" alt="Netral" class="mood-emoticon" data-mood="netral" style="width: 50px; height: 50px; display: block;"
+                             srcset="{{ Auth::check() && Auth::user()->jenis_kelamin === 'Cewek' ? asset('logo/netral1.png') : asset('logo/netral.png') }} 1x, {{ Auth::check() && Auth::user()->jenis_kelamin === 'Cewek' ? asset('logo/netral1.png') : asset('logo/netral.png') }} 2x">
                     </div>
                 </a>
             </div>
-            <div class="d-none d-md-block text-center">
-                <a href="{{ route('mood.modal', ['mood' => 'netral']) }}" data-turbo-frame="mood_modal_content" class="emoticon-link">
-                    <div class="emoticon-background">
-                        <img src="{{ Auth::check() && Auth::user()->jenis_kelamin === 'Cewek' ? asset('logo/netral1.png') : asset('logo/netral.png') }}" alt="Netral" class="mood-emoticon emoticon-clickable" data-mood="netral" style="width: 70px; height: 70px; transition: transform 0.2s ease; cursor: pointer;">
-                    </div>
-                </a>
-            </div>
-            
-            <div class="d-md-none text-center">
+
+            {{-- Senyum --}}
+            <div class="text-center mx-2 mx-md-5">
                 <a href="{{ route('mood.modal', ['mood' => 'senyum']) }}" data-turbo-frame="mood_modal_content" class="emoticon-link">
                     <div class="emoticon-background">
-                        <img src="{{ Auth::check() && Auth::user()->jenis_kelamin === 'Cewek' ? asset('logo/senyum1.png') : asset('logo/senyum.png') }}" alt="Senyum" class="mood-emoticon emoticon-clickable" data-mood="senyum" style="width: 45px; height: 45px; transition: transform 0.2s ease; display: block; cursor: pointer;">
+                        {{-- HAPUS 'transition' dari inline style --}}
+                        <img src="{{ Auth::check() && Auth::user()->jenis_kelamin === 'Cewek' ? asset('logo/senyum1.png') : asset('logo/senyum.png') }}" alt="Senyum" class="mood-emoticon" data-mood="senyum" style="width: 50px; height: 50px; display: block;"
+                             srcset="{{ Auth::check() && Auth::user()->jenis_kelamin === 'Cewek' ? asset('logo/senyum1.png') : asset('logo/senyum.png') }} 1x, {{ Auth::check() && Auth::user()->jenis_kelamin === 'Cewek' ? asset('logo/senyum1.png') : asset('logo/senyum.png') }} 2x">
                     </div>
                 </a>
             </div>
-            <div class="d-none d-md-block text-center">
-                <a href="{{ route('mood.modal', ['mood' => 'senyum']) }}" data-turbo-frame="mood_modal_content" class="emoticon-link">
-                    <div class="emoticon-background">
-                        <img src="{{ Auth::check() && Auth::user()->jenis_kelamin === 'Cewek' ? asset('logo/senyum1.png') : asset('logo/senyum.png') }}" alt="Senyum" class="mood-emoticon emoticon-clickable" data-mood="senyum" style="width: 70px; height: 70px; transition: transform 0.2s ease; cursor: pointer;">
-                    </div>
-                </a>
-            </div>
-            
-            <div class="d-md-none text-center">
+
+            {{-- Sedih --}}
+            <div class="text-center mx-2 mx-md-5">
                 <a href="{{ route('mood.modal', ['mood' => 'sedih']) }}" data-turbo-frame="mood_modal_content" class="emoticon-link">
                     <div class="emoticon-background">
-                        <img src="{{ Auth::check() && Auth::user()->jenis_kelamin === 'Cewek' ? asset('logo/sedih1.png') : asset('logo/sedih.png') }}" alt="Sedih" class="mood-emoticon emoticon-clickable" data-mood="sedih" style="width: 45px; height: 45px; transition: transform 0.2s ease; display: block; cursor: pointer;">
+                        {{-- HAPUS 'transition' dari inline style --}}
+                        <img src="{{ Auth::check() && Auth::user()->jenis_kelamin === 'Cewek' ? asset('logo/sedih1.png') : asset('logo/sedih.png') }}" alt="Sedih" class="mood-emoticon" data-mood="sedih" style="width: 50px; height: 50px; display: block;"
+                             srcset="{{ Auth::check() && Auth::user()->jenis_kelamin === 'Cewek' ? asset('logo/sedih1.png') : asset('logo/sedih.png') }} 1x, {{ Auth::check() && Auth::user()->jenis_kelamin === 'Cewek' ? asset('logo/sedih1.png') : asset('logo/sedih.png') }} 2x">
                     </div>
                 </a>
             </div>
-            <div class="d-none d-md-block text-center">
-                <a href="{{ route('mood.modal', ['mood' => 'sedih']) }}" data-turbo-frame="mood_modal_content" class="emoticon-link">
-                    <div class="emoticon-background">
-                        <img src="{{ Auth::check() && Auth::user()->jenis_kelamin === 'Cewek' ? asset('logo/sedih1.png') : asset('logo/sedih.png') }}" alt="Sedih" class="mood-emoticon emoticon-clickable" data-mood="sedih" style="width: 70px; height: 70px; transition: transform 0.2s ease; cursor: pointer;">
-                    </div>
-                </a>
-            </div>
-            
-            <div class="d-md-none text-center">
+
+            {{-- Lelah --}}
+            <div class="text-center mx-2 mx-md-5">
                 <a href="{{ route('mood.modal', ['mood' => 'lelah']) }}" data-turbo-frame="mood_modal_content" class="emoticon-link">
                     <div class="emoticon-background">
-                        <img src="{{ Auth::check() && Auth::user()->jenis_kelamin === 'Cewek' ? asset('logo/lelah1.png') : asset('logo/lelah.png') }}" alt="lelah" class="mood-emoticon emoticon-clickable" data-mood="lelah" style="width: 45px; height: 45px; transition: transform 0.2s ease; display: block; cursor: pointer;">
+                        {{-- HAPUS 'transition' dari inline style --}}
+                        <img src="{{ Auth::check() && Auth::user()->jenis_kelamin === 'Cewek' ? asset('logo/lelah1.png') : asset('logo/lelah.png') }}" alt="Lelah" class="mood-emoticon" data-mood="lelah" style="width: 50px; height: 50px; display: block;"
+                             srcset="{{ Auth::check() && Auth::user()->jenis_kelamin === 'Cewek' ? asset('logo/lelah1.png') : asset('logo/lelah.png') }} 1x, {{ Auth::check() && Auth::user()->jenis_kelamin === 'Cewek' ? asset('logo/lelah1.png') : asset('logo/lelah.png') }} 2x">
                     </div>
                 </a>
             </div>
-            <div class="d-none d-md-block text-center">
-                <a href="{{ route('mood.modal', ['mood' => 'lelah']) }}" data-turbo-frame="mood_modal_content" class="emoticon-link">
-                    <div class="emoticon-background">
-                        <img src="{{ Auth::check() && Auth::user()->jenis_kelamin === 'Cewek' ? asset('logo/lelah1.png') : asset('logo/lelah.png') }}" alt="lelah" class="mood-emoticon emoticon-clickable" data-mood="lelah" style="width: 70px; height: 70px; transition: transform 0.2s ease; cursor: pointer;">
-                    </div>
-                </a>
-            </div>
-            
-            <div class="d-md-none text-center">
+
+            {{-- Marah --}}
+            <div class="text-center mx-2 mx-md-5">
                 <a href="{{ route('mood.modal', ['mood' => 'marah']) }}" data-turbo-frame="mood_modal_content" class="emoticon-link">
                     <div class="emoticon-background">
-                        <img src="{{ Auth::check() && Auth::user()->jenis_kelamin === 'Cewek' ? asset('logo/marah1.png') : asset('logo/marah.png') }}" alt="Marah" class="mood-emoticon emoticon-clickable" data-mood="marah" style="width: 45px; height: 45px; transition: transform 0.2s ease; display: block; cursor: pointer;">
+                        {{-- HAPUS 'transition' dari inline style --}}
+                        <img src="{{ Auth::check() && Auth::user()->jenis_kelamin === 'Cewek' ? asset('logo/marah1.png') : asset('logo/marah.png') }}" alt="Marah" class="mood-emoticon" data-mood="marah" style="width: 50px; height: 50px; display: block;"
+                             srcset="{{ Auth::check() && Auth::user()->jenis_kelamin === 'Cewek' ? asset('logo/marah1.png') : asset('logo/marah.png') }} 1x, {{ Auth::check() && Auth::user()->jenis_kelamin === 'Cewek' ? asset('logo/marah1.png') : asset('logo/marah.png') }} 2x">
                     </div>
                 </a>
             </div>
-            <div class="d-none d-md-block text-center">
-                <a href="{{ route('mood.modal', ['mood' => 'marah']) }}" data-turbo-frame="mood_modal_content" class="emoticon-link">
-                    <div class="emoticon-background">
-                        <img src="{{ Auth::check() && Auth::user()->jenis_kelamin === 'Cewek' ? asset('logo/marah1.png') : asset('logo/marah.png') }}" alt="Marah" class="mood-emoticon emoticon-clickable" data-mood="marah" style="width: 70px; height: 70px; transition: transform 0.2s ease; cursor: pointer;">
-                    </div>
-                </a>
-            </div>
+
         </div>
     </div>
 </div>
