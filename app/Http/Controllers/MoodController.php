@@ -5,104 +5,64 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\MoodQuote;
+use Illuminate\Support\Facades\View; // Tambahkan ini
 
 class MoodController extends Controller
 {
     public function showMoodModal(Request $request)
     {
-        // Pastikan user terautentikasi
+        // Pastikan user terautentikasi (logika ini tetap sama)
         if (!Auth::check()) {
-            return response()->json([
-                'error' => 'User not authenticated',
-                'message' => 'Anda harus login terlebih dahulu'
-            ], 401);
+            // Untuk Turbo Frame, kita bisa return response error atau redirect
+            // Tapi karena ini dipicu link, lebih baik handle di middleware/route
+            // Jika request adalah Turbo Frame dan user tidak login, mungkin return frame kosong dg pesan error
+             return response('<turbo-frame id="mood_modal_content"><div class="alert alert-danger">Anda harus login.</div></turbo-frame>', 401)
+                    ->header('Content-Type', 'text/html; turbo-stream-content-type=text/html');
         }
 
-        // Ambil user yang terautentikasi
         $user = Auth::user();
-        if (!$user) {
-            return response()->json([
-                'error' => 'User data not available',
-                'message' => 'Data pengguna tidak ditemukan'
-            ], 401);
-        }
+        $mood = $request->input('mood', 'netral'); // Default ke netral jika tidak ada
 
-        $mood = $request->input('mood');
-        
         $moodData = [
-            'netral' => [
-                'title' => 'Biasa saja',
-                'explanation' => 'Kenapa Biasa saja? Coba ceritain...',
-                'suggestion' => 'Kira-kira apa yang bisa bikin kamu gak Biasa aja?'
-            ],
-            'senyum' => [
-                'title' => 'Senang',
-                'explanation' => 'Kenapa kamu merasa senang hari ini? Bagikan ceritanya...',
-                'suggestion' => 'Apa yang bisa bikin kamu tetap merasa senang?'
-            ],
-            'sedih' => [
-                'title' => 'Sedih',
-                'explanation' => 'Kenapa kamu merasa sedih? Ceritakan perasaanmu...',
-                'suggestion' => 'Apa yang bisa membantumu merasa lebih baik?'
-            ],
-            'lelah' => [
-                'title' => 'Lelah',
-                'explanation' => 'Kenapa kamu merasa lelah? Apa penyebabnya?',
-                'suggestion' => 'Apa yang bisa kamu lakukan untuk mengurangi rasa lelah ini?'
-            ],
-            'marah' => [
-                'title' => 'Marah',
-                'explanation' => 'Kenapa kamu merasa marah? Ceritakan penyebabnya...',
-                'suggestion' => 'Apa yang bisa membantumu meredakan amarah ini?'
-            ]
+            'netral' => ['title' => 'Biasa saja', 'explanation' => 'Kenapa Biasa saja? Coba ceritain...', 'suggestion' => 'Kira-kira apa yang bisa bikin kamu gak Biasa aja?'],
+            'senyum' => ['title' => 'Senang', 'explanation' => 'Kenapa kamu merasa senang hari ini? Bagikan ceritanya...', 'suggestion' => 'Apa yang bisa bikin kamu tetap merasa senang?'],
+            'sedih' => ['title' => 'Sedih', 'explanation' => 'Kenapa kamu merasa sedih? Ceritakan perasaanmu...', 'suggestion' => 'Apa yang bisa membantumu merasa lebih baik?'],
+            'lelah' => ['title' => 'Lelah', 'explanation' => 'Kenapa kamu merasa lelah? Apa penyebabnya?', 'suggestion' => 'Apa yang bisa kamu lakukan untuk mengurangi rasa lelah ini?'],
+            'marah' => ['title' => 'Marah', 'explanation' => 'Kenapa kamu merasa marah? Ceritakan penyebabnya...', 'suggestion' => 'Apa yang bisa membantumu meredakan amarah ini?']
         ];
-        
+
         $data = $moodData[$mood] ?? $moodData['netral'];
-        
+
         $today = now();
         $formattedDate = $today->locale('id_ID')->translatedFormat('l, j F Y');
-        
-        $userAvatar = $user->avatar ? $user->avatar : '';
-        $jenisKelamin = $user->jenis_kelamin ?? '';
-        
-        $emoticonPath = '';
-        switch($mood) {
-            case 'netral':
-                $emoticonPath = $jenisKelamin === 'Cewek' ? asset('logo/netral1.png') : asset('logo/netral.png');
-                break;
-            case 'senyum':
-                $emoticonPath = $jenisKelamin === 'Cewek' ? asset('logo/senyum1.png') : asset('logo/senyum.png');
-                break;
-            case 'sedih':
-                $emoticonPath = $jenisKelamin === 'Cewek' ? asset('logo/sedih1.png') : asset('logo/sedih.png');
-                break;
-            case 'lelah':
-                $emoticonPath = $jenisKelamin === 'Cewek' ? asset('logo/lelah1.png') : asset('logo/lelah.png');
-                break;
-            case 'marah':
-                $emoticonPath = $jenisKelamin === 'Cewek' ? asset('logo/marah1.png') : asset('logo/marah.png');
-                break;
-        }
-        
-        // Ambil kutipan acak dari cache
-        $quoteCacheKey = \App\Models\MoodQuote::getRandomQuoteCacheKey(Auth::id()); // Cache per user dengan versi
-        $randomQuote = cache()->remember($quoteCacheKey, 3600, function () { // Cache selama 1 jam
-            return MoodQuote::inRandomOrder()->first();
-        });
-        
-        $quoteText = $randomQuote ? $randomQuote->quote : 'Dibalik setiap kesulitan, tersimpan sebuah kesempatan.';
-        $quoteAuthor = $randomQuote ? $randomQuote->author : 'Albert Einstein';
 
-        return response()->json([
+        $userAvatar = $user->avatar ?: ''; // Gunakan null coalescing
+        $jenisKelamin = $user->jenis_kelamin ?? '';
+
+        $emoticonPaths = [
+            'netral' => $jenisKelamin === 'Cewek' ? asset('logo/netral1.png') : asset('logo/netral.png'),
+            'senyum' => $jenisKelamin === 'Cewek' ? asset('logo/senyum1.png') : asset('logo/senyum.png'),
+            'sedih' => $jenisKelamin === 'Cewek' ? asset('logo/sedih1.png') : asset('logo/sedih.png'),
+            'lelah' => $jenisKelamin === 'Cewek' ? asset('logo/lelah1.png') : asset('logo/lelah.png'),
+            'marah' => $jenisKelamin === 'Cewek' ? asset('logo/marah1.png') : asset('logo/marah.png'),
+        ];
+        $emoticonPath = $emoticonPaths[$mood] ?? $emoticonPaths['netral'];
+
+        // Data untuk view
+        $viewData = [
+            'mood' => $mood, // Kirim mood saat ini
             'title' => $data['title'],
             'explanation' => $data['explanation'],
             'suggestion' => $data['suggestion'],
-            'date' => $formattedDate,
-            'avatar' => $userAvatar,
+            'date' => $formattedDate, // Kita mungkin tidak perlu ini di frame, tapi di header modal
+            'avatar' => $userAvatar, // idem
             'emoticon' => $emoticonPath,
-            'quote' => $quoteText,
-            'author' => $quoteAuthor
-        ])->header('Content-Type', 'application/json');
+            // Quote tidak perlu di sini karena sudah ada di container utama
+        ];
+
+        // Kembalikan view partial yang berisi turbo-frame
+        // Penting: Pastikan view ini hanya berisi frame dan kontennya
+        return View::make('components._partials.mood_modal_content', $viewData);
     }
     
     public function getRandomQuote()

@@ -153,198 +153,189 @@
             }
         });
         
-        // Fungsi untuk mengecek apakah Bootstrap siap
+        // Hapus atau komentari fungsi openMoodModal yang lama
+        /*
+        function openMoodModal(element) {
+            // ... kode fetch lama ...
+        }
+        */
+
+        // Fungsi untuk memeriksa apakah Bootstrap siap (tetap sama)
         function isBootstrapReady() {
             return typeof bootstrap !== 'undefined' && bootstrap.Modal;
         }
-        
-        // Fungsi untuk membuka modal mood
-        function openMoodModal(element) {
-            const mood = element.getAttribute('data-mood');
-            
-            // Ambil token CSRF
-            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-            
-            // Kirim permintaan ke controller menggunakan AJAX
-            fetch('{{ route("mood.modal") }}?mood=' + mood, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken,
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                credentials: 'same-origin'
-            })
-            .then(response => {
-                // Perbarui CSRF token dari response header jika ada
-                const newToken = response.headers.get('X-CSRF-TOKEN');
-                if (newToken) {
-                    document.querySelector('meta[name="csrf-token"]').setAttribute('content', newToken);
+
+        // Fungsi untuk menutup modal (sedikit modifikasi untuk membersihkan frame)
+        function closeMoodModal() {
+            if (isBootstrapReady()) {
+                const modalElement = document.getElementById('moodModal');
+                const modalInstance = bootstrap.Modal.getInstance(modalElement);
+
+                if (modalInstance) {
+                    modalInstance.hide();
                 }
-                
-                if (!response.ok) {
-                    if (response.status === 401) {
-                        alert('Anda harus login terlebih dahulu');
-                        window.location.href = '/auth/google/redirect';
-                    } else {
-                        throw new Error('Network response was not ok: ' + response.status);
-                    }
+
+                // Hapus backdrop dan class 'modal-open' (opsional, hide() biasanya cukup)
+                const backdrop = document.querySelector('.modal-backdrop');
+                if (backdrop) {
+                    backdrop.remove();
                 }
-                return response.json();
-            })
-            .then(data => {
-                // Cek jika ada error dari server
-                if (data.error) {
-                    alert('Terjadi kesalahan: ' + data.message);
-                    return;
+                document.body.classList.remove('modal-open');
+                document.body.style.overflow = ''; // Kembalikan scroll body
+                document.body.style.paddingRight = ''; // Kembalikan padding body
+
+
+                // Reset form input di dalam frame setelah modal tertutup
+                const reasonInput = document.getElementById('reasonInput');
+                const suggestionInput = document.getElementById('suggestionInput');
+                if (reasonInput) reasonInput.value = '';
+                if (suggestionInput) suggestionInput.value = '';
+
+                // Opsional: Reset konten frame ke placeholder loading setelah modal ditutup
+                const frameContent = document.getElementById('mood_modal_content');
+                if (frameContent) {
+                     // Beri sedikit delay agar tidak terlihat aneh saat menutup
+                    setTimeout(() => {
+                        frameContent.innerHTML = `<div class="text-center">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>`;
+                    }, 300); // Sesuaikan delay
                 }
-                
-                // Set avatar dan tanggal di modal
-                document.getElementById('modalAvatar').src = data.avatar || '';
-                document.getElementById('modalDate').textContent = data.date || '';
-                
-                // Set emoticon dan teks mood
-                document.getElementById('modalEmoticon').src = data.emoticon || '';
-                document.getElementById('modalMoodText').textContent = data.title || '';
-                document.getElementById('modalExplanation').textContent = data.explanation || '';
-                document.getElementById('modalSuggestion').textContent = data.suggestion || '';
-                
-                // Tampilkan modal setelah bootstrap siap
-                if(isBootstrapReady()) {
+            }
+        }
+
+        // Listener untuk menampilkan modal SETELAH Turbo Frame selesai dirender
+        document.addEventListener('turbo:frame-render', function(event) {
+            const frameId = event.target.id;
+
+            if (frameId === 'mood_modal_content') {
+                if (isBootstrapReady()) {
                     const modalElement = document.getElementById('moodModal');
-                    if(modalElement) {
-                        // Hapus instance modal lama jika ada
+                    if (modalElement) {
+                        // Ambil data avatar dan date (jika perlu dari server,
+                        // idealnya ini bisa bagian dari frame response atau atribut data)
+                        // Untuk sekarang, kita set manual saja dari user yg login (jika ada)
+                        const avatarImg = document.getElementById('modalAvatar');
+                        const dateSpan = document.getElementById('modalDate');
+
+                        // Anda perlu cara mendapatkan avatar & date di JS.
+                        // Misal, simpan di data attribute body atau elemen lain saat page load.
+                        // Contoh Sederhana (perlu disesuaikan):
+                         const userAvatarUrl = "{{ Auth::check() ? Auth::user()->avatar : '' }}"; // Ini hanya bekerja jika JS inline di Blade
+                         if (avatarImg && userAvatarUrl) {
+                             avatarImg.src = userAvatarUrl;
+                             avatarImg.style.display = 'inline-block';
+                         } else if(avatarImg) {
+                             avatarImg.style.display = 'none';
+                         }
+
+                         if (dateSpan) {
+                             const today = new Date();
+                             // Format tanggal manual (atau gunakan library jika perlu format kompleks)
+                             const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+                             dateSpan.textContent = today.toLocaleDateString('id-ID', options);
+                         }
+
+
+                        // Hapus instance lama jika ada (penting!)
                         const existingModal = bootstrap.Modal.getInstance(modalElement);
-                        if(existingModal) {
+                        if (existingModal) {
                             existingModal.dispose();
                         }
-                        
-                        var myModal = new bootstrap.Modal(modalElement, {
-                            backdrop: 'static',
-                            keyboard: true
+
+                        // Buat instance baru dan tampilkan
+                        const myModal = new bootstrap.Modal(modalElement, {
+                             backdrop: 'static', // Mencegah tutup saat klik backdrop
+                             keyboard: false // Mencegah tutup dengan tombol Esc
                         });
-                        
-                        // Tambahkan event listener untuk menutup modal dengan backdrop
-                        modalElement.addEventListener('click', function(event) {
-                            if (event.target === modalElement) {
-                                closeMoodModal();
-                            }
-                        });
-                        
                         myModal.show();
                     }
                 }
-            })
-            .catch(error => {
-                alert('Terjadi kesalahan saat membuka modal: ' + error.message);
-            });
-        }
-        
-        // Fungsi untuk menambahkan event listener ke emotikon
+            }
+        });
+
+
+        // Hapus atau komentari attachEmoticonEventListeners() karena link Turbo bekerja otomatis
+        /*
         function attachEmoticonEventListeners() {
-            const emoticons = document.querySelectorAll('.mood-emoticon');
-            
-            emoticons.forEach(function(emoticon) {
-                // Hapus event listener yang lama untuk mencegah duplikasi
-                emoticon.removeEventListener('click', openMoodModal);
-                
-                const clickHandler = function() {
-                    openMoodModal(this);
-                };
-                
-                emoticon.addEventListener('click', clickHandler);
-                
-                // Tambahkan efek hover
-                emoticon.addEventListener('mouseenter', function() {
-                    this.style.transform = 'scale(1.1)';
-                });
-                
-                emoticon.addEventListener('mouseleave', function() {
-                    this.style.transform = 'scale(1)';
-                });
-            });
+            // ... kode lama ...
         }
-
-        // Karena aplikasi ini menggunakan Turbo, kita harus menggunakan event turbo:load
-        // alih-alih DOMContentLoaded untuk memastikan script berjalan setelah Turbo memuat halaman
-        document.addEventListener('turbo:load', function() {
-            attachEmoticonEventListeners();
-        });
-
-        // Juga tetap gunakan DOMContentLoaded sebagai fallback
-        document.addEventListener('DOMContentLoaded', function() {
-            attachEmoticonEventListeners();
-        });
+        document.addEventListener('turbo:load', attachEmoticonEventListeners);
+        document.addEventListener('DOMContentLoaded', attachEmoticonEventListeners);
+        */
         
-        // Fungsi untuk menutup modal dengan benar
-        function closeMoodModal() {
-            if(isBootstrapReady()) {
-                const modalElement = document.getElementById('moodModal');
-                const modalInstance = bootstrap.Modal.getInstance(modalElement);
-                
-                if(modalInstance) {
-                    modalInstance.hide();
-                }
-                
-                // Hapus backdrop Bootstrap secara manual jika masih ada
-                const backdrop = document.querySelector('.modal-backdrop');
-                if(backdrop) {
-                    backdrop.remove();
-                }
-                
-                // Hapus class 'modal-open' dari body jika masih ada
-                document.body.classList.remove('modal-open');
-                
-                // Reset form input
-                document.getElementById('reasonInput').value = '';
-                document.getElementById('suggestionInput').value = '';
-            }
-        }
-        
-        // Tambahkan event listener ke tombol close (X) dan tombol Batal
+        // Tambahkan event listener ke tombol close (X) dan tombol Batal (tetap sama)
         document.addEventListener('click', function(event) {
-            if(event.target.closest && (event.target.closest('.btn-close') || event.target.closest('.btn-secondary'))) {
-                closeMoodModal();
+            const target = event.target;
+            // Cek apakah tombol close modal atau tombol Batal di dalam modal
+            if (target.matches('[data-bs-dismiss="modal"]') || target.closest('[data-bs-dismiss="modal"]')) {
+                 // Cek apakah ini tombol di dalam #moodModal
+                if (target.closest('#moodModal')) {
+                    closeMoodModal();
+                }
             }
         });
-        
-        // Event listener untuk tombol submit mood
-        document.getElementById('submitMood').addEventListener('click', function() {
-            const moodValue = document.querySelector('.mood-emoticon.active') ? 
-                             document.querySelector('.mood-emoticon.active').getAttribute('data-mood') : 
-                             'netral'; // default value
-            
-            const reason = document.getElementById('reasonInput').value;
-            const suggestion = document.getElementById('suggestionInput').value;
-            
-            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-            
-            fetch('{{ route("mood.save") }}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken,
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: JSON.stringify({
-                    mood: moodValue,
-                    reason: reason,
-                    suggestion: suggestion
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if(data.success) {
-                    alert(data.message);
-                    closeMoodModal();
-                } else {
-                    alert('Gagal menyimpan mood');
+
+        // Event listener untuk form submit mood (menggunakan AJAX manual karena data-turbo="false")
+        document.addEventListener('turbo:load', () => {
+            const moodForm = document.getElementById('mood-save-form');
+            if (moodForm) {
+                // Hapus listener lama jika ada
+                const currentHandler = moodForm.handler;
+                if(currentHandler) {
+                    moodForm.removeEventListener('submit', currentHandler);
                 }
-            })
-            .catch(error => {
-                alert('Terjadi kesalahan saat menyimpan mood');
-                closeMoodModal();
-            });
+
+                // Tambah listener baru
+                const newHandler = function(event) {
+                    event.preventDefault(); // Mencegah submit form biasa
+
+                    const formData = new FormData(moodForm);
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+                    fetch(moodForm.action, {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json', // Beri tahu server kita mengharapkan JSON
+                            'X-CSRF-TOKEN': csrfToken,
+                            'X-Requested-With': 'XMLHttpRequest'
+                            // Jangan set Content-Type, biarkan browser menentukannya untuk FormData
+                        },
+                        body: formData // Kirim sebagai FormData
+                    })
+                    .then(response => {
+                         if (!response.ok) {
+                             throw new Error(`HTTP error! status: ${response.status}`);
+                         }
+                         // Cek content type sebelum parse JSON
+                         const contentType = response.headers.get("content-type");
+                         if (contentType && contentType.indexOf("application/json") !== -1) {
+                             return response.json();
+                         } else {
+                             return response.text().then(text => {throw new Error("Expected JSON, got: "+text)});
+                         }
+                    })
+                    .then(data => {
+                        if (data.success) {
+                            alert(data.message);
+                            closeMoodModal();
+                        } else {
+                            alert('Gagal menyimpan mood: ' + (data.message || 'Error tidak diketahui'));
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error saving mood:', error);
+                        alert('Terjadi kesalahan saat menyimpan mood: ' + error.message);
+                        // Pertimbangkan untuk tidak menutup modal jika ada error
+                        // closeMoodModal();
+                    });
+                };
+
+                moodForm.addEventListener('submit', newHandler);
+                moodForm.handler = newHandler; // Simpan referensi handler
+            }
         });
     </script>
 
