@@ -23,8 +23,8 @@ Route::get('/home', function () {
 Route::get('/auth/verify', [VerificationController::class, 'show'])->name('verification.show');
 Route::post('/auth/verify', [VerificationController::class, 'verify'])->name('verification.verify');
 
-Route::get('/record', function () {
-    return view('record.index');
+Route::get('/calendar', function () {
+    return view('calendar.index');
 });
 
 Route::get('/notif', function () {

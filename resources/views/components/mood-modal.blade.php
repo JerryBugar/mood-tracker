@@ -7,7 +7,7 @@
                         <path d="M400-80 0-480l400-400 71 71-329 329 329 329-71 71Z"/>
                     </svg>
                 </button>
-                <div class="d-flex align-items-center ms-auto">
+                <div class="d-flex align-items-center justify-content-center flex-grow-1">
                     <img id="modalAvatar" src="" alt="Avatar" style="width: 30px; height: 30px; border-radius: 50%; margin-right: 10px; display: none;"> {{-- Awalnya disembunyikan --}}
                     <span id="modalDate" class="text-white"></span>
                 </div>

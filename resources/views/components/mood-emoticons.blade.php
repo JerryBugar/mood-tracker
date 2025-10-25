@@ -59,12 +59,12 @@
 
     @media (max-width: 767px) {
         .mood-emoticons-grid > div > div {
-            margin: 0 5px !important;
+            margin: 0 3px !important;
         }
         
         .emoticon-background {
-            width: 50px;
-            height: 50px;
+            width: 60px;
+            height: 60px;
         }
         
         .mood-emoticons-container {
