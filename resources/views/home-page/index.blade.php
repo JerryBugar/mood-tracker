@@ -278,65 +278,7 @@
             }
         });
 
-        // Event listener untuk form submit mood (menggunakan AJAX manual karena data-turbo="false")
-        document.addEventListener('turbo:load', () => {
-            const moodForm = document.getElementById('mood-save-form');
-            if (moodForm) {
-                // Hapus listener lama jika ada
-                const currentHandler = moodForm.handler;
-                if(currentHandler) {
-                    moodForm.removeEventListener('submit', currentHandler);
-                }
 
-                // Tambah listener baru
-                const newHandler = function(event) {
-                    event.preventDefault(); // Mencegah submit form biasa
-
-                    const formData = new FormData(moodForm);
-                    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-
-                    fetch(moodForm.action, {
-                        method: 'POST',
-                        headers: {
-                            'Accept': 'application/json', // Beri tahu server kita mengharapkan JSON
-                            'X-CSRF-TOKEN': csrfToken,
-                            'X-Requested-With': 'XMLHttpRequest'
-                            // Jangan set Content-Type, biarkan browser menentukannya untuk FormData
-                        },
-                        body: formData // Kirim sebagai FormData
-                    })
-                    .then(response => {
-                         if (!response.ok) {
-                             throw new Error(`HTTP error! status: ${response.status}`);
-                         }
-                         // Cek content type sebelum parse JSON
-                         const contentType = response.headers.get("content-type");
-                         if (contentType && contentType.indexOf("application/json") !== -1) {
-                             return response.json();
-                         } else {
-                             return response.text().then(text => {throw new Error("Expected JSON, got: "+text)});
-                         }
-                    })
-                    .then(data => {
-                        if (data.success) {
-                            alert(data.message);
-                            closeMoodModal();
-                        } else {
-                            alert('Gagal menyimpan mood: ' + (data.message || 'Error tidak diketahui'));
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error saving mood:', error);
-                        alert('Terjadi kesalahan saat menyimpan mood: ' + error.message);
-                        // Pertimbangkan untuk tidak menutup modal jika ada error
-                        // closeMoodModal();
-                    });
-                };
-
-                moodForm.addEventListener('submit', newHandler);
-                moodForm.handler = newHandler; // Simpan referensi handler
-            }
-        });
     </script>
 
 @endsection

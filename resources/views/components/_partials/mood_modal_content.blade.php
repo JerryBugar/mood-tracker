@@ -6,7 +6,7 @@
     <hr style="border-color: #dc3545; border-width: 2px;">
 
     {{-- Form untuk menyimpan mood. Gunakan data-turbo="true" (default) atau data-turbo="false" jika masih mau pakai AJAX --}}
-    <form id="mood-save-form" action="{{ route('mood.save') }}" method="POST" data-turbo="false"> {{-- Pakai AJAX dulu untuk simpan --}}
+    <form id="mood-save-form" action="{{ route('mood.save') }}" method="POST">
         @csrf
         <input type="hidden" name="mood" value="{{ $mood ?? 'netral' }}"> {{-- Kirim mood yang dipilih --}}
 

@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\MoodQuote;
 use Illuminate\Support\Facades\View; // Tambahkan ini
+use Hotwired\Turbo\Turbo; // Pastikan ini di-use jika Anda menggunakan package turbo-laravel
 
 class MoodController extends Controller
 {
@@ -89,7 +90,31 @@ class MoodController extends Controller
     
     public function saveMood(Request $request)
     {
-        // Logika untuk menyimpan mood ke database akan ditambahkan di sini
-        return response()->json(['success' => true, 'message' => 'Mood berhasil disimpan']);
+        \Illuminate\Support\Facades\Log::info('Mood save request received (via Turbo):', $request->all());
+
+        // Validasi request jika perlu
+        $validated = $request->validate([
+            'mood' => 'required|string|in:netral,senyum,sedih,lelah,marah',
+            'reason' => 'nullable|string',
+            'suggestion_action' => 'nullable|string',
+        ]);
+
+        // Logika simpan mood ke database...
+        // Misalnya:
+        // auth()->user()->moods()->create($validated);
+
+        \Illuminate\Support\Facades\Log::info('Mood data validated and ready to save:', $validated);
+
+        // Jika berhasil disimpan, kirim Turbo Stream untuk menghapus frame modal
+        // Ini akan secara otomatis menutup modal jika modal memiliki data-turbo-temporary
+
+        // Menggunakan package turbo-laravel (lebih disarankan)
+        if (class_exists(\Hotwired\Turbo\Turbo::class)) {
+            return response()->turboStreamRemove('mood_modal_content');
+        }
+
+        // Atau secara manual jika tidak pakai package
+        return response('<turbo-stream action="remove" target="mood_modal_content"></turbo-stream>', 200)
+               ->header('Content-Type', Turbo::TURBO_STREAM_CONTENT_TYPE);
     }
 }
