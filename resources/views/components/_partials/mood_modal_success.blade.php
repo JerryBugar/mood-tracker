@@ -17,3 +17,9 @@
         <p class="mb-0">Terima kasih telah mencatat perasaanmu hari ini!</p>
     </div>
 </turbo-frame>
+<script>
+    // Tutup modal secara otomatis setelah 3 detik
+    setTimeout(() => {
+        closeMoodModal();
+    }, 3000);
+</script>
