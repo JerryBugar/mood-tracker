@@ -8,7 +8,7 @@ use App\Models\MoodQuote;
 use App\Models\MoodRecord;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\View; // Tambahkan ini
-use Hotwired\Turbo\Turbo; // Pastikan ini di-use jika Anda menggunakan package turbo-laravel
+// use Hotwired\Turbo\Turbo; // Tidak perlu jika membuat stream manual
 
 class MoodController extends Controller
 {
@@ -108,36 +108,80 @@ class MoodController extends Controller
             'marah' => 'Marah'
         ];
 
-        // Ambil user yang sedang login dan buat record baru menggunakan relasi.
         try {
-            $moodRecord = auth()->user()->moodRecords()->create($validated);
-            Log::info('Mood record saved successfully for user: ' . auth()->id());
+            $user = auth()->user();
             
-            // Buat Turbo Stream response secara manual untuk menambahkan record baru
-            $appendStream = '<turbo-stream action="append" target="record_container_list">'.PHP_EOL.
-                           '<template>'.PHP_EOL.
-                           view('components._partials.mood_record_item', [
-                               'record' => $moodRecord,
-                               'moodLabels' => $moodLabels,
-                               'user' => auth()->user()
-                           ])->render().PHP_EOL.
-                           '</template>'.PHP_EOL.
-                           '</turbo-stream>'.PHP_EOL;
-                           
+            // Hitung jumlah record SEBELUM menyimpan
+            $recordCountBeforeSave = $user->moodRecords()->count();
+            
+            // 1. SIMPAN RECORD BARU
+            $moodRecord = $user->moodRecords()->create($validated);
+            Log::info('Mood record saved successfully for user: ' . $user->id);
+            
+            // Cek apakah ini adalah record pertama
+            $isFirstRecord = $recordCountBeforeSave === 0;
+
+            // 2. AMBIL DATA HALAMAN PERTAMA (SETELAH DISIMPAN)
+            // Ini adalah *satu-satunya* query paginasi yang kita perlukan.
+            // Dia akan tahu kapan harus `hasPages()` (saat record > 5)
+            $records = $user->moodRecords()->latest()->paginate(5);
+            
+            // 3. RENDER KONTEN LIST BARU
+            $recordsContent = '';
+            if ($records->count() > 0) {
+                foreach ($records as $record) {
+                    $recordsContent .= view('components._partials.mood_record_item', [
+                        'record' => $record,
+                        'moodLabels' => $moodLabels,
+                        'user' => $user
+                    ])->render();
+                }
+            }
+            
+            // 4. BUAT STREAM UNTUK MENGGANTI LIST (SELALU REPLACE)
+            // Kita selalu 'replace' list untuk memastikan halaman 1 (terbaru) ditampilkan
+            $updateListStream = '<turbo-stream action="replace" target="record_container_list">'.PHP_EOL.
+                              '<template>'.PHP_EOL.
+                              '<div id="record_container_list">' . $recordsContent . '</div>'.PHP_EOL.
+                              '</template>'.PHP_EOL.
+                              '</turbo-stream>'.PHP_EOL;
+            
+            // 5. BUAT STREAM UNTUK MENGGANTI PAGINASI (SELALU REPLACE)
+            // View ini akan otomatis menampilkan/menyembunyikan paginasi
+            $updatePaginationStream = '<turbo-stream action="replace" target="pagination-container">'.PHP_EOL.
+                                    '<template>'.PHP_EOL.
+                                    // Bungkus dengan div target
+                                    '<div id="pagination-container">' . 
+                                       view('components._partials.pagination', ['records' => $records])->render().
+                                    '</div>' . PHP_EOL.
+                                    '</template>'.PHP_EOL.
+                                    '</turbo-stream>'.PHP_EOL;
+
+            // 6. BUAT STREAM UNTUK HAPUS PESAN "BELUM ADA CATATAN" (JIKA PERLU)
+            $removeMessageStream = '';
+            if ($isFirstRecord) {
+                $removeMessageStream = '<turbo-stream action="remove" target="no-records-message">'.PHP_EOL.
+                                      '<template></template>'.PHP_EOL.
+                                      '</turbo-stream>'.PHP_EOL;
+            }
+            
+            // 7. BUAT STREAM UNTUK MENGGANTI KONTEN MODAL (PESAN SUKSES)
             $replaceStream = '<turbo-stream action="replace" target="mood_modal_content">'.PHP_EOL.
                             '<template>'.PHP_EOL.
-                            view('components._partials.mood_modal_success')->render().PHP_EOL.
+                            // Pastikan Anda punya view ini
+                            view('components._partials.mood_modal_success')->render().PHP_EOL. 
                             '</template>'.PHP_EOL.
                             '</turbo-stream>'.PHP_EOL;
             
-            $streamContent = $appendStream . $replaceStream;
+            // 8. GABUNGKAN SEMUA STREAM
+            $streamContent = $removeMessageStream . $updateListStream . $updatePaginationStream . $replaceStream;
             
             return response($streamContent, 200, ['Content-Type' => 'text/vnd.turbo-stream.html']);
+
         } catch (\Exception $e) {
             Log::error('Failed to save mood record:', ['error' => $e->getMessage()]);
+            // Fallback jika terjadi error
+            return view('components._partials.mood_modal_success');
         }
-
-        // Jika proses Turbo gagal, kembalikan view sukses ke dalam turbo frame
-        return view('components._partials.mood_modal_success');
     }
 }
