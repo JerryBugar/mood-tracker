@@ -100,41 +100,44 @@ class MoodController extends Controller
             'suggestion_action' => 'nullable|string',
         ]);
 
-        // ===============================================
-        // === PERUBAHAN UTAMA: TAMBAHKAN BARIS INI ===
-        // ===============================================
-        
+        $moodLabels = [
+            'netral' => 'Biasa saja',
+            'senyum' => 'Senang',
+            'sedih' => 'Sedih',
+            'lelah' => 'Lelah',
+            'marah' => 'Marah'
+        ];
+
         // Ambil user yang sedang login dan buat record baru menggunakan relasi.
-        // 'user_id' akan diisi secara otomatis.
         try {
-            auth()->user()->moodRecords()->create($validated);
+            $moodRecord = auth()->user()->moodRecords()->create($validated);
             Log::info('Mood record saved successfully for user: ' . auth()->id());
             
-            // Kembalikan view sukses ke dalam turbo frame
-            return view('components._partials.mood_modal_success');
+            // Buat Turbo Stream response secara manual untuk menambahkan record baru
+            $appendStream = '<turbo-stream action="append" target="record_container_list">'.PHP_EOL.
+                           '<template>'.PHP_EOL.
+                           view('components._partials.mood_record_item', [
+                               'record' => $moodRecord,
+                               'moodLabels' => $moodLabels,
+                               'user' => auth()->user()
+                           ])->render().PHP_EOL.
+                           '</template>'.PHP_EOL.
+                           '</turbo-stream>'.PHP_EOL;
+                           
+            $replaceStream = '<turbo-stream action="replace" target="mood_modal_content">'.PHP_EOL.
+                            '<template>'.PHP_EOL.
+                            view('components._partials.mood_modal_success')->render().PHP_EOL.
+                            '</template>'.PHP_EOL.
+                            '</turbo-stream>'.PHP_EOL;
+            
+            $streamContent = $appendStream . $replaceStream;
+            
+            return response($streamContent, 200, ['Content-Type' => 'text/vnd.turbo-stream.html']);
         } catch (\Exception $e) {
             Log::error('Failed to save mood record:', ['error' => $e->getMessage()]);
-            // Jika gagal, kita harus merespons dengan pesan error
-            // (Untuk sekarang, kita biarkan lolos agar modal tetap tertutup,
-            // tapi idealnya kita beri feedback error)
-            
-             // Opsi: Kirim error kembali ke frame
-             // return response('<turbo-frame id="mood_modal_content"><div class="alert alert-danger m-3">Gagal menyimpan. Coba lagi.</div></turbo-frame>', 422)
-             //       ->header('Content-Type', 'text/html; turbo-stream-content-type=text/html');
         }
 
-        // ===============================================
-        // === AKHIR PERUBAHAN ===
-        // ===============================================
-
-        // Respon Turbo Stream tetap sama.
-        // Modal akan tertutup, dan data sudah tersimpan di database.
-        if (class_exists(Turbo::class)) {
-            return response()->turboStreamRemove('mood_modal_content');
-        }
-
-        Log::error('Turbo class not found! Falling back to manual stream.'); // Tambahkan log error
-    return response('<turbo-stream action="remove" target="mood_modal_content"></turbo-stream>', 200)
-           ->header('Content-Type', 'text/vnd.turbo-stream.html'); // Perbaiki manual jika perlu
+        // Jika proses Turbo gagal, kembalikan view sukses ke dalam turbo frame
+        return view('components._partials.mood_modal_success');
     }
 }

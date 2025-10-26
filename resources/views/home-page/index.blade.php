@@ -10,6 +10,7 @@
 
         @include('components.mood-input-container')
         @include('components.mood-emoticons')
+        @include('components.record-container')
     </div>
 
     @include('components.mood-modal')
@@ -32,14 +33,24 @@
                 greeting = 'Selamat Malam';
             }
             
-            document.getElementById('greeting-text').textContent = greeting;
+            const greetingElement = document.getElementById('greeting-text');
+            if (greetingElement) {
+                greetingElement.textContent = greeting;
+            }
         }
         
-        // Langsung eksekusi fungsi saat script dimuat untuk mendapatkan salam langsung
-        updateGreeting();
+        // Langsung eksekusi fungsi saat DOM telah dimuat untuk mendapatkan salam langsung
+        document.addEventListener('DOMContentLoaded', function() {
+            updateGreeting();
+        });
         
         // Update salam setiap 15 detik agar tetap akurat
         setInterval(updateGreeting, 15000);
+        
+        // Juga update saat Turbo memuat ulang halaman
+        document.addEventListener('turbo:load', function() {
+            updateGreeting();
+        });
         
         // Fungsi untuk memeriksa apakah cache masih valid (kurang dari 1 jam)
         function isQuoteCacheValid() {

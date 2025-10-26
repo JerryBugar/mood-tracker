@@ -102,5 +102,5 @@ document.addEventListener('turbo:load', () => {
                 activeBackground.style.width = `${activeItem.offsetWidth}px`;
             }
         }
-    }, 350); // .nav-item transition is 0.3s, so we wait 350ms.
+    }, 200); // .nav-item transition is 0.3s, so we wait 200ms.
 });

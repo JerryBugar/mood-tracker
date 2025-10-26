@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\GoogleLoginController;
 use App\Http\Controllers\VerificationController;
 use App\Http\Controllers\MoodController;
+use App\Http\Controllers\HomeController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -16,9 +17,7 @@ Route::get('/dashboard', function () {
 Route::get('/auth/google/redirect', [GoogleLoginController::class, 'redirect']);
 Route::get('/auth/google/callback', [GoogleLoginController::class, 'callback']);
 
-Route::get('/home', function () {
-    return view('home-page.index');
-})->middleware('auth');
+Route::get('/home', [HomeController::class, 'index'])->middleware('auth');
 
 Route::get('/auth/verify', [VerificationController::class, 'show'])->name('verification.show');
 Route::post('/auth/verify', [VerificationController::class, 'verify'])->name('verification.verify');
