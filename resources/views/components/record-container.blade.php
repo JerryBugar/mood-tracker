@@ -104,14 +104,14 @@
     /* Untuk semua ukuran layar, pastikan tidak tertutup navbar */
     @media (max-width: 768px) {
         .record-container {
-            padding-bottom: 100px; /* Tingkatkan padding untuk mobile */
+            padding-bottom: 20px; /* Tingkatkan padding untuk mobile */
         }
     }
     
     /* Untuk desktop, tambahkan margin jika diperlukan */
     @media (min-width: 769px) {
         .record-container {
-            padding-bottom: 100px;
+            padding-bottom: 20px;
         }
     }
     
