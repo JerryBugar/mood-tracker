@@ -5,6 +5,7 @@ use App\Http\Controllers\GoogleLoginController;
 use App\Http\Controllers\VerificationController;
 use App\Http\Controllers\MoodController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\CalendarController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -22,9 +23,8 @@ Route::get('/home', [HomeController::class, 'index'])->middleware('auth');
 Route::get('/auth/verify', [VerificationController::class, 'show'])->name('verification.show');
 Route::post('/auth/verify', [VerificationController::class, 'verify'])->name('verification.verify');
 
-Route::get('/calendar', function () {
-    return view('calendar.index');
-});
+Route::get('/calendar', [CalendarController::class, 'index'])->middleware('auth')->name('calendar.index');
+Route::get('/calendar/day/{date}', [CalendarController::class, 'showDay'])->middleware('auth')->name('calendar.day');
 
 Route::get('/notif', function () {
     return view('notif.index');
