@@ -263,17 +263,32 @@
                 $isToday = $dayData['isToday'];
                 $date = $dayData['date'];
                 $records = $dayData['records'];
+                $user = Auth::user(); // Ambil user yang sedang login
+                $jenisKelamin = $user->jenis_kelamin ?? '';
             @endphp
             <div class="calendar-day {{ !$isCurrentMonth ? 'other-month' : '' }} {{ $isToday ? 'today' : '' }}">
                 <div class="calendar-day-number">{{ $date->day }}</div>
                 
-                <div class="day-records">
+                <div class="day-records" style="display: flex; justify-content: center; align-items: center; height: 100%; margin-top: -10px; margin-bottom: 5px;">
                     @foreach($records as $record)
-                        <span class="mood-indicator {{ $record->mood }}" 
-                              data-bs-toggle="tooltip" 
-                              title="{{ $record->reason ?? 'Mood: ' . (['netral' => 'Biasa saja', 'senyum' => 'Senang', 'sedih' => 'Sedih', 'lelah' => 'Lelah', 'marah' => 'Marah'][$record->mood] ?? $record->mood) }}"
-                              onclick="showDayRecords('{{ $date->format('Y-m-d') }}')">
-                        </span>
+                        @php
+                            $emoticonPaths = [
+                                'netral' => $jenisKelamin === 'Cewek' ? asset('logo/netral1.png') : asset('logo/netral.png'),
+                            
+                                'senyum' => $jenisKelamin === 'Cewek' ? asset('logo/senyum1.png') : asset('logo/senyum.png'),
+                                'sedih' => $jenisKelamin === 'Cewek' ? asset('logo/sedih1.png') : asset('logo/sedih.png'),
+                                'lelah' => $jenisKelamin === 'Cewek' ? asset('logo/lelah1.png') : asset('logo/lelah.png'),
+                                'marah' => $jenisKelamin === 'Cewek' ? asset('logo/marah1.png') : asset('logo/marah.png'),
+                            ];
+                            $emoticonPath = $emoticonPaths[$record->mood] ?? $emoticonPaths['netral'];
+                        @endphp
+                        <img src="{{ $emoticonPath }}" 
+                             alt="{{ $record->mood }}" 
+                             class="mood-emoticon {{ $record->mood }}" 
+                             data-bs-toggle="tooltip" 
+                             title="{{ $record->reason ?? 'Mood: ' . (['netral' => 'Biasa saja', 'senyum' => 'Senang', 'sedih' => 'Sedih', 'lelah' => 'Lelah', 'marah' => 'Marah'][$record->mood] ?? $record->mood) }}"
+                             onclick="showDayRecords('{{ $date->format('Y-m-d') }}')"
+                             style="width: 50px; height: 50px; cursor: pointer;">
                     @endforeach
                 </div>
             </div>
