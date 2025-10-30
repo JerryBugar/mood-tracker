@@ -4,9 +4,9 @@
     <turbo-frame id="calendar_frame">
         <div class="container-fluid">
             @if (Auth::check())
-                <h1 style="color: #82272c; margin-top: 20px;">Kalender Mood</h1>
+                <h1 style="color: #82272c; margin-top: 20px; text-align: center;">Kalender Mood</h1>
             @else
-                <h1 style="color: #82272c; margin-top: 20px;">Kalender Mood</h1>
+                <h1 style="color: #82272c; margin-top: 20px; text-align: center;">Kalender Mood</h1>
             @endif
 
             @include('components._partials.calendar_content')

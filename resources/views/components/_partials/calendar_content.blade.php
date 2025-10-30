@@ -84,20 +84,20 @@
         }
         
         .mood-indicator {
-            width: 3px;
-            height: 3px;
+            width: 6px;
+            height: 6px;
             border-radius: 50%;
             display: inline-block;
-            margin: 0 0.5px;
+            margin: 0 1px;
             cursor: pointer;
-            border: 1px solid rgba(255, 255, 255, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.7);
         }
         
-        .mood-indicator.netral { background-color: #A9A9A9; }
-        .mood-indicator.senyum { background-color: #FFD700; }
-        .mood-indicator.sedih { background-color: #87CEEB; }
-        .mood-indicator.lelah { background-color: #D2B48C; }
-        .mood-indicator.marah { background-color: #FF6347; }
+        .mood-indicator.netral { background-color: #8B8082; } /* Abu-abu gelap */
+        .mood-indicator.senyum { background-color: #FFC107; } /* Kuning lebih gelap */
+        .mood-indicator.sedih { background-color: #2196F3; } /* Biru cerah */
+        .mood-indicator.lelah { background-color: #795548; } /* Coklat gelap */
+        .mood-indicator.marah { background-color: #F44336; } /* Merah cerah */
         
         .day-records {
             display: flex;
@@ -235,7 +235,7 @@
             margin-top: 2px;
         }
         
-        /* Menyembunyikan scrollbar di semua browser */
+        /* Menyembunyikan scrollbar di container kalender */
         .calendar-container::-webkit-scrollbar {
             display: none;
         }
