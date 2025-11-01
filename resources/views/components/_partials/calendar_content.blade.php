@@ -83,21 +83,7 @@
             color: #aaa;
         }
         
-        .mood-indicator {
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            display: inline-block;
-            margin: 0 1px;
-            cursor: pointer;
-            border: 1px solid rgba(255, 255, 255, 0.7);
-        }
-        
-        .mood-indicator.netral { background-color: #8B8082; } /* Abu-abu gelap */
-        .mood-indicator.senyum { background-color: #FFC107; } /* Kuning lebih gelap */
-        .mood-indicator.sedih { background-color: #2196F3; } /* Biru cerah */
-        .mood-indicator.lelah { background-color: #795548; } /* Coklat gelap */
-        .mood-indicator.marah { background-color: #F44336; } /* Merah cerah */
+
         
         .day-records {
             display: flex;
@@ -132,8 +118,35 @@
             overflow-x: hidden;
         }
         
+        /* Responsif untuk mobile */
+        @media (max-width: 767px) {
+            .calendar-navigation {
+                margin: 20px 0 25px 0; /* Lebih banyak margin atas untuk mobile */
+                padding: 50px 0; /* Tambahkan padding atas-bawah */
+            }
+            
+            .calendar-navigation h3 {
+                font-size: 1.2rem; /* Sedikit perbesar ukuran font untuk mobile */
+            }
+            
+            .calendar-navigation a {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+        }
+        
         /* Responsif untuk desktop */
         @media (min-width: 768px) {
+            .calendar-navigation {
+                justify-content: space-between;
+            }
+            
+            .calendar-navigation h3 {
+                margin: 0 10px; /* Margin kiri-kanan tetap kecil di desktop */
+                font-size: 1rem;
+            }
+            
             .calendar-container {
                 max-width: 700px;
                 margin: -20px auto 0; /* Menggeser ke atas sejauh 20px */
