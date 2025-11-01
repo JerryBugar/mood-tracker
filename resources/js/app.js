@@ -107,7 +107,7 @@ document.addEventListener('turbo:load', () => {
                 activeBackground.style.opacity = 1;
                 
                 setTimeout(() => {
-                    activeBackground.style.transition = 'all 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55)';
+                    activeBackground.style.transition = 'all 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55)';
                     isNavInitialized = true;
                 }, 50);
 
@@ -117,5 +117,5 @@ document.addEventListener('turbo:load', () => {
                 activeBackground.style.width = `${activeItem.offsetWidth}px`;
             }
         }
-    }, 200); // .nav-item transition is 0.3s, so we wait 200ms.
+    }, 180); // .nav-item transition is 0.3s, so we wait 200ms.
 });
