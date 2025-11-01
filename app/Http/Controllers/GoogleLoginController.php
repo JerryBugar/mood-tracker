@@ -26,9 +26,15 @@ class GoogleLoginController extends Controller
             $user = User::where('google_id', $googleUser->getId())->where('is_verified', true)->first();
 
             if ($user) {
+                \Log::info('Existing verified user logging in', ['user_id' => $user->id]);
                 Auth::login($user);
                 return redirect('/home'); // Langsung ke dashboard jika sudah terverifikasi
             }
+
+            \Log::info('User not verified or not exist, redirecting to verification page', [
+                'google_id' => $googleUser->getId(),
+                'email' => $googleUser->getEmail()
+            ]);
 
             // Jika belum, simpan data Google di session dan arahkan ke verifikasi
             Session::put('google_user_data', [
@@ -40,6 +46,7 @@ class GoogleLoginController extends Controller
             return redirect()->route('verification.show');
 
         } catch (\Exception $e) {
+            \Log::error('Google login callback error', ['error' => $e->getMessage()]);
             // You can log the error or redirect to an error page
             return redirect('/')->with('error', 'Login with Google failed. Please try again.');
         }

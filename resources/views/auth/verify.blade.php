@@ -14,7 +14,7 @@
                     <h1 class="h3 card-title text-center fw-bold mb-3" style="color: #82242d;">Lengkapi Data Anda</h1>
                     <p class="card-text text-center text-muted mb-4">Silakan isi data diri Anda untuk verifikasi.</p>
 
-                    <form method="POST" action="{{ route('verification.verify') }}">
+                    <form method="POST" action="{{ route('verification.verify') }}" data-turbo="false">
                         @csrf
 
                         <div class="mb-3">
@@ -156,11 +156,13 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         form.addEventListener('submit', (e) => {
+            console.log('Verification form submitted');
             let code = '';
             inputs.forEach(input => {
                 code += input.value;
             });
             hiddenInput.value = code;
+            console.log('Final company code:', code);
         });
     }
 

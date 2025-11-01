@@ -6,6 +6,9 @@ import 'bootstrap'; // Import Bootstrap JavaScript
 let isNavInitialized = false;
 
 document.addEventListener('turbo:load', () => {
+    // Logging untuk mengetahui halaman mana yang dimuat
+    console.log('Turbo loaded on: ', window.location.pathname);
+    
     // Splash screen logic from original file
     const splashLogo = document.getElementById('splash-logo-container');
     const mainContent = document.getElementById('main-content-wrapper');

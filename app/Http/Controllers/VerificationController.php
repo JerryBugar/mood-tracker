@@ -21,6 +21,7 @@ class VerificationController extends Controller
     public function verify(Request $request)
     {
         if (!Session::has('google_user_data')) {
+            \Log::info('No google_user_data in session, redirecting to home');
             return redirect('/');
         }
 
@@ -39,10 +40,12 @@ class VerificationController extends Controller
 
         // Bandingkan kode yang diinput dengan yang ada di .env
         if ($request->company_code !== env('COMPANY_VERIFICATION_CODE')) {
+            \Log::info('Company code mismatch', ['input' => $request->company_code, 'expected' => env('COMPANY_VERIFICATION_CODE')]);
             return back()->withErrors(['company_code' => 'Kode perusahaan tidak valid.'])->withInput();
         }
 
         $googleUserData = Session::get('google_user_data');
+        \Log::info('Processing verification for user', ['email' => $googleUserData['email']]);
 
         // Buat user baru atau update yang sudah ada, lalu tandai sebagai terverifikasi
         $user = User::updateOrCreate(
@@ -59,9 +62,24 @@ class VerificationController extends Controller
             ]
         );
 
-        Session::forget('google_user_data');
-        Auth::login($user);
+        \Log::info('User verification status updated', ['user_id' => $user->id, 'is_verified' => $user->is_verified]);
 
+        Session::forget('google_user_data');
+        
+        // Logout terlebih dahulu untuk memastikan sesi bersih
+        Auth::logout();
+        
+        // Login user dengan data terbaru
+        Auth::login($user);
+        \Log::info('User logged in after verification', ['user_id' => $user->id, 'is_verified' => $user->is_verified]);
+
+        // Buat sesi baru untuk memastikan status terbaru terbaca
+        $request->session()->regenerate();
+        
+        \Log::info('Session regenerated after login', ['user_id' => $user->id, 'session_id' => session()->getId()]);
+
+        // Untuk memastikan redirect bekerja dengan baik di Turbo, kita kembalikan 
+        // ke pendekatan sebelumnya yang terbukti berhasil
         return redirect('/home');
     }
 }
