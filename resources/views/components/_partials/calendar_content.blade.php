@@ -85,12 +85,44 @@
         
 
         
+        .mood-emoticon {
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+        }
+        
         .day-records {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 0.5px;
-            margin-top: auto;
+            display: flex !important;
+            flex-wrap: wrap !important;
+            justify-content: center !important;
+            align-items: center !important;
+            gap: 0.5px !important;
+            margin-top: 8px !important;
+            height: calc(100% - 20px) !important;
+            align-content: center !important;
+        }
+        
+        /* Responsif untuk mobile */
+        @media (max-width: 767px) {
+            .calendar-navigation {
+                margin: 20px 0 25px 0; /* Lebih banyak margin atas untuk mobile */
+                padding: 50px 0; /* Tambahkan padding atas-bawah */
+            }
+            
+            .calendar-navigation h3 {
+                font-size: 1.2rem; /* Sedikit perbesar ukuran font untuk mobile */
+            }
+            
+            .calendar-navigation a {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            
+            .mood-emoticon {
+                width: 20px !important; /* Lebih kecil di mobile */
+                height: 20px !important;
+            }
         }
         
         .calendar-navigation {
@@ -134,6 +166,19 @@
                 align-items: center;
                 justify-content: center;
             }
+            
+            .mood-emoticon {
+                width: 30px !important; /* Ukuran 30px di mobile */
+                height: 30px !important;
+            }
+            
+            .day-records {
+                margin-top: -10px !important; /* Atur posisi vertikal untuk mobile */
+                height: calc(100% - 15px) !important;
+                display: flex !important;
+                justify-content: center !important;
+                align-items: center !important;
+            }
         }
         
         /* Responsif untuk desktop */
@@ -155,6 +200,19 @@
             .calendar-grid {
                 max-width: 700px;
                 margin: 0 auto;
+            }
+            
+            .mood-emoticon {
+                width: 50px;
+                height: 50px;
+            }
+            
+            .day-records {
+                margin-top: -10px !important; /* Atur posisi vertikal untuk desktop */
+                height: calc(100% - 20px) !important;
+                display: flex !important;
+                justify-content: center !important;
+                align-items: center !important;
             }
         }
         
@@ -282,7 +340,7 @@
             <div class="calendar-day {{ !$isCurrentMonth ? 'other-month' : '' }} {{ $isToday ? 'today' : '' }}">
                 <div class="calendar-day-number">{{ $date->day }}</div>
                 
-                <div class="day-records" style="display: flex; justify-content: center; align-items: center; height: 100%; margin-top: -10px; margin-bottom: 5px;">
+                <div class="day-records">
                     @foreach($records as $record)
                         @php
                             $emoticonPaths = [
@@ -300,8 +358,7 @@
                              class="mood-emoticon {{ $record->mood }}" 
                              data-bs-toggle="tooltip" 
                              title="{{ $record->reason ?? 'Mood: ' . (['netral' => 'Biasa saja', 'senyum' => 'Senang', 'sedih' => 'Sedih', 'lelah' => 'Lelah', 'marah' => 'Marah'][$record->mood] ?? $record->mood) }}"
-                             onclick="showDayRecords('{{ $date->format('Y-m-d') }}')"
-                             style="width: 50px; height: 50px; cursor: pointer;">
+                             onclick="showDayRecords('{{ $date->format('Y-m-d') }}')">
                     @endforeach
                 </div>
             </div>
