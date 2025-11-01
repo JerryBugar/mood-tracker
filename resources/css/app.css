@@ -20,6 +20,11 @@ body {
   padding-bottom: 80px; /* Ruang untuk navigasi bawah */
 }
 
+/* Hilangkan padding bawah untuk halaman tanpa bottom navigation */
+body.dashboard-page {
+  padding-bottom: 0;
+}
+
 .splash-logo {
   display: none;
 }

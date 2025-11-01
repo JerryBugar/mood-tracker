@@ -14,9 +14,16 @@ document.addEventListener('turbo:load', () => {
     if (splashLogo && mainContent && finalLogo) {
         if (!splashLogo.classList.contains('js-has-run')) {
             splashLogo.classList.add('js-has-run');
+            
+            // Tambahkan class untuk halaman dashboard
+            document.body.classList.add('dashboard-page');
+            
             requestAnimationFrame(() => {
+                // Ambil posisi akhir logo sebelum menampilkannya
                 mainContent.classList.remove('hidden');
                 const finalRect = finalLogo.getBoundingClientRect();
+                
+                // Matikan sementara transisi agar dapat menghitung posisi dengan akurat
                 mainContent.classList.add('hidden');
         
                 const finalX = finalRect.left + finalRect.width / 2 - window.innerWidth / 2;
@@ -33,19 +40,24 @@ document.addEventListener('turbo:load', () => {
                 styleSheet.innerHTML = keyframes;
                 document.head.appendChild(styleSheet);
         
+                // Tampilkan splash logo
                 splashLogo.style.opacity = '1';
                 splashLogo.style.animation = 'settleInPlace 2.5s ease-in-out forwards';
         
                 splashLogo.addEventListener('animationend', () => {
-                    finalLogo.style.opacity = 0;
+                    // Sembunyikan logo final sementara
+                    finalLogo.style.visibility = 'hidden';
+                    
+                    // Tampilkan konten utama
                     mainContent.classList.remove('hidden');
                     
+                    // Setelah animasi selesai, sembunyikan splash logo dan tampilkan logo final
                     setTimeout(() => {
-                        finalLogo.style.transition = 'opacity 0.5s ease-in';
-                        finalLogo.style.opacity = 1;
-                        splashLogo.style.opacity = 0;
+                        finalLogo.style.visibility = 'visible';
+                        splashLogo.style.opacity = '0';
                     }, 50);
-        
+    
+                    // Setelah splash logo disembunyikan, hapus dari DOM
                     splashLogo.addEventListener('transitionend', () => {
                         splashLogo.remove();
                         if (document.getElementById('dynamic-splash-animation')) {
