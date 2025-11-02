@@ -18,6 +18,9 @@ Route::get('/dashboard', function () {
 Route::get('/auth/google/redirect', [GoogleLoginController::class, 'redirect']);
 Route::get('/auth/google/callback', [GoogleLoginController::class, 'callback']);
 
+// Route login mengarah ke Google OAuth redirect
+Route::get('/login', [GoogleLoginController::class, 'redirect'])->name('login');
+
 Route::get('/home', [HomeController::class, 'index'])->middleware(['auth', 'verified']);
 
 Route::get('/auth/verify', [VerificationController::class, 'show'])->name('verification.show');

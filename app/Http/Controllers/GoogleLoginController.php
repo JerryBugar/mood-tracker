@@ -13,17 +13,28 @@ class GoogleLoginController extends Controller
 {
     public function redirect()
     {
+        \Log::info('Google OAuth redirect initiated');
         Session::forget('google_user_data');
         return Socialite::driver('google')->redirect();
     }
 
     public function callback()
     {
+        \Log::info('Google OAuth callback initiated');
         try {
             $googleUser = Socialite::driver('google')->stateless()->user();
+            \Log::info('Successfully retrieved user from Google', [
+                'google_id' => $googleUser->getId(),
+                'email' => $googleUser->getEmail()
+            ]);
 
             // Cek jika user sudah ada DAN terverifikasi
             $user = User::where('google_id', $googleUser->getId())->where('is_verified', true)->first();
+            \Log::info('Looking for existing verified user', [
+                'google_id' => $googleUser->getId(),
+                'found_user' => $user ? true : false,
+                'user_verified' => $user ? $user->is_verified : null
+            ]);
 
             if ($user) {
                 \Log::info('Existing verified user logging in', ['user_id' => $user->id]);
@@ -46,7 +57,10 @@ class GoogleLoginController extends Controller
             return redirect()->route('verification.show');
 
         } catch (\Exception $e) {
-            \Log::error('Google login callback error', ['error' => $e->getMessage()]);
+            \Log::error('Google login callback error', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             // You can log the error or redirect to an error page
             return redirect('/')->with('error', 'Login with Google failed. Please try again.');
         }
