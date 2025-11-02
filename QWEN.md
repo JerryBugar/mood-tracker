@@ -19,7 +19,7 @@ CereMood is a web-based mood tracking application built with Laravel PHP framewo
 
 - **Backend**: Laravel 12.x (PHP)
 - **Frontend**: HTML, CSS, JavaScript with Bootstrap 5 and Tailwind CSS
-- **Turbo Framework**: Hotwire Turbo for modern UX without full page reloads
+- **Turbo Framework**: Hotwire Turbo for modern UX without full page refreshes
 - **Database**: MySQL (default configuration)
 - **Authentication**: Laravel Socialite with Google OAuth
 - **Build Tools**: Vite for asset building
@@ -80,6 +80,19 @@ mood-tracker/
 ### Views & Templates
 
 The application uses Blade templates with a component-based structure in `resources/views/components/`. The UI leverages Turbo Frames and Streams for dynamic content updates without full page refreshes.
+
+#### Dashboard Structure
+
+The main dashboard is composed of several components located in `resources/views/components/`:
+
+- **mood-input-container.blade.php**: Displays user greeting, avatar, and motivational quotes
+- **mood-emoticons.blade.php**: Shows a row of mood emoticons for user to select their current mood
+- **record-container.blade.php**: Displays the user's mood history records with pagination
+- **mood-modal.blade.php**: Modal that appears when a user selects a mood emoticon
+
+The main page layout is defined in `resources/views/home-page/index.blade.php`, which includes these components to form the complete dashboard for logged-in users.
+
+The dashboard also features a bottom navigation bar with links to Home, Calendar, Notifications, and Profile sections.
 
 ## Development Setup
 
@@ -196,15 +209,16 @@ Key environment variables:
 - `GOOGLE_CLIENT_ID`: Google OAuth client ID
 - `GOOGLE_CLIENT_SECRET`: Google OAuth client secret
 - `GOOGLE_REDIRECT_URI`: Google OAuth redirect URI
+- `COMPANY_VERIFICATION_CODE`: Company verification code for user registration
 
 ## Key Routes
 
 - `/` - Welcome page
 - `/auth/google/redirect` - Google login redirect
 - `/auth/google/callback` - Google login callback
+- `/auth/verify` - User verification page
 - `/home` - Main dashboard (requires authentication)
 - `/calendar` - Calendar view of moods (requires authentication)
-- `/auth/verify` - User verification page
 - `/mood/modal` - Mood selection modal
 - `/mood/save` - Save mood entry (POST)
 - `/mood/quote` - Get random inspirational quote

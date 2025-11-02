@@ -1,15 +1,15 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 
 @section('content')
 <!-- Animated splash logo -->
 <div id="splash-logo-container">
-    <img src="{{ asset('logo/icon.jpeg') }}" alt="App Logo Splash" class="splash-logo-animated">
+    <img src="{{ asset('logo/favicons.png') }}" alt="App Logo Splash" class="splash-logo-animated">
 </div>
 
 <!-- Main content, initially hidden -->
 <div id="main-content-wrapper" class="hidden">
     <div class="d-flex flex-column align-items-center justify-content-center min-vh-100 text-center">
-        <img id="final-logo-position" src="{{ asset('logo/icon.jpeg') }}" alt="Ikon utama aplikasi" class="center-icon img-fluid">
+        <img id="final-logo-position" src="{{ asset('logo/favicons.png') }}" alt="Ikon utama aplikasi" class="center-icon img-fluid">
         <h1 class="hero-title mt-5 text-center">
             Selamat datang, <br> Tim Hebat Cerebrum!
         </h1>
