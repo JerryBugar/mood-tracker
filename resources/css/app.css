@@ -362,3 +362,12 @@ body.dashboard-page {
         -webkit-overflow-scrolling: touch; /* For smooth scrolling on iOS */
     }
 }
+
+/* Specific styles for company code inputs on mobile */
+@media (max-width: 576px) {
+    #company_code_inputs .code-input {
+        height: 2rem !important;
+        font-size: 0.9rem !important;
+        padding: 0.25rem !important;
+    }
+}

@@ -55,9 +55,9 @@
 
                         <div class="mb-4">
                             <label for="company_code_inputs" class="form-label">Kode Unik Perusahaan</label>
-                            <div id="company_code_inputs" class="d-flex justify-content-between gap-2">
+                            <div id="company_code_inputs" class="d-flex flex-wrap justify-content-between gap-2">
                                 @for ($i = 0; $i < 8; $i++)
-                                    <input type="text" name="code_part[]" class="form-control text-center code-input" inputmode="text" pattern="[a-zA-Z0-9]" maxlength="1" style="width: 3rem; height: 3rem; font-size: 1.2rem; border: 1px solid #000;" required>
+                                    <input type="text" name="code_part[]" class="form-control text-center code-input" inputmode="text" pattern="[a-zA-Z0-9]" maxlength="1" style="flex: 1; min-width: calc((100% - 7 * 0.5rem) / 8); height: 3rem; font-size: 1.2rem; border: 2px solid #000;" required>
                                 @endfor
                             </div>
                             <input type="hidden" name="company_code" id="company_code">
