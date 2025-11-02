@@ -9,6 +9,10 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Models\MoodRecord;
 
+/**
+ * User adalah model yang merepresentasikan pengguna aplikasi.
+ * Model ini digunakan untuk autentikasi dan menyimpan informasi profil pengguna.
+ */
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
@@ -17,7 +21,7 @@ class User extends Authenticatable
     /**
      * The attributes that are mass assignable.
      *
-     * @var list<string>
+     * @var array
      */
     protected $fillable = [
         'name',
@@ -25,16 +29,16 @@ class User extends Authenticatable
         'password',
         'google_id',
         'avatar',
-        'division', // Tambahkan ini
-        'role',       // Tambahkan ini
+        'division',
+        'role',
         'jenis_kelamin',
-        'is_verified',// Tambahkan ini
+        'is_verified',
     ];
 
     /**
      * The attributes that should be hidden for serialization.
      *
-     * @var list<string>
+     * @var array
      */
     protected $hidden = [
         'password',
@@ -42,9 +46,9 @@ class User extends Authenticatable
     ];
 
     /**
-     * Get the attributes that should be cast.
+     * The attributes that should be cast.
      *
-     * @return array<string, string>
+     * @return array
      */
     protected function casts(): array
     {
@@ -56,9 +60,34 @@ class User extends Authenticatable
 
     /**
      * Relasi: Satu User memiliki banyak MoodRecord.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
     public function moodRecords(): HasMany
     {
         return $this->hasMany(MoodRecord::class);
+    }
+
+    /**
+     * Scope untuk menemukan user yang terverifikasi.
+     *
+     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeVerified($query)
+    {
+        return $query->where('is_verified', true);
+    }
+
+    /**
+     * Scope untuk menemukan user berdasarkan Google ID.
+     *
+     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @param string $googleId
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeByGoogleId($query, string $googleId)
+    {
+        return $query->where('google_id', $googleId);
     }
 }

@@ -6,11 +6,22 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\MoodRecord;
 use Illuminate\Support\Facades\View;
+use App\Http\Controllers\Mood\MoodRecordController;
 
 class HomeController extends Controller
 {
     public function index(Request $request)
     {
+        // Kita gunakan MoodRecordController untuk menangani logika data dan Turbo Streams
+        $moodRecordController = new MoodRecordController(app(\App\Services\MoodService::class));
+        
+        // Jika permintaan datang dari Turbo Stream (misalnya dari link pagination)
+        $acceptHeader = $request->header('Accept', '');
+        if (strpos($acceptHeader, 'text/vnd.turbo-stream') !== false) {
+            return $moodRecordController->index($request);
+        }
+
+        // Untuk permintaan biasa, kita tetap kembalikan view dengan data
         $moodLabels = [
             'netral' => 'Biasa saja',
             'senyum' => 'Senang',
@@ -28,125 +39,17 @@ class HomeController extends Controller
                 ->paginate(5); // 5 record per halaman
         }
 
-        // Jika permintaan datang dari Turbo Stream (misalnya dari link pagination)
-        $acceptHeader = $request->header('Accept', '');
-        if (strpos($acceptHeader, 'text/vnd.turbo-stream') !== false) {
-            // Kembalikan hanya bagian record-container dan pagination sebagai Turbo Stream
-            $pagination = view('components._partials.pagination', [
-                'records' => $records
-            ])->render();
-            
-            // Gabungkan konten record dan pagination dalam Turbo Stream
-            $recordsContent = '';
-            if ($records->count() > 0) {
-                foreach ($records as $record) {
-                    $recordsContent .= view('components._partials.mood_record_item', [
-                        'record' => $record,
-                        'moodLabels' => $moodLabels,
-                        'user' => Auth::user()
-                    ])->render();
-                }
-            } else {
-                $recordsContent = '<div id="no-records-message" class="text-center py-5">
-                    <div style="display: flex; justify-content: center; margin-bottom: 15px;">
-                        <svg version="1.0" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 64 64" enable-background="new 0 0 64 64" xml:space="preserve" fill="#000000" style="width: 48px; height: 48px;">
-                            <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
-                            <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
-                            <g id="SVGRepo_iconCarrier"> 
-                                <path fill="#d98695" d="M60,52V4c0-2.211-1.789-4-4-4H14v51v3h42v8H10c-2.209,0-4-1.791-4-4s1.791-4,4-4h2v-3V0H8 C5.789,0,4,1.789,4,4v54c0,3.313,2.687,6,6,6h49c0.553,0,1-0.447,1-1s-0.447-1-1-1h-1v-8C59.104,54,60,53.104,60,52z M23,14h12 c0.553,0,1,0.447,1,1s-0.447,1-1,1H23c-0.553,0-1-0.447-1-1S22.447,14,23,14z M42,28H23c-0.553,0-1-0.447-1-1s0.447-1,1-1h19 c0.553,0,1,0.447,1,1S42.553,28,42,28z M49,22H23c-0.553,0-1-0.447-1-1s0.447-1,1-1h26c0.553,0,1,0.447,1,1S49.553,22,49,22z"></path> 
-                            </g>
-                        </svg>
-                    </div>
-                    <p style="color: #82272c; font-size: 1.1rem; font-weight: 500; margin: 0;">Belum ada catatan mood hari ini.</p>
-                    <p style="color: #6c757d; font-size: 0.9rem; margin-top: 8px;">Ayo ceritakan perasaanmu dengan memilih emoticon di atas!</p>
-                </div>';
-            }
-            
-            $streamContent = '<turbo-stream action="replace" target="record_container_list">'.PHP_EOL.
-                            '<template>'.PHP_EOL.
-                            '<div id="record_container_list">' . $recordsContent . '</div>'.PHP_EOL.
-                            '</template>'.PHP_EOL.
-                            '</turbo-stream>'.PHP_EOL;
-            
-            $streamContent .= '<turbo-stream action="replace" target="pagination-container">'.PHP_EOL.
-                            '<template>'.PHP_EOL.
-                            '<div id="pagination-container">' . $pagination . '</div>' . PHP_EOL.
-                            '</template>'.PHP_EOL.
-                            '</turbo-stream>'.PHP_EOL;
-            
-            return response($streamContent, 200, ['Content-Type' => 'text/vnd.turbo-stream.html']);
-        }
-
         return view('home-page.index', [
             'records' => $records,
             'moodLabels' => $moodLabels
         ]);
     }
     
+    // Kita bisa hapus method pagination karena sekarang menggunakan MoodRecordController
+    // Tapi kita tetap pertahankan untuk kompatibilitas
     public function pagination(Request $request)
     {
-        $moodLabels = [
-            'netral' => 'Biasa saja',
-            'senyum' => 'Senang',
-            'sedih' => 'Sedih',
-            'lelah' => 'Lelah',
-            'marah' => 'Marah'
-        ];
-
-        $page = $request->get('page', 1);
-        
-        $records = collect(); // Default empty collection
-        
-        if (Auth::check()) {
-            // Ambil records untuk user yang sedang login, 5 record per halaman
-            $records = Auth::user()->moodRecords()
-                ->latest()
-                ->paginate(5, ['*'], 'page', $page); // 5 record per halaman
-        }
-
-        // Kembalikan hanya bagian record-container dan pagination sebagai Turbo Stream
-        $pagination = view('components._partials.pagination', [
-            'records' => $records
-        ])->render();
-        
-        // Gabungkan konten record dan pagination dalam Turbo Stream
-        $recordsContent = '';
-        if ($records->count() > 0) {
-            foreach ($records as $record) {
-                $recordsContent .= view('components._partials.mood_record_item', [
-                    'record' => $record,
-                    'moodLabels' => $moodLabels,
-                    'user' => Auth::user()
-                ])->render();
-            }
-        } else {
-            $recordsContent = '<div id="no-records-message" class="text-center py-5">
-                <div style="display: flex; justify-content: center; margin-bottom: 15px;">
-                    <svg version="1.0" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 64 64" enable-background="new 0 0 64 64" xml:space="preserve" fill="#000000" style="width: 48px; height: 48px;">
-                        <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
-                        <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
-                        <g id="SVGRepo_iconCarrier"> 
-                            <path fill="#d98695" d="M60,52V4c0-2.211-1.789-4-4-4H14v51v3h42v8H10c-2.209,0-4-1.791-4-4s1.791-4,4-4h2v-3V0H8 C5.789,0,4,1.789,4,4v54c0,3.313,2.687,6,6,6h49c0.553,0,1-0.447,1-1s-0.447-1-1-1h-1v-8C59.104,54,60,53.104,60,52z M23,14h12 c0.553,0,1,0.447,1,1s-0.447,1-1,1H23c-0.553,0-1-0.447-1-1S22.447,14,23,14z M42,28H23c-0.553,0-1-0.447-1-1s0.447-1,1-1h19 c0.553,0,1,0.447,1,1S42.553,28,42,28z M49,22H23c-0.553,0-1-0.447-1-1s0.447-1,1-1h26c0.553,0,1,0.447,1,1S49.553,22,49,22z"></path> 
-                        </g>
-                    </svg>
-                </div>
-                <p style="color: #82272c; font-size: 1.1rem; font-weight: 500; margin: 0;">Belum ada catatan mood hari ini.</p>
-                <p style="color: #6c757d; font-size: 0.9rem; margin-top: 8px;">Ayo ceritakan perasaanmu dengan memilih emoticon di atas!</p>
-            </div>';
-        }
-        
-        $streamContent = '<turbo-stream action="replace" target="record_container_list">'.PHP_EOL.
-                        '<template>'.PHP_EOL.
-                        '<div id="record_container_list">' . $recordsContent . '</div>'.PHP_EOL.
-                        '</template>'.PHP_EOL.
-                        '</turbo-stream>'.PHP_EOL;
-        
-        $streamContent .= '<turbo-stream action="replace" target="pagination-container">'.PHP_EOL.
-                        '<template>'.PHP_EOL.
-                        '<div id="pagination-container">' . $pagination . '</div>' . PHP_EOL.
-                        '</template>'.PHP_EOL.
-                        '</turbo-stream>'.PHP_EOL;
-        
-        return response($streamContent, 200, ['Content-Type' => 'text/vnd.turbo-stream.html']);
+        $moodRecordController = new MoodRecordController(app(\App\Services\MoodService::class));
+        return $moodRecordController->pagination($request);
     }
 }

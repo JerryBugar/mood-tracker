@@ -1,11 +1,12 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\GoogleLoginController;
-use App\Http\Controllers\VerificationController;
+use App\Http\Controllers\Auth\GoogleLoginController;
+use App\Http\Controllers\Auth\VerificationController;
 use App\Http\Controllers\MoodController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\CalendarController;
+use App\Http\Controllers\Mood\MoodRecordController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -43,7 +44,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/mood/save', [MoodController::class, 'saveMood'])->name('mood.save');
     Route::get('/mood/quote', [MoodController::class, 'getRandomQuote'])->name('mood.quote');
     
-    // Route untuk pagination mood records
+    // Route untuk pagination mood records - sekarang menggunakan MoodRecordController
+    Route::get('/mood/records', [MoodRecordController::class, 'index'])->name('mood.records.index');
+    Route::get('/mood/records/pagination', [MoodRecordController::class, 'pagination'])->name('mood.records.pagination');
+    
+    // Route lama untuk kompatibilitas - nanti bisa dihapus
     Route::get('/home/pagination', [HomeController::class, 'pagination'])->name('home.pagination');
 });
 

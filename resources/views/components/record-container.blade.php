@@ -171,11 +171,7 @@
     <div id="record_container_list">
         @if(Auth::check() && $records->count() > 0)
             @foreach($records as $record)
-                {!! view('components._partials.mood_record_item', [
-                    'record' => $record,
-                    'moodLabels' => $moodLabels,
-                    'user' => Auth::user()
-                ])->render() !!}
+                <x-mood-record-item :record="$record" :user="Auth::user()" />
             @endforeach
         @else
             <div id="no-records-message" class="text-center py-5">

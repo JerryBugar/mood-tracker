@@ -1,4 +1,4 @@
-<div class="modal fade" id="moodModal" tabindex="-1" role="dialog" aria-labelledby="moodModalLabel" aria-hidden="true" data-turbo-temporary> {{-- data-turbo-temporary agar tidak di-cache Turbo --}}
+<div class="modal fade" id="moodModal" tabindex="-1" role="dialog" aria-labelledby="moodModalLabel" aria-hidden="true" data-turbo-permanent> {{-- data-turbo-permanent agar modal tetap ada saat navigasi --}}
     <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-header" style="background-color: #83282f; border-bottom: 1px solid #dee2e6; color: #ffffff;">
@@ -26,3 +26,64 @@
         </div>
     </div>
 </div>
+
+<script>
+// Tambahkan flag untuk memastikan skrip hanya dijalankan sekali
+if (!window.moodModalScriptInitialized) {
+    window.moodModalScriptInitialized = true;
+    
+    // Gunakan MutationObserver untuk mendeteksi perubahan DOM akibat Turbo
+    document.addEventListener('turbo:load', function() {
+        // Jika modal sedang terbuka saat halaman dimuat ulang dengan Turbo,
+        // tutup modal untuk mencegah keadaan tidak konsisten
+        const modalElement = document.getElementById('moodModal');
+        if (modalElement) {
+            const modalInstance = bootstrap.Modal.getInstance(modalElement);
+            if (modalInstance && modalInstance._isShown) {
+                modalInstance.hide();
+            }
+        }
+    });
+
+    // Amati perubahan pada body atau elemen utama untuk mendeteksi perubahan DOM
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            // Jika sebuah node baru ditambahkan dan mengandung modal
+            if (mutation.type === 'childList') {
+                mutation.addedNodes.forEach(function(node) {
+                    if (node.nodeType === 1) { // Jika node adalah elemen
+                        // Cek apakah elemen yang ditambahkan adalah modal itu sendiri
+                        if (node.id === 'moodModal') {
+                            // Lakukan inisialisasi khusus jika diperlukan
+                            console.log('Mood modal added to DOM');
+                        }
+                        
+                        // Cek apakah elemen mengandung modal
+                        const modalInNode = node.querySelector('#moodModal');
+                        if (modalInNode) {
+                            // Pastikan modal tidak memiliki instance ganda
+                            const existingModal = bootstrap.Modal.getInstance(modalInNode);
+                            if (existingModal) {
+                                existingModal.dispose();
+                            }
+                            
+                            console.log('Mood modal detected in added content');
+                        }
+                    }
+                });
+            }
+        });
+    });
+
+    // Mulai mengamati perubahan DOM
+    observer.observe(document.documentElement, {
+        childList: true,
+        subtree: true
+    });
+
+    // Hapus observer saat halaman berpindah untuk mencegah kebocoran memori
+    document.addEventListener('turbo:before-render', function() {
+        observer.disconnect();
+    });
+}
+</script>
