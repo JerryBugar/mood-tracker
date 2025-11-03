@@ -136,7 +136,19 @@ class CalendarController extends Controller
         
         $formattedDate = $date->locale('id_ID')->translatedFormat('l, j F Y');
         
-        // Check if this is a Turbo request
+        // Check if this is a Turbo Frame request
+        $turboFrame = $request->header('Turbo-Frame');
+        if ($turboFrame === 'calendar-day-view') {
+            // Return Turbo Frame response
+            return view('components._partials.calendar_day_content', [
+                'records' => $records,
+                'moodLabels' => $moodLabels,
+                'formattedDate' => $formattedDate,
+                'date' => $date
+            ]);
+        }
+        
+        // Check if this is a Turbo Stream request (fallback)
         $acceptHeader = $request->header('Accept', '');
         if (strpos($acceptHeader, 'text/vnd.turbo-stream') !== false) {
             // Return Turbo Stream response

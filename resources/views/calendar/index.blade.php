@@ -15,35 +15,15 @@
 
     <script>
         function showDayRecords(date) {
-            // Scroll to the day view
-            const dayView = document.getElementById('calendar-day-view');
-            dayView.scrollIntoView({ behavior: 'smooth' });
-            
-            // Make an AJAX request to load the day's records
-            const url = `{{ route('calendar.day', ['date' => ':date']) }}`.replace(':date', date);
-            
-            fetch(url, {
-                headers: {
-                    'Accept': 'text/vnd.turbo-stream.html',
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-            .then(response => response.text())
-            .then(data => {
-                // Parse the turbo stream response
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(data, 'text/html');
-                const template = doc.querySelector('template');
+            // Dapatkan Turbo Frame
+            const calendarDayFrame = document.getElementById('calendar-day-view');
+            if (calendarDayFrame) {
+                // Atur URL sumber untuk frame
+                calendarDayFrame.src = `{{ route('calendar.day', ['date' => ':date']) }}`.replace(':date', date);
                 
-                if (template) {
-                    // Update the day view with the content from the turbo stream
-                    dayView.innerHTML = template.innerHTML;
-                    dayView.style.display = 'block';
-                }
-            })
-            .catch(error => {
-                console.error('Error loading day records:', error);
-            });
+                // Tampilkan frame
+                calendarDayFrame.style.display = 'block';
+            }
         }
         
         // Initialize tooltips when page loads

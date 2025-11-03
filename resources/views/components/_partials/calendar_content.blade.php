@@ -224,6 +224,14 @@
             box-shadow: 0 3px 6px rgba(0,0,0,0.1);
             display: none;
             border: 2px solid #d98695;
+            position: relative;
+            clear: both;
+            z-index: 100;
+            width: 100%;
+        }
+        
+        #calendar-day-view.turbo-frame {
+            display: block;
         }
         
         .day-view-header {
@@ -366,7 +374,7 @@
     </div>
 </div>
 
-<!-- Day View Container -->
-<div id="calendar-day-view" style="margin-top: 20px; padding: 15px; background-color: #ffffff; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); display: none;">
+<!-- Day View Container as Turbo Frame -->
+<turbo-frame id="calendar-day-view" style="margin-top: 20px; padding: 15px; background-color: #ffffff; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); display: none; width: 100%;">
     <!-- Day records will be loaded here via Turbo -->
-</div>
+</turbo-frame>
