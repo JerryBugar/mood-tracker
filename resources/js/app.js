@@ -1,5 +1,6 @@
 import * as Turbo from '@hotwired/turbo';
 import './bootstrap';
+import './modal'; // Import modal.js
 import '../css/app.css';
 import 'bootstrap'; // Import Bootstrap JavaScript
 
