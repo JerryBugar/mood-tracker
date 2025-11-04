@@ -39,8 +39,17 @@ class VerificationController extends Controller
         ]);
 
         // Bandingkan kode yang diinput dengan yang ada di .env
-        if ($request->company_code !== env('COMPANY_VERIFICATION_CODE')) {
-            \Log::info('Company code mismatch', ['input' => $request->company_code, 'expected' => env('COMPANY_VERIFICATION_CODE')]);
+        // Trim whitespace dan ubah ke huruf besar untuk perbandingan case-insensitive
+        $inputCode = strtoupper(trim($request->company_code));
+        $expectedCode = strtoupper(trim(env('COMPANY_VERIFICATION_CODE', '')));
+        
+        if ($inputCode !== $expectedCode) {
+            \Log::info('Company code mismatch', [
+                'input_raw' => $request->company_code, 
+                'input_processed' => $inputCode, 
+                'expected_raw' => env('COMPANY_VERIFICATION_CODE'), 
+                'expected_processed' => $expectedCode
+            ]);
             return back()->withErrors(['company_code' => 'Kode perusahaan tidak valid.'])->withInput();
         }
 

@@ -108,15 +108,18 @@ document.addEventListener('DOMContentLoaded', function () {
     function updateEmoticon() {
         const selectedGender = jenisKelaminSelect.value;
         if (selectedGender === 'Laki-laki' || selectedGender === 'Perempuan') {
-            // Pilih emoticon netral sebagai contoh
-            const emoticonKey = 'netral';
-            const emoticonPath = emoticonMap[selectedGender][emoticonKey];
-            emoticonPreview.src = emoticonPath;
+            // Pastikan emoticonPreview ada sebelum mengakses propertinya
+            if (emoticonPreview) {
+                // Pilih emoticon netral sebagai contoh
+                const emoticonKey = 'netral';
+                const emoticonPath = emoticonMap[selectedGender][emoticonKey];
+                emoticonPreview.src = emoticonPath;
+            }
         }
     }
 
     // Tambahkan event listener untuk perubahan jenis kelamin
-    if (jenisKelaminSelect && emoticonPreview) {
+    if (jenisKelaminSelect) {
         jenisKelaminSelect.addEventListener('change', updateEmoticon);
     }
 
@@ -166,8 +169,10 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Update emoticon saat halaman dimuat jika sudah ada nilai yang dipilih
-    updateEmoticon();
+    // Update emoticon saat halaman dimuat jika sudah ada nilai yang dipilih dan elemen tersedia
+    if (emoticonPreview) {
+        updateEmoticon();
+    }
 });
 </script>
 @endsection

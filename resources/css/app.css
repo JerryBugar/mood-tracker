@@ -199,7 +199,7 @@ body.dashboard-page {
 
     flex-grow: 1;
 
-    max-width: 80px;
+    max-width: 140px;
 
 }
 
@@ -229,6 +229,8 @@ body.dashboard-page {
 
     white-space: nowrap;
 
+    display: block;
+
 }
 
 
@@ -236,6 +238,8 @@ body.dashboard-page {
 .nav-item.active {
 
     width: auto;
+
+    min-width: 120px;
 
     padding: 0 20px;
 
@@ -257,11 +261,11 @@ body.dashboard-page {
 
         background-color: rgba(255, 255, 255, 0.2);
 
-        transition: all 0.08s linear;
+        transition: left 0.3s ease, width 0.3s ease;
 
     z-index: 0;
 
-    opacity: 0;
+    opacity: 1;
 
     /* Penambahan untuk konsistensi mobile */
     left: 10px;
@@ -278,6 +282,14 @@ body.dashboard-page {
 
     margin-left: 10px;
 
+    max-width: 70px;
+
+}
+
+@media (max-width: 767px) {
+  .nav-item.active .nav-text {
+    max-width: 85px;
+  }
 }
 
 
@@ -302,31 +314,32 @@ body.dashboard-page {
     justify-content: center;
   }
   
+  .nav-item i {
+    font-size: 20px;
+  }
+  
   .nav-item.active {
+    min-width: 110px;
     padding: 0 15px;
   }
   
   .nav-active-background {
-    width: calc(25% - 12px) !important; /* Lebar background untuk 1 dari 4 item navigasi dikurangi margin */
-    left: 10px !important;
+    width: calc(25% - 10px) !important; /* Lebar background untuk 1 dari 4 item navigasi dikurangi margin */
+    left: 8px !important;
     transition: left 0.3s ease, width 0.3s ease !important; /* Animasi perpindahan */
   }
   
   /* Sesuaikan posisi background untuk setiap item */
-  .nav-item:nth-child(1).active ~ .nav-active-background {
-    left: 10px;
-  }
-  
   .nav-item:nth-child(2).active ~ .nav-active-background {
-    left: calc(25% - 3px);
+    left: calc(25% + 2px) !important;
   }
   
   .nav-item:nth-child(3).active ~ .nav-active-background {
-    left: calc(50% - 6px);
+    left: calc(50% - 4px) !important;
   }
   
   .nav-item:nth-child(4).active ~ .nav-active-background {
-    left: calc(75% - 9px);
+    left: calc(75% - 10px) !important;
   }
 }
 

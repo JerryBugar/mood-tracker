@@ -122,6 +122,26 @@ document.addEventListener('turbo:load', () => {
             }
         }
     }, 200); // .nav-item transition is 0.3s, so we wait 200ms.
+    
+    // Add click event listeners to update active state and background
+    navItems.forEach(item => {
+        item.addEventListener('click', function(e) {
+            // Remove active class from all items
+            navItems.forEach(navItem => navItem.classList.remove('active'));
+            
+            // Add active class to clicked item
+            this.classList.add('active');
+            
+            // Update background position after a short delay to allow CSS changes to take effect
+            setTimeout(() => {
+                const activeBackground = bottomNav.querySelector('.nav-active-background');
+                if (activeBackground) {
+                    activeBackground.style.left = `${this.offsetLeft}px`;
+                    activeBackground.style.width = `${this.offsetWidth}px`;
+                }
+            }, 50);
+        });
+    });
 });
 
 // Mencegah navigasi tidak perlu ke halaman yang sama
