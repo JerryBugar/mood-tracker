@@ -38,52 +38,14 @@ if (!window.moodModalScriptInitialized) {
         // tutup modal untuk mencegah keadaan tidak konsisten
         const modalElement = document.getElementById('moodModal');
         if (modalElement) {
-            const modalInstance = bootstrap.Modal.getInstance(modalElement);
-            if (modalInstance && modalInstance._isShown) {
-                modalInstance.hide();
+            // Pastikan hanya satu instance modal Bootstrap yang aktif
+            const existingModalInstance = bootstrap.Modal.getInstance(modalElement);
+            if (existingModalInstance) {
+                // Jangan dispose instance karena modal bersifat permanen
+            } else {
+                // Jika tidak ada instance, kita tidak perlu membuat baru karena modal permanen
             }
         }
-    });
-
-    // Amati perubahan pada body atau elemen utama untuk mendeteksi perubahan DOM
-    const observer = new MutationObserver(function(mutations) {
-        mutations.forEach(function(mutation) {
-            // Jika sebuah node baru ditambahkan dan mengandung modal
-            if (mutation.type === 'childList') {
-                mutation.addedNodes.forEach(function(node) {
-                    if (node.nodeType === 1) { // Jika node adalah elemen
-                        // Cek apakah elemen yang ditambahkan adalah modal itu sendiri
-                        if (node.id === 'moodModal') {
-                            // Lakukan inisialisasi khusus jika diperlukan
-                            console.log('Mood modal added to DOM');
-                        }
-                        
-                        // Cek apakah elemen mengandung modal
-                        const modalInNode = node.querySelector('#moodModal');
-                        if (modalInNode) {
-                            // Pastikan modal tidak memiliki instance ganda
-                            const existingModal = bootstrap.Modal.getInstance(modalInNode);
-                            if (existingModal) {
-                                existingModal.dispose();
-                            }
-                            
-                            console.log('Mood modal detected in added content');
-                        }
-                    }
-                });
-            }
-        });
-    });
-
-    // Mulai mengamati perubahan DOM
-    observer.observe(document.documentElement, {
-        childList: true,
-        subtree: true
-    });
-
-    // Hapus observer saat halaman berpindah untuk mencegah kebocoran memori
-    document.addEventListener('turbo:before-render', function() {
-        observer.disconnect();
     });
 }
 </script>

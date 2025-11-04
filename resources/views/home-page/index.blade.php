@@ -1,7 +1,7 @@
 @extends('layouts.internal')
 
 @section('main-content')
-    <div class="container-fluid" data-turbo-permanent>
+    <div class="container-fluid">
         @if (Auth::check())
             <h1 style="color: #82272c; margin-top: 20px;">Haloo, {{ explode(' ', Auth::user()->name)[0] }}</h1>
         @else

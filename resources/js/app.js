@@ -7,7 +7,7 @@ import 'bootstrap'; // Import Bootstrap JavaScript
 let isNavInitialized = false;
 
 // Optimasi Turbo: konfigurasi Turbo agar lebih efisien
-Turbo.setProgressBarDelay(500); // Tunda progress bar untuk pengalaman yang lebih mulus
+Turbo.config.drive.progressBarDelay = 500; // Tunda progress bar untuk pengalaman yang lebih mulus
 
 document.addEventListener('turbo:load', () => {
     // Logging untuk mengetahui halaman mana yang dimuat
@@ -133,9 +133,17 @@ document.addEventListener('turbo:before-visit', (event) => {
 
 // Menangani kasus ketika Turbo memutuskan untuk melakukan full page reload
 document.addEventListener('turbo:before-render', (event) => {
-    // Memastikan elemen-elemen penting tetap ada selama proses render
-    const permanentElements = document.querySelectorAll('[data-turbo-permanent]');
-    permanentElements.forEach(element => {
-        event.detail.newBody.appendChild(element.cloneNode(true));
+    // Hapus elemen-elemen yang tidak seharusnya duplikat sebelum render
+    const duplicateElements = event.detail.newBody.querySelectorAll('[id^="calendar-day-view"]');
+    duplicateElements.forEach(element => {
+        element.remove();
     });
+    
+    // Jaga agar modal tetap ada di DOM yang baru
+    const existingModal = document.getElementById('moodModal');
+    const newModal = event.detail.newBody.querySelector('[id="moodModal"]');
+    
+    if (existingModal && newModal) {
+        newModal.replaceWith(existingModal);
+    }
 });

@@ -14,7 +14,7 @@
     @stack('head')
 </head>
 <body class="antialiased">
-    <div class="min-h-screen bg-gray-100" data-turbo-permanent>
+    <div class="min-h-screen bg-gray-100">
         @yield('content')
     </div>
     
