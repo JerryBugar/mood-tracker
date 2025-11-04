@@ -47,5 +47,36 @@ if (!window.moodModalScriptInitialized) {
             }
         }
     });
+
+    // Tambahkan event listener untuk form submit di dalam frame setelah konten frame dimuat
+    document.addEventListener('turbo:frame-load', function(event) {
+        if (event.target.id === 'mood_modal_content') {
+            const form = event.target.querySelector('#mood-save-form');
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    const reasonInput = form.querySelector('#reasonInput');
+                    const suggestionInput = form.querySelector('#suggestionInput');
+                    let isValid = true;
+
+                    if (!reasonInput.value.trim() || !suggestionInput.value.trim()) {
+                        isValid = false;
+                    }
+
+                    if (!isValid) {
+                        e.preventDefault(); // Batalkan pengiriman jika tidak valid
+                        alert('Tolong diisi semua formnya'); // Tampilkan pesan error
+                        
+                        // Opsional: Fokus ke field pertama yang kosong
+                        if (!reasonInput.value.trim()) {
+                            reasonInput.focus();
+                        } else if (!suggestionInput.value.trim()) {
+                            suggestionInput.focus();
+                        }
+                        return false;
+                    }
+                });
+            }
+        }
+    });
 }
 </script>
