@@ -45,8 +45,8 @@
                             <label for="jenis_kelamin" class="form-label">Jenis Kelamin</label>
                             <select id="jenis_kelamin" name="jenis_kelamin" class="form-select @error('jenis_kelamin') is-invalid @enderror" required>
                                 <option value="" disabled {{ old('jenis_kelamin') ? '' : 'selected' }}>Pilih Jenis Kelamin</option>
-                                <option value="Cowok" {{ old('jenis_kelamin') == 'Cowok' ? 'selected' : '' }}>Cowok</option>
-                                <option value="Cewek" {{ old('jenis_kelamin') == 'Cewek' ? 'selected' : '' }}>Cewek</option>
+                                <option value="Laki-laki" {{ old('jenis_kelamin') == 'Laki-laki' ? 'selected' : '' }}>Laki-laki</option>
+                                <option value="Perempuan" {{ old('jenis_kelamin') == 'Perempuan' ? 'selected' : '' }}>Perempuan</option>
                             </select>
                             @error('jenis_kelamin')
                                 <div class="invalid-feedback">{{ $message }}</div>
@@ -86,16 +86,16 @@ document.addEventListener('DOMContentLoaded', function () {
     const jenisKelaminSelect = document.getElementById('jenis_kelamin');
     const emoticonPreview = document.getElementById('emoticon-preview');
 
-    // Mapping emoticon untuk cowok (tanpa angka) dan cewek (dengan angka 1)
+    // Mapping emoticon untuk laki-laki (tanpa angka) dan perempuan (dengan angka 1)
     const emoticonMap = {
-        'Cowok': {
+        'Laki-laki': {
             'netral': '{{ asset('logo/netral.png') }}',
             'senyum': '{{ asset('logo/senyum.png') }}',
             'sedih': '{{ asset('logo/sedih.png') }}',
             'lelah': '{{ asset('logo/lelah.png') }}',
             'marah': '{{ asset('logo/marah.png') }}'
         },
-        'Cewek': {
+        'Perempuan': {
             'netral': '{{ asset('logo/netral1.png') }}',
             'senyum': '{{ asset('logo/senyum1.png') }}',
             'sedih': '{{ asset('logo/sedih1.png') }}',
@@ -107,7 +107,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // Fungsi untuk mengganti emoticon berdasarkan jenis kelamin
     function updateEmoticon() {
         const selectedGender = jenisKelaminSelect.value;
-        if (selectedGender === 'Cowok' || selectedGender === 'Cewek') {
+        if (selectedGender === 'Laki-laki' || selectedGender === 'Perempuan') {
             // Pilih emoticon netral sebagai contoh
             const emoticonKey = 'netral';
             const emoticonPath = emoticonMap[selectedGender][emoticonKey];

@@ -29,7 +29,7 @@ class VerificationController extends Controller
             'name' => ['required', 'string', 'max:60', 'regex:/^[a-zA-Z\\s]+$/'],
             'division' => ['required', 'string', 'max:60'],
             'role' => ['required', 'string', 'max:60'],
-            'jenis_kelamin' => 'required|string|in:Cowok,Cewek',
+            'jenis_kelamin' => 'required|string|in:Laki-laki,Perempuan',
             'company_code' => 'required|string',
         ],[
             'name.regex' => 'Nama Lengkap hanya boleh berisi huruf dan spasi.',
