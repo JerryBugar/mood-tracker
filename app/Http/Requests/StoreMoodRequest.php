@@ -25,8 +25,8 @@ class StoreMoodRequest extends FormRequest
     {
         return [
             'mood' => 'required|string|in:netral,senyum,sedih,lelah,marah',
-            'reason' => 'nullable|string',
-            'suggestion_action' => 'nullable|string',
+            'reason' => 'required|string|min:1',
+            'suggestion_action' => 'required|string|min:1',
         ];
     }
 
@@ -41,8 +41,12 @@ class StoreMoodRequest extends FormRequest
             'mood.required' => 'Mood harus dipilih.',
             'mood.string' => 'Mood harus berupa teks.',
             'mood.in' => 'Mood yang dipilih tidak valid.',
+            'reason.required' => 'Alasan harus diisi.',
             'reason.string' => 'Alasan harus berupa teks.',
+            'reason.min' => 'Alasan harus diisi dengan teks yang valid.',
+            'suggestion_action.required' => 'Saran tindakan harus diisi.',
             'suggestion_action.string' => 'Saran tindakan harus berupa teks.',
+            'suggestion_action.min' => 'Saran tindakan harus diisi dengan teks yang valid.',
         ];
     }
 }

@@ -25,6 +25,15 @@ class MoodService
         try {
             $user = Auth::user();
             
+            // Cek apakah user sudah menyimpan mood hari ini
+            $today = now()->toDateString();
+            $existingRecord = $user->moodRecords()->whereDate('date_recorded', $today)->first();
+            
+            if ($existingRecord) {
+                // Jika sudah ada catatan hari ini, kembalikan null untuk menandakan bahwa tidak perlu disimpan lagi
+                return null;
+            }
+            
             // Validasi data input
             $validatedData = $this->validateMoodData($data);
             

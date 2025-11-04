@@ -47,6 +47,8 @@ if (!moodModalScriptInitialized) {
     // Tambahkan fungsi global agar bisa diakses dari file blade
     window.closeMoodModal = closeMoodModal;
 
+
+
     // Event listener untuk menangani saat frame modal ditampilkan
     document.addEventListener('turbo:frame-render', function(event) {
         const frameId = event.target.id;
@@ -106,6 +108,105 @@ if (!moodModalScriptInitialized) {
             }
         }
     });
+
+    // Fungsi untuk memuat modal mood tanpa pindah halaman
+    async function loadMoodModal(moodType) {
+        try {
+            // Fetch konten modal secara langsung
+            const response = await fetch(`/mood/modal?mood=${encodeURIComponent(moodType)}`);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const htmlContent = await response.text();
+            
+            // Dapatkan elemen frame
+            const frame = document.getElementById('mood_modal_content');
+            if (frame) {
+                // Set innerHTML dengan konten yang diterima
+                frame.innerHTML = htmlContent;
+                
+                // Trigger event turbo:frame-render secara manual karena kita mengganti konten secara manual
+                const frameRenderEvent = new CustomEvent('turbo:frame-render', {
+                    bubbles: true,
+                    detail: { target: frame }
+                });
+                frame.dispatchEvent(frameRenderEvent);
+            }
+        } catch (error) {
+            console.error('Error loading mood modal:', error);
+            // Tampilkan pesan error ke pengguna
+            const frame = document.getElementById('mood_modal_content');
+            if (frame) {
+                frame.innerHTML = `<div class="alert alert-danger">Gagal memuat modal mood. Silakan coba lagi.</div>`;
+            }
+        }
+    }
+    
+    // Tambahkan fungsi global agar bisa diakses dari file blade
+    window.loadMoodModal = loadMoodModal;
+    
+    // Tambahkan event listener untuk validasi form sebelum dikirim
+    document.addEventListener('submit', function(event) {
+        if (event.target.id === 'mood-save-form') {
+            const reasonInput = event.target.querySelector('#reasonInput');
+            const suggestionInput = event.target.querySelector('#suggestionInput');
+
+            if (!reasonInput.value.trim() || !suggestionInput.value.trim()) {
+                event.preventDefault(); // Mencegah pengiriman form
+                event.stopPropagation(); // Menghentikan propagasi
+                
+                // Tampilkan pesan error
+                alert('Tolong diisi semua formnya');
+                
+                // Fokus ke field pertama yang kosong
+                if (!reasonInput.value.trim()) {
+                    reasonInput.focus();
+                } else if (!suggestionInput.value.trim()) {
+                    suggestionInput.focus();
+                }
+                
+                return false;
+            }
+        }
+    });
+    
+    // Tambahkan event listener untuk menangani saat frame dimuat untuk memastikan validasi dipasang
+    document.addEventListener('turbo:frame-render', function(event) {
+        if (event.target.id === 'mood_modal_content') {
+            // Setelah frame dimuat, tambahkan handler submit ke form di dalam frame
+            const form = event.target.querySelector('#mood-save-form');
+            if (form) {
+                // Hapus event listener yang mungkin sudah ada untuk menghindari duplikasi
+                form.removeEventListener('submit', handleFormSubmit);
+                // Tambahkan event listener baru
+                form.addEventListener('submit', handleFormSubmit);
+            }
+        }
+    });
+    
+    // Fungsi untuk menangani submit form
+    function handleFormSubmit(event) {
+        const reasonInput = event.target.querySelector('#reasonInput');
+        const suggestionInput = event.target.querySelector('#suggestionInput');
+
+        if (!reasonInput.value.trim() || !suggestionInput.value.trim()) {
+            event.preventDefault(); // Mencegah pengiriman form
+            event.stopPropagation(); // Menghentikan propagasi
+            
+            // Tampilkan pesan error
+            alert('Tolong diisi semua formnya');
+            
+            // Fokus ke field pertama yang kosong
+            if (!reasonInput.value.trim()) {
+                reasonInput.focus();
+            } else if (!suggestionInput.value.trim()) {
+                suggestionInput.focus();
+            }
+            
+            return false;
+        }
+    }
 
     // Event listener untuk saat Turbo memuat ulang halaman
     document.addEventListener('turbo:load', function() {

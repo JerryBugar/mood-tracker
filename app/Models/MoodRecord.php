@@ -25,6 +25,7 @@ class MoodRecord extends Model
         'mood',
         'reason',
         'suggestion_action',
+        'date_recorded',
     ];
 
     /**
@@ -35,7 +36,22 @@ class MoodRecord extends Model
     protected $casts = [
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+        'date_recorded' => 'date',
     ];
+
+    /**
+     * Boot the model and set up event listeners.
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($model) {
+            if (!$model->date_recorded) {
+                $model->date_recorded = Carbon::now()->toDateString();
+            }
+        });
+    }
 
     /**
      * Relasi: Satu MoodRecord dimiliki oleh satu User.

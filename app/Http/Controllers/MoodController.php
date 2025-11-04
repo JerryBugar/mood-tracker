@@ -88,8 +88,13 @@ class MoodController extends Controller
         $moodRecord = $this->moodService->saveMood($request->validated());
         
         if (!$moodRecord) {
-            // Fallback jika terjadi error
-            return view('components._partials.mood_modal_success');
+            // Jika service mengembalikan null, kemungkinan karena pengguna sudah menyimpan mood hari ini
+            // Tampilkan pesan bahwa sudah menyimpan mood hari ini
+            $replaceStream = TurboStreamHelper::replace('mood_modal_content', 
+                view('components._partials.mood_modal_duplicate')->render()
+            );
+            
+            return response($replaceStream, 200, ['Content-Type' => 'text/vnd.turbo-stream.html']);
         }
 
         $moodLabels = [

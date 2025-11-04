@@ -10,11 +10,11 @@
         @csrf
         <input type="hidden" name="mood" value="{{ $mood ?? 'netral' }}"> {{-- Kirim mood yang dipilih --}}
 
-        <p class="mb-1">{{ $explanation ?? 'Ceritakan perasaanmu...' }}</p>
-        <textarea name="reason" id="reasonInput" class="form-control mb-3" rows="3" placeholder="Coba ceritakan..."></textarea>
+        <p class="mb-1">{{ $explanation ?? 'Ceritakan perasaanmu...' }} <span class="text-danger">*</span></p>
+        <textarea name="reason" id="reasonInput" class="form-control mb-3" rows="3" placeholder="Coba ceritakan..." required></textarea>
 
-        <p class="mb-1">{{ $suggestion ?? 'Apa yang bisa membantumu?' }}</p>
-        <textarea name="suggestion_action" id="suggestionInput" class="form-control mb-3" rows="3" placeholder="Kira-kira apa yang bisa bikin kamu ..."></textarea>
+        <p class="mb-1">{{ $suggestion ?? 'Apa yang bisa membantumu?' }} <span class="text-danger">*</span></p>
+        <textarea name="suggestion_action" id="suggestionInput" class="form-control mb-3" rows="3" placeholder="Kira-kira apa yang bisa bikin kamu ..." required></textarea>
 
         <div class="text-end">
             {{-- Tombol Simpan sekarang menjadi bagian dari form --}}

@@ -23,7 +23,9 @@ Props:
 @endphp
 
 <div class="text-center mx-2 mx-md-5">
-    <a href="{{ route('mood.modal', ['mood' => $mood]) }}" data-turbo-frame="mood_modal_content" class="emoticon-link">
+    <a href="javascript:void(0)" 
+       class="emoticon-link" 
+       onclick="loadMoodModal('{{ $mood }}')">
         <div class="emoticon-background">
             <img 
                 src="{{ $emoticonPath }}" 
