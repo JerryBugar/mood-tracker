@@ -7,6 +7,7 @@ use App\Http\Controllers\MoodController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\Mood\MoodRecordController;
+use App\Http\Controllers\ProfileController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -22,6 +23,13 @@ Route::get('/auth/google/callback', [GoogleLoginController::class, 'callback']);
 // Route login mengarah ke Google OAuth redirect
 Route::get('/login', [GoogleLoginController::class, 'redirect'])->name('login');
 
+Route::post('/logout', function () {
+    auth()->logout();
+    request()->session()->invalidate();
+    request()->session()->regenerateToken();
+    return redirect('/');
+})->middleware(['auth'])->name('logout');
+
 Route::get('/home', [HomeController::class, 'index'])->middleware(['auth', 'verified']);
 
 Route::get('/auth/verify', [VerificationController::class, 'show'])->name('verification.show');
@@ -34,9 +42,8 @@ Route::get('/notif', function () {
     return view('notif.index');
 })->middleware(['auth', 'verified']);
 
-Route::get('/profile', function () {
-    return view('profile.index');
-})->middleware(['auth', 'verified']);
+Route::get('/profile', [ProfileController::class, 'index'])->middleware(['auth', 'verified'])->name('profile.index');
+Route::put('/profile', [ProfileController::class, 'update'])->middleware(['auth', 'verified'])->name('profile.update');
 
 // Routes untuk mood
 Route::middleware(['auth', 'verified'])->group(function () {
