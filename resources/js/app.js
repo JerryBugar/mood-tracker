@@ -6,6 +6,9 @@ import 'bootstrap'; // Import Bootstrap JavaScript
 
 let isNavInitialized = false;
 
+// Optimasi Turbo: konfigurasi Turbo agar lebih efisien
+Turbo.setProgressBarDelay(500); // Tunda progress bar untuk pengalaman yang lebih mulus
+
 document.addEventListener('turbo:load', () => {
     // Logging untuk mengetahui halaman mana yang dimuat
     console.log('Turbo loaded on: ', window.location.pathname);
@@ -119,4 +122,20 @@ document.addEventListener('turbo:load', () => {
             }
         }
     }, 200); // .nav-item transition is 0.3s, so we wait 200ms.
+});
+
+// Mencegah navigasi tidak perlu ke halaman yang sama
+document.addEventListener('turbo:before-visit', (event) => {
+    if (event.detail.url === window.location.href) {
+        event.preventDefault();
+    }
+});
+
+// Menangani kasus ketika Turbo memutuskan untuk melakukan full page reload
+document.addEventListener('turbo:before-render', (event) => {
+    // Memastikan elemen-elemen penting tetap ada selama proses render
+    const permanentElements = document.querySelectorAll('[data-turbo-permanent]');
+    permanentElements.forEach(element => {
+        event.detail.newBody.appendChild(element.cloneNode(true));
+    });
 });
