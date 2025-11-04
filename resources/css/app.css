@@ -197,6 +197,10 @@ body.dashboard-page {
 
     z-index: 1;
 
+    flex-grow: 1;
+
+    max-width: 80px;
+
 }
 
 
@@ -259,6 +263,9 @@ body.dashboard-page {
 
     opacity: 0;
 
+    /* Penambahan untuk konsistensi mobile */
+    left: 10px;
+
 }
 
 
@@ -279,6 +286,48 @@ body.dashboard-page {
 
     margin-top: 4px;
 
+}
+
+/* Responsif untuk mobile bottom nav */
+@media (max-width: 767px) {
+  .bottom-nav {
+    left: 5px;
+    right: 5px;
+    padding: 8px 0;
+  }
+  
+  .nav-item {
+    width: 100%;
+    max-width: none;
+    justify-content: center;
+  }
+  
+  .nav-item.active {
+    padding: 0 15px;
+  }
+  
+  .nav-active-background {
+    width: calc(25% - 12px) !important; /* Lebar background untuk 1 dari 4 item navigasi dikurangi margin */
+    left: 10px !important;
+    transition: left 0.3s ease, width 0.3s ease !important; /* Animasi perpindahan */
+  }
+  
+  /* Sesuaikan posisi background untuk setiap item */
+  .nav-item:nth-child(1).active ~ .nav-active-background {
+    left: 10px;
+  }
+  
+  .nav-item:nth-child(2).active ~ .nav-active-background {
+    left: calc(25% - 3px);
+  }
+  
+  .nav-item:nth-child(3).active ~ .nav-active-background {
+    left: calc(50% - 6px);
+  }
+  
+  .nav-item:nth-child(4).active ~ .nav-active-background {
+    left: calc(75% - 9px);
+  }
 }
 
 /* Mood Input Box */
