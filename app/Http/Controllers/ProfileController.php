@@ -24,7 +24,7 @@ class ProfileController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'division' => 'nullable|string|max:255',
-            'jenis_kelamin' => 'nullable|in:Laki-laki,Cewek',
+            'jenis_kelamin' => 'nullable|in:Laki-laki,Perempuan',
             'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // Validasi untuk avatar
         ]);
 

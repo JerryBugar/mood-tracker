@@ -11,6 +11,7 @@
     <div class="mood-input-box text-center" style="flex-direction: column;">
         <x-user-avatar 
             :avatar-url="Auth::check() ? Auth::user()->avatar : ''" 
+            :jenis-kelamin="Auth::check() ? Auth::user()->jenis_kelamin : ''"
             size="70px"
         />
         <div class="mood-text-content">
