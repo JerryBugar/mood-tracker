@@ -40,8 +40,7 @@
 
     .profile-detail {
         display: flex;
-        justify-content: space-between;
-        align-items: center;
+        flex-direction: column;
         padding: 12px 0;
         border-bottom: 1px solid #eee;
     }
@@ -49,10 +48,23 @@
     .detail-label {
         font-weight: 500;
         color: #495057;
+        margin-bottom: 5px;
     }
 
     .detail-value {
         color: #6c757d;
+    }
+    
+    @media (min-width: 768px) {
+        .profile-detail {
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .detail-label {
+            margin-bottom: 0;
+        }
     }
 
     .btn-edit {
@@ -91,12 +103,16 @@
     
     @media (min-width: 768px) {
         .profile-detail {
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
             padding: 15px 0;
         }
         
         .detail-label {
             flex: 1;
             text-align: left;
+            margin-bottom: 0;
         }
         
         .detail-value {
