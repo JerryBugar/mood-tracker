@@ -351,13 +351,16 @@
                 <div class="day-records">
                     @foreach($records as $record)
                         @php
-                            $emoticonPaths = [
-                                'netral' => $jenisKelamin === 'Cewek' ? asset('logo/netral1.png') : asset('logo/netral.png'),
+                            // Tentukan apakah user berjenis kelamin perempuan
+                            $isFemale = $jenisKelamin === 'Perempuan' || $jenisKelamin === 'Cewek';
                             
-                                'senyum' => $jenisKelamin === 'Cewek' ? asset('logo/senyum1.png') : asset('logo/senyum.png'),
-                                'sedih' => $jenisKelamin === 'Cewek' ? asset('logo/sedih1.png') : asset('logo/sedih.png'),
-                                'lelah' => $jenisKelamin === 'Cewek' ? asset('logo/lelah1.png') : asset('logo/lelah.png'),
-                                'marah' => $jenisKelamin === 'Cewek' ? asset('logo/marah1.png') : asset('logo/marah.png'),
+                            $emoticonPaths = [
+                                'netral' => $isFemale ? asset('logo/netral1.png') : asset('logo/netral.png'),
+                            
+                                'senyum' => $isFemale ? asset('logo/senyum1.png') : asset('logo/senyum.png'),
+                                'sedih' => $isFemale ? asset('logo/sedih1.png') : asset('logo/sedih.png'),
+                                'lelah' => $isFemale ? asset('logo/lelah1.png') : asset('logo/lelah.png'),
+                                'marah' => $isFemale ? asset('logo/marah1.png') : asset('logo/marah.png'),
                             ];
                             $emoticonPath = $emoticonPaths[$record->mood] ?? $emoticonPaths['netral'];
                         @endphp

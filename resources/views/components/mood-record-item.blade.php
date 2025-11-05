@@ -20,12 +20,15 @@ Props:
     $formattedTime = $record->formatted_time ?? \Carbon\Carbon::parse($record->created_at)->format('g:i A');
     
     $jenisKelamin = $user ? $user->jenis_kelamin : '';
+    // Tentukan apakah user berjenis kelamin perempuan
+    $isFemale = $jenisKelamin === 'Perempuan' || $jenisKelamin === 'Cewek';
+    
     $emoticonPaths = [
-        'netral' => $jenisKelamin === 'Cewek' ? asset('logo/netral1.png') : asset('logo/netral.png'),
-        'senyum' => $jenisKelamin === 'Cewek' ? asset('logo/senyum1.png') : asset('logo/senyum.png'),
-        'sedih' => $jenisKelamin === 'Cewek' ? asset('logo/sedih1.png') : asset('logo/sedih.png'),
-        'lelah' => $jenisKelamin === 'Cewek' ? asset('logo/lelah1.png') : asset('logo/lelah.png'),
-        'marah' => $jenisKelamin === 'Cewek' ? asset('logo/marah1.png') : asset('logo/marah.png'),
+        'netral' => $isFemale ? asset('logo/netral1.png') : asset('logo/netral.png'),
+        'senyum' => $isFemale ? asset('logo/senyum1.png') : asset('logo/senyum.png'),
+        'sedih' => $isFemale ? asset('logo/sedih1.png') : asset('logo/sedih.png'),
+        'lelah' => $isFemale ? asset('logo/lelah1.png') : asset('logo/lelah.png'),
+        'marah' => $isFemale ? asset('logo/marah1.png') : asset('logo/marah.png'),
     ];
     $emoticonPath = $emoticonPaths[$record->mood] ?? $emoticonPaths['netral'];
 @endphp
