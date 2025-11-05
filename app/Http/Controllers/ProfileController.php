@@ -51,15 +51,21 @@ class ProfileController extends Controller
             $user->avatar = '/storage/' . $avatarPath;
         }
 
+        // Konversi nilai 'Cewek' menjadi 'Perempuan' untuk konsistensi
+        $jenisKelamin = $request->jenis_kelamin;
+        if ($jenisKelamin === 'Cewek') {
+            $jenisKelamin = 'Perempuan';
+        }
+
         $user->update([
             'name' => $request->name,
             'division' => $request->division,
-            'jenis_kelamin' => $request->jenis_kelamin,
+            'jenis_kelamin' => $jenisKelamin,
             'avatar' => $user->avatar, // Simpan avatar baru jika ada
         ]);
 
-        // Karena modal sekarang menggunakan data-turbo-permanent, 
-        // kita kembalikan respons yang memicu penutupan modal
+        // Karena modal menggunakan data-turbo-permanent, kembalikan response JSON
+        // agar bisa diproses oleh JavaScript untuk menutup modal dan update UI
         return response()->json([
             'success' => true,
             'message' => 'Profil berhasil diperbarui',

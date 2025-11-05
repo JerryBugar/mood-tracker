@@ -212,6 +212,8 @@
     </div>
 </div>
 
+
+
 <!-- Modal Edit Profil (dengan data-turbo-permanent untuk mencegah perubahan oleh Turbo) -->
 <div class="modal fade" id="editProfileModal" tabindex="-1" aria-labelledby="editProfileModalLabel" aria-hidden="true" data-turbo-permanent>
     <div id="edit-profile-modal-container" class="modal-dialog">
@@ -220,7 +222,7 @@
                 <h5 class="modal-title" id="editProfileModalLabel">Edit Profil</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form method="POST" action="{{ route('profile.update') }}" enctype="multipart/form-data">
+            <form id="edit-profile-form" method="POST" action="{{ route('profile.update') }}" enctype="multipart/form-data" data-turbo="true">
                 @csrf
                 @method('PUT')
                 <div class="modal-body">
@@ -245,7 +247,7 @@
                         <select class="form-select" id="jenis_kelamin" name="jenis_kelamin">
                             <option value="">Pilih jenis kelamin</option>
                             <option value="Laki-laki" {{ Auth::user()->jenis_kelamin === 'Laki-laki' ? 'selected' : '' }}>Laki-laki</option>
-                            <option value="Cewek" {{ Auth::user()->jenis_kelamin === 'Cewek' ? 'selected' : '' }}>Cewek</option>
+                            <option value="Perempuan" {{ Auth::user()->jenis_kelamin === 'Perempuan' || Auth::user()->jenis_kelamin === 'Cewek' ? 'selected' : '' }}>Perempuan</option>
                         </select>
                     </div>
                     
@@ -277,15 +279,14 @@
         }
     }
     
-    // Fungsi untuk menangani submit form edit profil secara manual
-    const editProfileForm = document.querySelector('form[action="{{ route('profile.update') }}"]');
-    if (editProfileForm) {
-        editProfileForm.addEventListener('submit', function(e) {
+    // Fungsi untuk menangani submit form edit profil
+    document.addEventListener('submit', function(e) {
+        if (e.target.id === 'edit-profile-form') {
             e.preventDefault(); // Mencegah submit standar
             
-            const formData = new FormData(this);
+            const formData = new FormData(e.target);
             
-            fetch(this.action, {
+            fetch(e.target.action, {
                 method: 'POST',
                 body: formData,
                 headers: {
@@ -324,8 +325,7 @@
                         modal.hide();
                     }
                     
-                    // Refresh halaman untuk memastikan semua data terupdate
-                    location.reload();
+                    // Modal sudah ditutup di atas
                 } else {
                     alert('Terjadi kesalahan saat memperbarui profil: ' + (data.message || 'Silakan coba lagi'));
                 }
@@ -334,14 +334,7 @@
                 console.error('Error:', error);
                 alert('Terjadi kesalahan saat memperbarui profil. Silakan coba lagi.');
             });
-        });
-    }
-    
-    // Fungsi showEditProfile yang diperbarui
-    window.showEditProfile = function() {
-        const modalElement = document.getElementById('editProfileModal');
-        const modal = new bootstrap.Modal(modalElement);
-        modal.show();
-    };
+        }
+    });
 </script>
 @endsection
