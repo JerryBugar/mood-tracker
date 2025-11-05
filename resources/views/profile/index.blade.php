@@ -56,7 +56,7 @@
     }
 
     .btn-edit {
-        background-color: #83282f;
+        background-color: #661118ff;
         color: white;
         border: none;
         padding: 10px 20px;

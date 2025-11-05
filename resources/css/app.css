@@ -267,9 +267,6 @@ body.dashboard-page {
 
     opacity: 1;
 
-    /* Penambahan untuk konsistensi mobile */
-    left: 10px;
-
 }
 
 
@@ -284,11 +281,17 @@ body.dashboard-page {
 
     max-width: 70px;
 
+    z-index: 1;
+
+    position: relative;
+
 }
 
 @media (max-width: 767px) {
   .nav-item.active .nav-text {
     max-width: 85px;
+    z-index: 1;
+    position: relative;
   }
 }
 
@@ -324,23 +327,13 @@ body.dashboard-page {
   }
   
   .nav-active-background {
-    width: calc(25% - 10px) !important; /* Lebar background untuk 1 dari 4 item navigasi dikurangi margin */
-    left: 8px !important;
-    transition: left 0.3s ease, width 0.3s ease !important; /* Animasi perpindahan */
+    width: calc(25% - 10px); /* Lebar background untuk 1 dari 4 item navigasi dikurangi margin */
+    left: 8px;
+    transition: left 0.3s ease, width 0.3s ease; /* Animasi perpindahan */
   }
   
-  /* Sesuaikan posisi background untuk setiap item */
-  .nav-item:nth-child(2).active ~ .nav-active-background {
-    left: calc(25% + 2px) !important;
-  }
-  
-  .nav-item:nth-child(3).active ~ .nav-active-background {
-    left: calc(50% - 4px) !important;
-  }
-  
-  .nav-item:nth-child(4).active ~ .nav-active-background {
-    left: calc(75% - 10px) !important;
-  }
+  /* Hapus aturan CSS yang menggantungkan posisi background pada kelas aktif
+     Kita akan mengaturnya secara dinamis melalui JavaScript saja */
 }
 
 /* Mood Input Box */
