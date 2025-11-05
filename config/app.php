@@ -52,7 +52,7 @@ return [
     |
     */
 
-    'url' => env('APP_URL', 'http://localhost'),
+    'url' => preg_replace('/:\d+$/', '', env('APP_URL', 'http://localhost')),
 
     /*
     |--------------------------------------------------------------------------
