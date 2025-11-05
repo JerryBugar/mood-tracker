@@ -147,48 +147,50 @@
 <div class="container-fluid">
 
     <div class="profile-card">
-        <div class="profile-header">
-            @if(Auth::user()->avatar)
-                <img src="{{ Auth::user()->avatar }}" alt="Avatar" class="profile-avatar">
-            @else
-                <div class="profile-avatar bg-light d-flex align-items-center justify-content-center" style="border: 4px solid #d98695;">
-                    <span class="text-muted" style="font-size: 3rem;">{{ strtoupper(substr(Auth::user()->name, 0, 1)) }}</span>
-                </div>
-            @endif
-            <h2 class="profile-name">{{ Auth::user()->name }}</h2>
-            <p class="profile-email">{{ Auth::user()->email }}</p>
-        </div>
+        <div id="profile-content">
+            <div class="profile-header">
+                @if(Auth::user()->avatar)
+                    <img src="{{ Auth::user()->avatar }}" alt="Avatar" class="profile-avatar">
+                @else
+                    <div class="profile-avatar bg-light d-flex align-items-center justify-content-center" style="border: 4px solid #d98695;">
+                        <span class="text-muted" style="font-size: 3rem;">{{ strtoupper(substr(Auth::user()->name, 0, 1)) }}</span>
+                    </div>
+                @endif
+                <h2 class="profile-name">{{ Auth::user()->name }}</h2>
+                <p class="profile-email">{{ Auth::user()->email }}</p>
+            </div>
 
-        <div class="profile-section">
-            <div class="profile-detail">
-                <span class="detail-label">Nama Lengkap</span>
-                <span class="detail-value">{{ Auth::user()->name }}</span>
-            </div>
-            
-            <div class="profile-detail">
-                <span class="detail-label">Email</span>
-                <span class="detail-value">{{ Auth::user()->email }}</span>
-            </div>
-            
-            <div class="profile-detail">
-                <span class="detail-label">Divisi</span>
-                <span class="detail-value">{{ Auth::user()->division ?: '-' }}</span>
-            </div>
-            
-            <div class="profile-detail">
-                <span class="detail-label">Jenis Kelamin</span>
-                <span class="detail-value">{{ Auth::user()->jenis_kelamin ?: '-' }}</span>
-            </div>
-            
-            <div class="profile-detail">
-                <span class="detail-label">Status Verifikasi</span>
-                <span class="detail-value">
-                    @if(Auth::user()->is_verified)
-                        <span class="badge bg-success">Terverifikasi</span>
-                    @else
-                        <span class="badge bg-warning text-dark">Belum Terverifikasi</span>
-                    @endif
-                </span>
+            <div class="profile-section">
+                <div class="profile-detail">
+                    <span class="detail-label">Nama Lengkap</span>
+                    <span class="detail-value">{{ Auth::user()->name }}</span>
+                </div>
+                
+                <div class="profile-detail">
+                    <span class="detail-label">Email</span>
+                    <span class="detail-value">{{ Auth::user()->email }}</span>
+                </div>
+                
+                <div class="profile-detail">
+                    <span class="detail-label">Divisi</span>
+                    <span class="detail-value">{{ Auth::user()->division ?: '-' }}</span>
+                </div>
+                
+                <div class="profile-detail">
+                    <span class="detail-label">Jenis Kelamin</span>
+                    <span class="detail-value">{{ Auth::user()->jenis_kelamin ?: '-' }}</span>
+                </div>
+                
+                <div class="profile-detail">
+                    <span class="detail-label">Status Verifikasi</span>
+                    <span class="detail-value">
+                        @if(Auth::user()->is_verified)
+                            <span class="badge bg-success">Terverifikasi</span>
+                        @else
+                            <span class="badge bg-warning text-dark">Belum Terverifikasi</span>
+                        @endif
+                    </span>
+                </div>
             </div>
         </div>
 
@@ -210,15 +212,15 @@
     </div>
 </div>
 
-<!-- Modal Edit Profil -->
-<div class="modal fade" id="editProfileModal" tabindex="-1" aria-labelledby="editProfileModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
+<!-- Modal Edit Profil (dengan data-turbo-permanent untuk mencegah perubahan oleh Turbo) -->
+<div class="modal fade" id="editProfileModal" tabindex="-1" aria-labelledby="editProfileModalLabel" aria-hidden="true" data-turbo-permanent>
+    <div id="edit-profile-modal-container" class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="editProfileModalLabel">Edit Profil</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form id="editProfileForm" method="POST" action="{{ route('profile.update') }}">
+            <form method="POST" action="{{ route('profile.update') }}" enctype="multipart/form-data">
                 @csrf
                 @method('PUT')
                 <div class="modal-body">
@@ -246,6 +248,12 @@
                             <option value="Cewek" {{ Auth::user()->jenis_kelamin === 'Cewek' ? 'selected' : '' }}>Cewek</option>
                         </select>
                     </div>
+                    
+                    <div class="mb-3">
+                        <label for="avatar" class="form-label">Avatar</label>
+                        <input type="file" class="form-control" id="avatar" name="avatar" accept="image/*">
+                        <div class="form-text">Pilih gambar baru untuk avatar Anda</div>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
@@ -269,51 +277,71 @@
         }
     }
     
-    // Setelah form disubmit, tutup modal dan tampilkan notifikasi
-    document.getElementById('editProfileForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        // Dapatkan data form
-        const formData = new FormData(this);
-        
-        // Kirim data menggunakan fetch
-        fetch(this.action, {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                'X-HTTP-Method-Override': 'PUT'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Update informasi di halaman
-                document.querySelector('.profile-name').textContent = data.user.name;
-                document.querySelector('.profile-email').textContent = data.user.email;
-                
-                // Update info detail
-                document.querySelectorAll('.detail-value')[0].textContent = data.user.name;
-                document.querySelectorAll('.detail-value')[1].textContent = data.user.email;
-                document.querySelectorAll('.detail-value')[2].textContent = data.user.division || '-';
-                document.querySelectorAll('.detail-value')[3].textContent = data.user.jenis_kelamin || '-';
-                
-                // Tutup modal
-                bootstrap.Modal.getInstance(document.getElementById('editProfileModal')).hide();
-                
-                // Tampilkan notifikasi sukses
-                alert('Profil berhasil diperbarui!');
-                
-                // Refresh halaman untuk memastikan semua data terupdate
-                location.reload();
-            } else {
-                alert('Terjadi kesalahan saat memperbarui profil: ' + (data.message || 'Silakan coba lagi'));
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Terjadi kesalahan saat memperbarui profil. Silakan coba lagi.');
+    // Fungsi untuk menangani submit form edit profil secara manual
+    const editProfileForm = document.querySelector('form[action="{{ route('profile.update') }}"]');
+    if (editProfileForm) {
+        editProfileForm.addEventListener('submit', function(e) {
+            e.preventDefault(); // Mencegah submit standar
+            
+            const formData = new FormData(this);
+            
+            fetch(this.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'X-HTTP-Method-Override': 'PUT'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update informasi profil di halaman
+                    document.querySelector('.profile-name').textContent = data.user.name;
+                    document.querySelector('.profile-email').textContent = data.user.email;
+                    
+                    // Update avatar jika ada
+                    if (data.user.avatar) {
+                        const avatarElement = document.querySelector('.profile-avatar');
+                        if (avatarElement.tagName === 'IMG') {
+                            avatarElement.src = data.user.avatar;
+                        } else {
+                            // Jika sebelumnya menggunakan placeholder teks
+                            avatarElement.outerHTML = `<img src="${data.user.avatar}" alt="Avatar" class="profile-avatar">`;
+                        }
+                    }
+                    
+                    // Update info detail
+                    document.querySelectorAll('.detail-value')[0].textContent = data.user.name;
+                    document.querySelectorAll('.detail-value')[1].textContent = data.user.email;
+                    document.querySelectorAll('.detail-value')[2].textContent = data.user.division || '-';
+                    document.querySelectorAll('.detail-value')[3].textContent = data.user.jenis_kelamin || '-';
+                    
+                    // Tutup modal
+                    const modalElement = document.getElementById('editProfileModal');
+                    const modal = bootstrap.Modal.getInstance(modalElement);
+                    if (modal) {
+                        modal.hide();
+                    }
+                    
+                    // Refresh halaman untuk memastikan semua data terupdate
+                    location.reload();
+                } else {
+                    alert('Terjadi kesalahan saat memperbarui profil: ' + (data.message || 'Silakan coba lagi'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Terjadi kesalahan saat memperbarui profil. Silakan coba lagi.');
+            });
         });
-    });
+    }
+    
+    // Fungsi showEditProfile yang diperbarui
+    window.showEditProfile = function() {
+        const modalElement = document.getElementById('editProfileModal');
+        const modal = new bootstrap.Modal(modalElement);
+        modal.show();
+    };
 </script>
 @endsection

@@ -25,15 +25,41 @@ class ProfileController extends Controller
             'name' => 'required|string|max:255',
             'division' => 'nullable|string|max:255',
             'jenis_kelamin' => 'nullable|in:Laki-laki,Cewek',
+            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // Validasi untuk avatar
         ]);
 
         $user = Auth::user();
+        
+        // Jika ada file avatar yang diupload
+        if ($request->hasFile('avatar')) {
+            // Validasi file avatar
+            $request->validate([
+                'avatar' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
+            ]);
+            
+            // Hapus avatar lama jika bukan avatar default
+            if ($user->avatar && !str_starts_with($user->avatar, 'http')) {
+                // Jika avatar disimpan secara lokal, hapus file lama
+                // Di sini kita mengasumsikan avatar disimpan dalam folder 'public/avatars'
+                if (file_exists(public_path($user->avatar))) {
+                    unlink(public_path($user->avatar));
+                }
+            }
+            
+            // Simpan avatar baru
+            $avatarPath = $request->file('avatar')->store('avatars', 'public');
+            $user->avatar = '/storage/' . $avatarPath;
+        }
+
         $user->update([
             'name' => $request->name,
             'division' => $request->division,
             'jenis_kelamin' => $request->jenis_kelamin,
+            'avatar' => $user->avatar, // Simpan avatar baru jika ada
         ]);
 
+        // Karena modal sekarang menggunakan data-turbo-permanent, 
+        // kita kembalikan respons yang memicu penutupan modal
         return response()->json([
             'success' => true,
             'message' => 'Profil berhasil diperbarui',
@@ -42,6 +68,7 @@ class ProfileController extends Controller
                 'email' => $user->email,
                 'division' => $user->division,
                 'jenis_kelamin' => $user->jenis_kelamin,
+                'avatar' => $user->avatar,
             ]
         ]);
     }
