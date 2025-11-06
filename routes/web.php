@@ -59,3 +59,37 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/home/pagination', [HomeController::class, 'pagination'])->name('home.pagination');
 });
 
+// Routes untuk admin panel
+Route::prefix('admin')->group(function () {
+    Route::get('/login', function () {
+        return view('admin.login');
+    })->name('admin.login');
+
+    Route::post('/login', function (\Illuminate\Http\Request $request) {
+        $adminUsername = config('app.admin_username');
+        $adminPassword = config('app.admin_password');
+        
+        if ($request->username === $adminUsername && $request->password === $adminPassword) {
+            $request->session()->put('is_admin_authenticated', true);
+            return redirect()->intended('/admin/dashboard');
+        }
+        
+        return redirect()->back()->withErrors(['credentials' => 'Username atau password salah']);
+    })->name('admin.authenticate');
+    
+    Route::middleware(['admin.auth'])->group(function () {
+        Route::get('/dashboard', function () {
+            return view('admin.dashboard');
+        })->name('admin.dashboard');
+        
+        Route::get('/mood-monitoring', function () {
+            return view('admin.mood-monitoring');
+        })->name('admin.mood.monitoring');
+    });
+    
+    Route::post('/logout', function (\Illuminate\Http\Request $request) {
+        $request->session()->forget('is_admin_authenticated');
+        return redirect('/admin/login');
+    })->name('admin.logout');
+});
+
