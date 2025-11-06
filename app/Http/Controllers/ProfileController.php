@@ -24,6 +24,7 @@ class ProfileController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'division' => 'nullable|string|max:255',
+            'role' => 'nullable|string|max:255',
             'jenis_kelamin' => 'nullable|in:Laki-laki,Perempuan',
             'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // Validasi untuk avatar
         ]);
@@ -60,6 +61,7 @@ class ProfileController extends Controller
         $user->update([
             'name' => $request->name,
             'division' => $request->division,
+            'role' => $request->role,
             'jenis_kelamin' => $jenisKelamin,
             'avatar' => $user->avatar, // Simpan avatar baru jika ada
         ]);
@@ -73,6 +75,7 @@ class ProfileController extends Controller
                 'name' => $user->name,
                 'email' => $user->email,
                 'division' => $user->division,
+                'role' => $user->role,
                 'jenis_kelamin' => $user->jenis_kelamin,
                 'avatar' => $user->avatar,
             ]

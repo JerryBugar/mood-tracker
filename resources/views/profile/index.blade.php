@@ -177,6 +177,11 @@
                 </div>
                 
                 <div class="profile-detail">
+                    <span class="detail-label">Role</span>
+                    <span class="detail-value">{{ Auth::user()->role ?: '-' }}</span>
+                </div>
+                
+                <div class="profile-detail">
                     <span class="detail-label">Jenis Kelamin</span>
                     <span class="detail-value">{{ Auth::user()->jenis_kelamin ?: '-' }}</span>
                 </div>
@@ -243,6 +248,11 @@
                     </div>
                     
                     <div class="mb-3">
+                        <label for="role" class="form-label">Role</label>
+                        <input type="text" class="form-control" id="role" name="role" value="{{ Auth::user()->role ?: '' }}">
+                    </div>
+                    
+                    <div class="mb-3">
                         <label for="jenis_kelamin" class="form-label">Jenis Kelamin</label>
                         <select class="form-select" id="jenis_kelamin" name="jenis_kelamin">
                             <option value="">Pilih jenis kelamin</option>
@@ -262,6 +272,19 @@
                     <button type="submit" class="btn" style="background-color: #83282f; color: white;">Simpan</button>
                 </div>
             </form>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1100;">
+    <div id="successToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header" style="background-color: #d4edda; color: #155724;">
+            <strong class="me-auto">Notifikasi</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body" style="background-color: #d4edda; color: #155724;">
+            Profil berhasil diperbarui!
         </div>
     </div>
 </div>
@@ -316,7 +339,8 @@
                     document.querySelectorAll('.detail-value')[0].textContent = data.user.name;
                     document.querySelectorAll('.detail-value')[1].textContent = data.user.email;
                     document.querySelectorAll('.detail-value')[2].textContent = data.user.division || '-';
-                    document.querySelectorAll('.detail-value')[3].textContent = data.user.jenis_kelamin || '-';
+                    document.querySelectorAll('.detail-value')[3].textContent = data.user.role || '-';
+                    document.querySelectorAll('.detail-value')[4].textContent = data.user.jenis_kelamin || '-';
                     
                     // Tutup modal
                     const modalElement = document.getElementById('editProfileModal');
@@ -325,7 +349,10 @@
                         modal.hide();
                     }
                     
-                    // Modal sudah ditutup di atas
+                    // Tampilkan notifikasi Toast berhasil
+                    const toastEl = document.getElementById('successToast');
+                    const toast = new bootstrap.Toast(toastEl);
+                    toast.show();
                 } else {
                     alert('Terjadi kesalahan saat memperbarui profil: ' + (data.message || 'Silakan coba lagi'));
                 }
