@@ -520,7 +520,7 @@
     }
     
     function viewEmployeeDetail(userId) {
-        // Fetch user details and recent mood record
+        // Fetch user details and all mood records
         fetch(`/admin/user/${userId}/detail`)
         .then(response => response.json())
         .then(data => {
@@ -531,14 +531,12 @@
                 document.getElementById('detail-user-division').textContent = data.user.division || 'Tidak ada divisi';
                 document.getElementById('detail-user-gender').textContent = data.user.jenis_kelamin || 'Tidak diset';
                 
-                // Fill mood details if available
-                if(data.moodRecord) {
-                    document.getElementById('detail-mood-reason').textContent = data.moodRecord.reason || 'Tidak ada alasan';
-                    document.getElementById('detail-mood-action').textContent = data.moodRecord.action_suggestion || 'Tidak ada saran tindakan';
-                    
-                    // Set mood emoticon and label
-                    const moodEmoticon = document.getElementById('detail-mood-emoticon');
-                    const moodLabel = document.getElementById('detail-mood-label');
+                // Get container for mood records
+                const container = document.getElementById('mood-records-container');
+                
+                if(data.moodRecords && data.moodRecords.length > 0) {
+                    // Clear container
+                    container.innerHTML = '';
                     
                     // Determine gender for emoticon selection
                     const isFemale = data.user.jenis_kelamin === 'Perempuan' || data.user.jenis_kelamin === 'Cewek';
@@ -552,11 +550,7 @@
                         'marah': isFemale ? '{{ asset("logo/marah1.png") }}' : '{{ asset("logo/marah.png") }}',
                     };
                     
-                    // Set the appropriate emoticon
-                    moodEmoticon.src = emoticonPaths[data.moodRecord.mood] || emoticonPaths['netral'];
-                    moodEmoticon.alt = data.moodRecord.mood;
-                    
-                    // Set mood label based on mood type
+                    // Define mood labels
                     const moodLabels = {
                         'senyum': 'Senang',
                         'sedih': 'Sedih',
@@ -565,15 +559,48 @@
                         'netral': 'Biasa Saja'
                     };
                     
-                    moodLabel.textContent = moodLabels[data.moodRecord.mood] || data.moodRecord.mood;
-                    
-                    document.getElementById('detail-mood-date').textContent = new Date(data.moodRecord.created_at).toLocaleDateString('id-ID');
+                    // Add each mood record to container
+                    data.moodRecords.forEach((record, index) => {
+                        const moodCard = document.createElement('div');
+                        moodCard.className = 'card mb-3';
+                        
+                        // Format date using Indonesian locale
+                        const date = new Date(record.created_at);
+                        const formattedDate = date.toLocaleDateString('id-ID', {
+                            day: '2-digit',
+                            month: 'long',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+                        
+                        moodCard.innerHTML = `
+                            <div class="card-body">
+                                <div class="d-flex align-items-center mb-2">
+                                    <img src="${emoticonPaths[record.mood] || emoticonPaths['netral']}" 
+                                         class="me-2" 
+                                         style="width: 30px; height: 30px;" 
+                                         alt="${record.mood}">
+                                    <span class="fw-bold">${moodLabels[record.mood] || record.mood}</span>
+                                    <span class="text-muted ms-2">${formattedDate}</span>
+                                </div>
+                                
+                                <div class="mb-2">
+                                    <label class="form-label fw-bold">Alasan</label>
+                                    <p class="mb-1">${record.reason || 'Tidak ada alasan'}</p>
+                                </div>
+                                
+                                <div>
+                                    <label class="form-label fw-bold">Saran Tindakan</label>
+                                    <p class="mb-1">${record.action_suggestion || 'Tidak ada saran tindakan'}</p>
+                                </div>
+                            </div>
+                        `;
+                        
+                        container.appendChild(moodCard);
+                    });
                 } else {
-                    document.getElementById('detail-mood-reason').textContent = 'Tidak ada catatan mood';
-                    document.getElementById('detail-mood-action').textContent = 'Tidak ada catatan mood';
-                    document.getElementById('detail-mood-emoticon').src = '{{ asset("logo/netral.png") }}';
-                    document.getElementById('detail-mood-label').textContent = 'Tidak ada catatan';
-                    document.getElementById('detail-mood-date').textContent = '-';
+                    container.innerHTML = '<p>Tidak ada catatan mood</p>';
                 }
                 
                 // Show the modal
@@ -594,7 +621,7 @@
 
 <!-- Modal Detail Karyawan (dengan data-turbo-permanent untuk mencegah perubahan oleh Turbo) -->
 <div class="modal fade" id="employeeDetailModal" tabindex="-1" aria-labelledby="employeeDetailModalLabel" aria-hidden="true" data-turbo="false">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="employeeDetailModalLabel">Detail Karyawan</h5>
@@ -621,22 +648,10 @@
                 <hr>
                 
                 <div class="mb-3">
-                    <label class="form-label fw-bold">Mood Terakhir</label>
-                    <div class="d-flex align-items-center mb-2">
-                        <img id="detail-mood-emoticon" class="me-2" style="width: 30px; height: 30px;" alt="Mood Emoticon">
-                        <span id="detail-mood-label"></span>
-                        <span class="text-muted ms-2" id="detail-mood-date"></span>
+                    <label class="form-label fw-bold">Catatan Mood</label>
+                    <div id="mood-records-container">
+                        <!-- Mood records akan ditampilkan di sini -->
                     </div>
-                </div>
-                
-                <div class="mb-3">
-                    <label class="form-label fw-bold">Alasan</label>
-                    <p id="detail-mood-reason" class="mb-1"></p>
-                </div>
-                
-                <div class="mb-3">
-                    <label class="form-label fw-bold">Saran Tindakan</label>
-                    <p id="detail-mood-action" class="mb-1"></p>
                 </div>
             </div>
             <div class="modal-footer">

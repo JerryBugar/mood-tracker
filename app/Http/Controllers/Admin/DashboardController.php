@@ -245,8 +245,8 @@ class DashboardController extends Controller
             ]);
         }
         
-        // Ambil mood record terakhir dari user
-        $moodRecord = $user->moodRecords()->latest()->first();
+        // Ambil semua mood record dari user, urutkan dari terbaru
+        $moodRecords = $user->moodRecords()->latest()->get();
         
         return response()->json([
             'success' => true,
@@ -258,12 +258,15 @@ class DashboardController extends Controller
                 'jenis_kelamin' => $user->jenis_kelamin,
                 'avatar' => $user->avatar
             ],
-            'moodRecord' => $moodRecord ? [
-                'mood' => $moodRecord->mood,
-                'reason' => $moodRecord->reason,
-                'action_suggestion' => $moodRecord->suggestion_action,
-                'created_at' => $moodRecord->created_at
-            ] : null
+            'moodRecords' => $moodRecords->map(function($record) {
+                return [
+                    'id' => $record->id,
+                    'mood' => $record->mood,
+                    'reason' => $record->reason,
+                    'action_suggestion' => $record->suggestion_action,
+                    'created_at' => $record->created_at
+                ];
+            })->toArray()
         ]);
     }
 }
