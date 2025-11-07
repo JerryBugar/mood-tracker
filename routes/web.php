@@ -78,13 +78,13 @@ Route::prefix('admin')->group(function () {
     })->name('admin.authenticate');
     
     Route::middleware(['admin.auth'])->group(function () {
-        Route::get('/dashboard', function () {
-            return view('admin.dashboard');
-        })->name('admin.dashboard');
+        Route::get('/dashboard', [App\Http\Controllers\Admin\DashboardController::class, 'index'])->name('admin.dashboard');
         
-        Route::get('/mood-monitoring', function () {
-            return view('admin.mood-monitoring');
-        })->name('admin.mood.monitoring');
+        Route::get('/mood-monitoring', [App\Http\Controllers\Admin\DashboardController::class, 'moodMonitoring'])->name('admin.mood.monitoring');
+        
+        Route::get('/dashboard/chart-data', [App\Http\Controllers\Admin\DashboardController::class, 'getChartData'])->name('admin.dashboard.chart-data');
+        
+        Route::get('/user/{id}/detail', [App\Http\Controllers\Admin\DashboardController::class, 'getUserDetail'])->name('admin.user.detail');
     });
     
     Route::post('/logout', function (\Illuminate\Http\Request $request) {

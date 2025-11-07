@@ -257,114 +257,77 @@
                 </tr>
             </thead>
             <tbody>
+                @forelse($moodRecords as $record)
                 <tr>
                     <td>
                         <div class="employee-info">
-                            <div class="employee-avatar bg-light d-flex align-items-center justify-content-center">A</div>
+                            @if($record->user->avatar)
+                                <img src="{{ $record->user->avatar }}" alt="Avatar" class="employee-avatar">
+                            @else
+                                <div class="employee-avatar bg-light d-flex align-items-center justify-content-center">
+                                    {{ strtoupper(substr($record->user->name, 0, 1)) }}
+                                </div>
+                            @endif
                             <div>
-                                <div>Ahmad Fauzi</div>
-                                <div class="text-muted small">ahmad@example.com</div>
+                                <div>{{ $record->user->name }}</div>
+                                <div class="text-muted small">{{ $record->user->email }}</div>
                             </div>
                         </div>
                     </td>
-                    <td>IT Department</td>
-                    <td>06 Nov 2025</td>
+                    <td>{{ $record->user->division ?: 'Tidak ada divisi' }}</td>
+                    <td>{{ $record->created_at->format('d M Y') }}</td>
                     <td>
-                        <span><div class="mood-indicator mood-happy"></div> Bahagia</span>
+                        @php
+                            $moodClass = '';
+                            $moodLabel = '';
+                            switch($record->mood) {
+                                case 'senyum':
+                                    $moodClass = 'mood-happy';
+                                    $moodLabel = 'Senang';
+                                    break;
+                                case 'sedih':
+                                    $moodClass = 'mood-sad';
+                                    $moodLabel = 'Sedih';
+                                    break;
+                                case 'lelah':
+                                    $moodClass = 'mood-tired';
+                                    $moodLabel = 'Lelah';
+                                    break;
+                                case 'marah':
+                                    $moodClass = 'mood-angry';
+                                    $moodLabel = 'Marah';
+                                    break;
+                                case 'netral':
+                                    $moodClass = 'mood-neutral';
+                                    $moodLabel = 'Biasa Saja';
+                                    break;
+                                default:
+                                    $moodClass = 'mood-neutral';
+                                    $moodLabel = $record->mood;
+                            }
+                        @endphp
+                        <span><div class="mood-indicator {{ $moodClass }}"></div> {{ $moodLabel }}</span>
                     </td>
-                    <td>Kenaikan gaji</td>
-                    <td>Tetap pertahankan semangat!</td>
+                    <td>{{ $record->reason ?: '-' }}</td>
+                    <td>{{ $record->action_suggestion ?: '-' }}</td>
                     <td>
                         <div class="action-buttons">
-                            <button class="btn-notification">Notifikasi</button>
-                            <button class="btn-schedule">Jadwal</button>
+                            <button class="btn-notification" onclick="sendNotification({{ $record->user->id }})">Notifikasi</button>
+                            <button class="btn-schedule" onclick="scheduleTask({{ $record->user->id }})">Jadwal</button>
                         </div>
                     </td>
                 </tr>
+                @empty
                 <tr>
-                    <td>
-                        <div class="employee-info">
-                            <div class="employee-avatar bg-light d-flex align-items-center justify-content-center">B</div>
-                            <div>
-                                <div>Budi Santoso</div>
-                                <div class="text-muted small">budi@example.com</div>
-                            </div>
-                        </div>
-                    </td>
-                    <td>HR Department</td>
-                    <td>06 Nov 2025</td>
-                    <td>
-                        <span><div class="mood-indicator mood-sad"></div> Sedih</span>
-                    </td>
-                    <td>Masalah keluarga</td>
-                    <td>Diberi waktu istirahat</td>
-                    <td>
-                        <div class="action-buttons">
-                            <button class="btn-notification">Notifikasi</button>
-                            <button class="btn-schedule">Jadwal</button>
-                        </div>
-                    </td>
+                    <td colspan="7" class="text-center">Tidak ada data mood hari ini</td>
                 </tr>
-                <tr>
-                    <td>
-                        <div class="employee-info">
-                            <div class="employee-avatar bg-light d-flex align-items-center justify-content-center">C</div>
-                            <div>
-                                <div>Citra Dewi</div>
-                                <div class="text-muted small">citra@example.com</div>
-                            </div>
-                        </div>
-                    </td>
-                    <td>Finance Department</td>
-                    <td>06 Nov 2025</td>
-                    <td>
-                        <span><div class="mood-indicator mood-tired"></div> Lelah</span>
-                    </td>
-                    <td>Banyaknya pekerjaan</td>
-                    <td>Direkomendasikan untuk istirahat</td>
-                    <td>
-                        <div class="action-buttons">
-                            <button class="btn-notification">Notifikasi</button>
-                            <button class="btn-schedule">Jadwal</button>
-                        </div>
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        <div class="employee-info">
-                            <div class="employee-avatar bg-light d-flex align-items-center justify-content-center">D</div>
-                            <div>
-                                <div>Dian Pratiwi</div>
-                                <div class="text-muted small">dian@example.com</div>
-                            </div>
-                        </div>
-                    </td>
-                    <td>Marketing Department</td>
-                    <td>05 Nov 2025</td>
-                    <td>
-                        <span><div class="mood-indicator mood-angry"></div> Marah</span>
-                    </td>
-                    <td>Konflik dengan rekan kerja</td>
-                    <td>Dijadwalkan mediasi</td>
-                    <td>
-                        <div class="action-buttons">
-                            <button class="btn-notification">Notifikasi</button>
-                            <button class="btn-schedule">Jadwal</button>
-                        </div>
-                    </td>
-                </tr>
+                @endforelse
             </tbody>
         </table>
     </div>
     
     <div class="pagination">
-        <a href="#">&laquo;</a>
-        <a href="#" class="active">1</a>
-        <a href="#">2</a>
-        <a href="#">3</a>
-        <a href="#">4</a>
-        <a href="#">5</a>
-        <a href="#">&raquo;</a>
+        {{ $moodRecords->links() }}
     </div>
 </div>
 
@@ -411,19 +374,12 @@
         alert('Filter diterapkan!');
     });
     
-    // Action buttons event
-    const notificationButtons = document.querySelectorAll('.btn-notification');
-    notificationButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            alert('Fitur kirim notifikasi akan segera tersedia');
-        });
-    });
+    function sendNotification(userId) {
+        alert('Fitur kirim notifikasi untuk user ID: ' + userId + ' akan segera tersedia');
+    }
     
-    const scheduleButtons = document.querySelectorAll('.btn-schedule');
-    scheduleButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            alert('Fitur penjadwalan akan segera tersedia');
-        });
-    });
+    function scheduleTask(userId) {
+        alert('Fitur penjadwalan untuk user ID: ' + userId + ' akan segera tersedia');
+    }
 </script>
 @endsection

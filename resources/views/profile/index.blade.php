@@ -307,6 +307,16 @@
         if (e.target.id === 'edit-profile-form') {
             e.preventDefault(); // Mencegah submit standar
             
+            // Cegah pengiriman ganda dengan menonaktifkan tombol submit
+            const submitButton = e.target.querySelector('button[type="submit"]');
+            if (submitButton.disabled) {
+                // Jika tombol sudah dinonaktifkan, hentikan eksekusi
+                return;
+            }
+            
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Menyimpan...';
+            
             const formData = new FormData(e.target);
             
             fetch(e.target.action, {
@@ -360,6 +370,11 @@
             .catch(error => {
                 console.error('Error:', error);
                 alert('Terjadi kesalahan saat memperbarui profil. Silakan coba lagi.');
+            })
+            .finally(() => {
+                // Selalu aktifkan kembali tombol submit setelah selesai
+                submitButton.disabled = false;
+                submitButton.innerHTML = 'Simpan';
             });
         }
     });

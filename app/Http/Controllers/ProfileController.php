@@ -26,7 +26,7 @@ class ProfileController extends Controller
             'division' => 'nullable|string|max:255',
             'role' => 'nullable|string|max:255',
             'jenis_kelamin' => 'nullable|in:Laki-laki,Perempuan',
-            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // Validasi untuk avatar
+            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:3072', // Validasi untuk avatar (3MB)
         ]);
 
         $user = Auth::user();
@@ -34,9 +34,7 @@ class ProfileController extends Controller
         // Jika ada file avatar yang diupload
         if ($request->hasFile('avatar')) {
             // Validasi file avatar
-            $request->validate([
-                'avatar' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
-            ]);
+            // Tidak perlu melakukan validasi ulang karena sudah di validasi sebelumnya
             
             // Hapus avatar lama jika bukan avatar default
             if ($user->avatar && !str_starts_with($user->avatar, 'http')) {
@@ -58,13 +56,19 @@ class ProfileController extends Controller
             $jenisKelamin = 'Perempuan';
         }
 
-        $user->update([
+        $updateData = [
             'name' => $request->name,
             'division' => $request->division,
             'role' => $request->role,
             'jenis_kelamin' => $jenisKelamin,
-            'avatar' => $user->avatar, // Simpan avatar baru jika ada
-        ]);
+        ];
+        
+        // Hanya tambahkan field avatar ke update jika ada avatar baru
+        if ($request->hasFile('avatar')) {
+            $updateData['avatar'] = $user->avatar;
+        }
+
+        $user->update($updateData);
 
         // Karena modal menggunakan data-turbo-permanent, kembalikan response JSON
         // agar bisa diproses oleh JavaScript untuk menutup modal dan update UI

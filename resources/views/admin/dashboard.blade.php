@@ -179,31 +179,31 @@
     
     <div class="stats-container">
         <div class="stat-card">
-            <div class="stat-value" id="total-employees">0</div>
+            <div class="stat-value" id="total-employees">{{ $totalEmployees ?? 0 }}</div>
             <div class="stat-label">Total Karyawan</div>
         </div>
         <div class="stat-card">
-            <div class="stat-value" id="active-today">0</div>
+            <div class="stat-value" id="active-today">{{ $activeToday ?? 0 }}</div>
             <div class="stat-label">Aktif Hari Ini</div>
         </div>
         <div class="stat-card">
-            <div class="stat-value" id="mood-senang">0</div>
+            <div class="stat-value" id="mood-senang">{{ $senangCount ?? 0 }}</div>
             <div class="stat-label">Senang</div>
         </div>
         <div class="stat-card">
-            <div class="stat-value" id="mood-sedih">0</div>
+            <div class="stat-value" id="mood-sedih">{{ $sedihCount ?? 0 }}</div>
             <div class="stat-label">Sedih</div>
         </div>
         <div class="stat-card">
-            <div class="stat-value" id="mood-netral">0</div>
+            <div class="stat-value" id="mood-netral">{{ $netralCount ?? 0 }}</div>
             <div class="stat-label">Biasa Saja</div>
         </div>
         <div class="stat-card">
-            <div class="stat-value" id="mood-lelah">0</div>
+            <div class="stat-value" id="mood-lelah">{{ $lelahCount ?? 0 }}</div>
             <div class="stat-label">Lelah</div>
         </div>
         <div class="stat-card">
-            <div class="stat-value" id="mood-marah">0</div>
+            <div class="stat-value" id="mood-marah">{{ $marahCount ?? 0 }}</div>
             <div class="stat-label">Marah</div>
         </div>
     </div>
@@ -234,48 +234,32 @@
             </div>
         </div>
         <div class="employee-list">
+            @forelse($employees as $employee)
             <div class="employee-item">
                 <div class="employee-info">
-                    <div class="employee-avatar bg-light d-flex align-items-center justify-content-center">A</div>
+                    @if($employee->avatar)
+                        <img src="{{ $employee->avatar }}" alt="Avatar" class="employee-avatar">
+                    @else
+                        <div class="employee-avatar bg-light d-flex align-items-center justify-content-center">
+                            {{ strtoupper(substr($employee->name, 0, 1)) }}
+                        </div>
+                    @endif
                     <div>
-                        <div class="employee-name">Ahmad Fauzi</div>
-                        <div class="text-muted">IT Department</div>
+                        <div class="employee-name">{{ $employee->name }}</div>
+                        <div class="text-muted">{{ $employee->division ?: 'Tidak ada divisi' }}</div>
                     </div>
                 </div>
-                <div class="employee-mood">
-                    <div class="mood-indicator mood-happy"></div>
-                    <span>Bahagia</span>
-                </div>
-                <button class="notification-btn">Kirim Notifikasi</button>
+                <button class="notification-btn" onclick="viewEmployeeDetail({{ $employee->id }})">Lihat Detail</button>
             </div>
+            @empty
             <div class="employee-item">
                 <div class="employee-info">
-                    <div class="employee-avatar bg-light d-flex align-items-center justify-content-center">B</div>
                     <div>
-                        <div class="employee-name">Budi Santoso</div>
-                        <div class="text-muted">HR Department</div>
+                        <div class="employee-name">Tidak ada data karyawan</div>
                     </div>
                 </div>
-                <div class="employee-mood">
-                    <div class="mood-indicator mood-sad"></div>
-                    <span>Sedih</span>
-                </div>
-                <button class="notification-btn">Kirim Notifikasi</button>
             </div>
-            <div class="employee-item">
-                <div class="employee-info">
-                    <div class="employee-avatar bg-light d-flex align-items-center justify-content-center">C</div>
-                    <div>
-                        <div class="employee-name">Citra Dewi</div>
-                        <div class="text-muted">Finance Department</div>
-                    </div>
-                </div>
-                <div class="employee-mood">
-                    <div class="mood-indicator mood-neutral"></div>
-                    <span>Netral</span>
-                </div>
-                <button class="notification-btn">Kirim Notifikasi</button>
-            </div>
+            @endforelse
         </div>
     </div>
     
@@ -327,101 +311,178 @@
     });
     
     // Initialize charts
-    const moodCtx = document.getElementById('moodChart').getContext('2d');
-    const moodChart = new Chart(moodCtx, {
-        type: 'line',
-        data: {
-            labels: ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'],
-            datasets: [{
-                label: 'Senang',
-                data: [12, 19, 3, 5, 2, 3, 15],
-                borderColor: '#28a745',
-                backgroundColor: 'rgba(40, 167, 69, 0.1)',
-                tension: 0.1
-            }, {
-                label: 'Sedih',
-                data: [3, 5, 2, 8, 1, 4, 6],
-                borderColor: '#dc3545',
-                backgroundColor: 'rgba(220, 53, 69, 0.1)',
-                tension: 0.1
-            }, {
-                label: 'Biasa Saja',
-                data: [5, 4, 7, 2, 9, 3, 4],
-                borderColor: '#6c757d',
-                backgroundColor: 'rgba(108, 117, 125, 0.1)',
-                tension: 0.1
-            }, {
-                label: 'Lelah',
-                data: [2, 3, 5, 4, 1, 2, 3],
-                borderColor: '#ffc107',
-                backgroundColor: 'rgba(255, 193, 7, 0.1)',
-                tension: 0.1
-            }, {
-                label: 'Marah',
-                data: [1, 2, 1, 3, 2, 1, 2],
-                borderColor: '#6f42c1',
-                backgroundColor: 'rgba(111, 66, 193, 0.1)',
-                tension: 0.1
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                title: {
-                    display: true,
-                    text: 'Tren Mood Minggu Ini'
+    fetch('/admin/dashboard/chart-data')
+    .then(response => response.json())
+    .then(data => {
+        // Mood trend chart
+        const moodCtx = document.getElementById('moodChart').getContext('2d');
+        const moodChart = new Chart(moodCtx, {
+            type: 'line',
+            data: {
+                labels: data.moodTrend.labels,
+                datasets: data.moodTrend.datasets
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Tren Mood Minggu Ini'
+                    }
+                },
+                scales: {
+                    y: {
+                        stacked: true
+                    }
                 }
             }
-        }
-    });
-    
-    const divisionCtx = document.getElementById('divisionChart').getContext('2d');
-    const divisionChart = new Chart(divisionCtx, {
-        type: 'bar',
-        data: {
-            labels: ['IT', 'HR', 'Finance', 'Marketing', 'Operations'],
-            datasets: [
-            {
-                label: 'Senang',
-                data: [4, 3, 3, 2, 4],
-                backgroundColor: 'rgba(40, 167, 69, 0.7)'  // Hijau
-            }, 
-            {
-                label: 'Sedih',
-                data: [1, 2, 1, 2, 1],
-                backgroundColor: 'rgba(220, 53, 69, 0.7)'  // Merah
-            }, 
-            {
-                label: 'Biasa Saja',
-                data: [2, 2, 3, 2, 2],
-                backgroundColor: 'rgba(108, 117, 125, 0.7)'  // Abu-abu
-            },
-            {
-                label: 'Lelah',
-                data: [1, 1, 1, 2, 1],
-                backgroundColor: 'rgba(255, 193, 7, 0.7)'  // Kuning
-            },
-            {
-                label: 'Marah',
-                data: [0, 0, 1, 0, 0],
-                backgroundColor: 'rgba(111, 66, 193, 0.7)'  // Ungu
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                title: {
-                    display: true,
-                    text: 'Rata-rata Mood per Divisi'
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    max: 10
+        });
+        
+        // Division mood chart
+        const divisionCtx = document.getElementById('divisionChart').getContext('2d');
+        const divisionChart = new Chart(divisionCtx, {
+            type: 'bar',
+            data: data.divisionMood,
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Rata-rata Mood per Divisi'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
                 }
             }
-        }
+        });
+    })
+    .catch(error => {
+        console.error('Error loading chart data:', error);
+        
+        // Fallback to original charts if API fails
+        const moodCtx = document.getElementById('moodChart').getContext('2d');
+        const moodChart = new Chart(moodCtx, {
+            type: 'line',
+            data: {
+                labels: ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'],
+                datasets: [{
+                    label: 'Senang',
+                    data: [12, 19, 3, 5, 2, 3, 15],
+                    borderColor: '#28a745',
+                    backgroundColor: 'rgba(40, 167, 69, 0.3)',
+                    tension: 0.4,
+                    pointRadius: 6,
+                    pointBackgroundColor: 'rgb(20, 80, 35)',
+                    pointBorderColor: 'rgb(20, 80, 35)',
+                    fill: true
+                }, {
+                    label: 'Sedih',
+                    data: [3, 5, 2, 8, 1, 4, 6],
+                    borderColor: '#dc3545',
+                    backgroundColor: 'rgba(220, 53, 69, 0.3)',
+                    tension: 0.4,
+                    pointRadius: 6,
+                    pointBackgroundColor: 'rgb(150, 35, 45)',
+                    pointBorderColor: 'rgb(150, 35, 45)',
+                    fill: true
+                }, {
+                    label: 'Biasa Saja',
+                    data: [5, 4, 7, 2, 9, 3, 4],
+                    borderColor: '#6c757d',
+                    backgroundColor: 'rgba(108, 117, 125, 0.3)',
+                    tension: 0.4,
+                    pointRadius: 6,
+                    pointBackgroundColor: 'rgb(70, 75, 80)',
+                    pointBorderColor: 'rgb(70, 75, 80)',
+                    fill: true
+                }, {
+                    label: 'Lelah',
+                    data: [2, 3, 5, 4, 1, 2, 3],
+                    borderColor: '#ffc107',
+                    backgroundColor: 'rgba(255, 193, 7, 0.3)',
+                    tension: 0.4,
+                    pointRadius: 6,
+                    pointBackgroundColor: 'rgb(200, 150, 0)',
+                    pointBorderColor: 'rgb(200, 150, 0)',
+                    fill: true
+                }, {
+                    label: 'Marah',
+                    data: [1, 2, 1, 3, 2, 1, 2],
+                    borderColor: '#6f42c1',
+                    backgroundColor: 'rgba(111, 66, 193, 0.3)',
+                    tension: 0.4,
+                    pointRadius: 6,
+                    pointBackgroundColor: 'rgb(75, 45, 130)',
+                    pointBorderColor: 'rgb(75, 45, 130)',
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Tren Mood Minggu Ini'
+                    }
+                },
+                scales: {
+                    y: {
+                        stacked: true
+                    }
+                }
+            }
+        });
+        
+        const divisionCtx = document.getElementById('divisionChart').getContext('2d');
+        const divisionChart = new Chart(divisionCtx, {
+            type: 'bar',
+            data: {
+                labels: ['IT', 'HR', 'Finance', 'Marketing', 'Operations'],
+                datasets: [
+                {
+                    label: 'Senang',
+                    data: [4, 3, 3, 2, 4],
+                    backgroundColor: 'rgba(40, 167, 69, 0.7)'  // Hijau
+                }, 
+                {
+                    label: 'Sedih',
+                    data: [1, 2, 1, 2, 1],
+                    backgroundColor: 'rgba(220, 53, 69, 0.7)'  // Merah
+                }, 
+                {
+                    label: 'Biasa Saja',
+                    data: [2, 2, 3, 2, 2],
+                    backgroundColor: 'rgba(108, 117, 125, 0.7)'  // Abu-abu
+                },
+                {
+                    label: 'Lelah',
+                    data: [1, 1, 1, 2, 1],
+                    backgroundColor: 'rgba(255, 193, 7, 0.7)'  // Kuning
+                },
+                {
+                    label: 'Marah',
+                    data: [0, 0, 1, 0, 0],
+                    backgroundColor: 'rgba(111, 66, 193, 0.7)'  // Ungu
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Rata-rata Mood per Divisi'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
     });
     
     // Form submission for notifications
@@ -458,13 +519,131 @@
         });
     }
     
-    // Update stat values with mock data
-    document.getElementById('total-employees').textContent = 42;
-    document.getElementById('active-today').textContent = 38;
-    document.getElementById('mood-senang').textContent = 15;
-    document.getElementById('mood-sedih').textContent = 8;
-    document.getElementById('mood-netral').textContent = 10;
-    document.getElementById('mood-lelah').textContent = 5;
-    document.getElementById('mood-marah').textContent = 3;
+    function viewEmployeeDetail(userId) {
+        // Fetch user details and recent mood record
+        fetch(`/admin/user/${userId}/detail`)
+        .then(response => response.json())
+        .then(data => {
+            if(data.success) {
+                // Fill modal with user details
+                document.getElementById('detail-user-name').textContent = data.user.name;
+                document.getElementById('detail-user-email').textContent = data.user.email;
+                document.getElementById('detail-user-division').textContent = data.user.division || 'Tidak ada divisi';
+                document.getElementById('detail-user-gender').textContent = data.user.jenis_kelamin || 'Tidak diset';
+                
+                // Fill mood details if available
+                if(data.moodRecord) {
+                    document.getElementById('detail-mood-reason').textContent = data.moodRecord.reason || 'Tidak ada alasan';
+                    document.getElementById('detail-mood-action').textContent = data.moodRecord.action_suggestion || 'Tidak ada saran tindakan';
+                    
+                    // Set mood emoticon and label
+                    const moodEmoticon = document.getElementById('detail-mood-emoticon');
+                    const moodLabel = document.getElementById('detail-mood-label');
+                    
+                    // Determine gender for emoticon selection
+                    const isFemale = data.user.jenis_kelamin === 'Perempuan' || data.user.jenis_kelamin === 'Cewek';
+                    
+                    // Define emoticon paths based on mood and gender
+                    const emoticonPaths = {
+                        'netral': isFemale ? '{{ asset("logo/netral1.png") }}' : '{{ asset("logo/netral.png") }}',
+                        'senyum': isFemale ? '{{ asset("logo/senyum1.png") }}' : '{{ asset("logo/senyum.png") }}',
+                        'sedih': isFemale ? '{{ asset("logo/sedih1.png") }}' : '{{ asset("logo/sedih.png") }}',
+                        'lelah': isFemale ? '{{ asset("logo/lelah1.png") }}' : '{{ asset("logo/lelah.png") }}',
+                        'marah': isFemale ? '{{ asset("logo/marah1.png") }}' : '{{ asset("logo/marah.png") }}',
+                    };
+                    
+                    // Set the appropriate emoticon
+                    moodEmoticon.src = emoticonPaths[data.moodRecord.mood] || emoticonPaths['netral'];
+                    moodEmoticon.alt = data.moodRecord.mood;
+                    
+                    // Set mood label based on mood type
+                    const moodLabels = {
+                        'senyum': 'Senang',
+                        'sedih': 'Sedih',
+                        'lelah': 'Lelah',
+                        'marah': 'Marah',
+                        'netral': 'Biasa Saja'
+                    };
+                    
+                    moodLabel.textContent = moodLabels[data.moodRecord.mood] || data.moodRecord.mood;
+                    
+                    document.getElementById('detail-mood-date').textContent = new Date(data.moodRecord.created_at).toLocaleDateString('id-ID');
+                } else {
+                    document.getElementById('detail-mood-reason').textContent = 'Tidak ada catatan mood';
+                    document.getElementById('detail-mood-action').textContent = 'Tidak ada catatan mood';
+                    document.getElementById('detail-mood-emoticon').src = '{{ asset("logo/netral.png") }}';
+                    document.getElementById('detail-mood-label').textContent = 'Tidak ada catatan';
+                    document.getElementById('detail-mood-date').textContent = '-';
+                }
+                
+                // Show the modal
+                const detailModal = new bootstrap.Modal(document.getElementById('employeeDetailModal'));
+                detailModal.show();
+            } else {
+                alert('Gagal mengambil data karyawan');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Terjadi kesalahan saat mengambil data karyawan');
+        });
+    }
+    
+
 </script>
+
+<!-- Modal Detail Karyawan (dengan data-turbo-permanent untuk mencegah perubahan oleh Turbo) -->
+<div class="modal fade" id="employeeDetailModal" tabindex="-1" aria-labelledby="employeeDetailModalLabel" aria-hidden="true" data-turbo="false">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="employeeDetailModalLabel">Detail Karyawan</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Nama</label>
+                    <p id="detail-user-name" class="mb-1"></p>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Email</label>
+                    <p id="detail-user-email" class="mb-1"></p>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Divisi</label>
+                    <p id="detail-user-division" class="mb-1"></p>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Jenis Kelamin</label>
+                    <p id="detail-user-gender" class="mb-1"></p>
+                </div>
+                
+                <hr>
+                
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Mood Terakhir</label>
+                    <div class="d-flex align-items-center mb-2">
+                        <img id="detail-mood-emoticon" class="me-2" style="width: 30px; height: 30px;" alt="Mood Emoticon">
+                        <span id="detail-mood-label"></span>
+                        <span class="text-muted ms-2" id="detail-mood-date"></span>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Alasan</label>
+                    <p id="detail-mood-reason" class="mb-1"></p>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Saran Tindakan</label>
+                    <p id="detail-mood-action" class="mb-1"></p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @endsection
