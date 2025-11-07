@@ -66,8 +66,8 @@ Route::prefix('admin')->group(function () {
     })->name('admin.login');
 
     Route::post('/login', function (\Illuminate\Http\Request $request) {
-        $adminUsername = config('app.admin_username');
-        $adminPassword = config('app.admin_password');
+        $adminUsername = env('ADMIN_USERNAME', 'valetest');
+        $adminPassword = env('ADMIN_PASSWORD', 'test123');
         
         if ($request->username === $adminUsername && $request->password === $adminPassword) {
             $request->session()->put('is_admin_authenticated', true);

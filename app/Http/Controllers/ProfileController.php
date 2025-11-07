@@ -21,6 +21,14 @@ class ProfileController extends Controller
      */
     public function update(Request $request)
     {
+        // Cek apakah ada file yang diupload tapi melebihi batas ukuran server
+        if ($request->hasFile('avatar') && $request->file('avatar')->getError() !== UPLOAD_ERR_OK) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ukuran file terlalu besar atau terjadi kesalahan upload.'
+            ], 422);
+        }
+        
         $request->validate([
             'name' => 'required|string|max:255',
             'division' => 'nullable|string|max:255',
@@ -36,12 +44,15 @@ class ProfileController extends Controller
             // Validasi file avatar
             // Tidak perlu melakukan validasi ulang karena sudah di validasi sebelumnya
             
-            // Hapus avatar lama jika bukan avatar default
+            // Hapus avatar lama jika bukan avatar default dan bukan URL eksternal
             if ($user->avatar && !str_starts_with($user->avatar, 'http')) {
                 // Jika avatar disimpan secara lokal, hapus file lama
                 // Di sini kita mengasumsikan avatar disimpan dalam folder 'public/avatars'
-                if (file_exists(public_path($user->avatar))) {
-                    unlink(public_path($user->avatar));
+                $oldAvatarPath = public_path($user->avatar);
+                if (file_exists($oldAvatarPath)) {
+                    if (!unlink($oldAvatarPath)) {
+                        \Log::warning("Tidak bisa menghapus avatar lama: " . $oldAvatarPath);
+                    }
                 }
             }
             
