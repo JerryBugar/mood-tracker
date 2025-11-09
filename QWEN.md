@@ -1,285 +1,178 @@
-# CereMood - Mood Tracker Application
+# QWEN.md - CereMood Mood Tracker Application
 
 ## Project Overview
 
-CereMood is a web-based mood tracking application built with Laravel PHP framework. The application allows users to track their daily moods, emotions, and feelings over time, providing a personal dashboard to monitor emotional well-being. The application uses Turbo Laravel for modern web interactions without full page refreshes.
+CereMood is a web-based mood tracking application built with the Laravel PHP framework. The application allows users to track their daily moods, emotions, and feelings over time, providing a personal dashboard to monitor emotional well-being. The application uses Turbo Laravel for modern web interactions without full page refreshes.
 
-### Key Technologies Used
+### Key Features
+- User Authentication: Login via Google OAuth integration
+- Mood Tracking: Record moods with reasons and action suggestions
+- Mood Categories: Supports five mood types - senyum (happy), sedih (sad), lelah (tired), marah (angry), and netral (neutral)
+- Personal Dashboard: View mood history with pagination
+- Mood Quotes: Random inspirational quotes displayed to users
+- Calendar View: Visual representation of mood history over time
+- User Verification: Verification system for new users via Google login
+- Profile Management: User profile with avatar and personal details
+- Admin Panel: Administrative interface for monitoring user mood data
 
-- **Backend**: Laravel 12.x (PHP)
-- **Frontend**: HTML, CSS, JavaScript with Bootstrap 5 and Tailwind CSS
-- **Turbo Framework**: Hotwire Turbo for modern UX without full page refreshes
-- **Database**: MySQL (default configuration)
-- **Authentication**: Laravel Socialite with Google OAuth
-- **Build Tools**: Vite for asset building
-- **Styling**: Tailwind CSS for utility-first CSS framework
+### Tech Stack
+- **Backend**: Laravel PHP framework (v12)
+- **Frontend**: Tailwind CSS, Bootstrap 5, Turbo Laravel
+- **Database**: MySQL (with Eloquent ORM)
+- **Authentication**: Google OAuth via Laravel Socialite
+- **Build Tools**: Vite, NPM
+- **Caching**: Laravel caching system
 
-### Architecture and Structure
+## Project Structure
 
-The application follows the Model-View-Controller (MVC) pattern with the following key components:
+### Main Directories
+- `app/` - Main application logic (Controllers, Models, Services, Helpers)
+- `routes/` - Application routing configuration
+- `resources/` - Frontend assets, views, and components
+- `config/` - Laravel configuration files
+- `database/` - Migrations, seeds, and factories
+- `public/` - Web root directory
+- `storage/` - Compiled views, file uploads, and logs
 
-- **Models**:
-  - `User`: Extends Authenticatable with relationships to MoodRecord
-  - `MoodRecord`: Stores mood entries with mood type, reason, and action suggestion
-  - `MoodQuote`: Manages inspirational quotes with cache invalidation on CRUD operations
+### Key Application Components
 
-- **Controllers**:
-  - `MoodController`: Handles mood recording modal, quote retrieval, and mood saving with Turbo Streams
-  - `HomeController`: Manages the main dashboard and pagination
-  - `GoogleLoginController`: Handles Google OAuth authentication
-  - `VerificationController`: Manages user verification process
-  - `CalendarController`: Provides calendar view functionality
-  - `MoodRecordController`: Handles mood records pagination with Turbo Streams
+#### Models
+- `User.php` - User authentication and profile management
+- `MoodRecord.php` - Mood tracking records with user relationship
+- `MoodQuote.php` - Inspirational quotes management with caching
 
-- **Services**:
-  - `MoodService`: Contains business logic for mood handling and quote retrieval
+#### Controllers
+- `HomeController.php` - Main dashboard and home page
+- `MoodController.php` - Mood recording functionality
+- `GoogleLoginController.php` - Google OAuth authentication
+- `VerificationController.php` - User verification process
+- `ProfileController.php` - User profile management
+- `CalendarController.php` - Calendar view for mood history
+- `Admin/DashboardController.php` - Administrative dashboard and mood monitoring
+- `Mood/MoodRecordController.php` - Mood record management with Turbo Stream integration
 
-- **Helpers**:
-  - `TurboStreamHelper`: Provides methods for building Turbo Streams
-
-### Core Features
-
-- **User Authentication**: Login via Google OAuth integration
-- **Mood Tracking**: Record moods with reasons and action suggestions
-- **Mood Categories**: Supports five mood types - senyum (happy), sedih (sad), lelah (tired), marah (angry), and netral (neutral)
-- **Personal Dashboard**: View mood history with pagination
-- **Mood Quotes**: Random inspirational quotes displayed to users
-- **Calendar View**: Visual representation of mood history over time
-- **User Verification**: Verification system for new users via Google login
-- **Profile Management**: User profile with avatar and personal details
+#### Views
+- `layouts/` - Main layout templates
+- `home-page/` - Main dashboard and mood tracking interface
+- `auth/` - Authentication and verification views
+- `profile/` - User profile management
+- `calendar/` - Calendar visualization of mood data
+- `admin/` - Administrative interface
 
 ## Building and Running
 
 ### Prerequisites
-
 - PHP 8.2+
 - Composer
 - Node.js and npm
 - MySQL or compatible database
 
 ### Installation Steps
-
-1. Clone the repository
-2. Install PHP dependencies:
-   ```
+1. Install PHP dependencies:
+   ```bash
    composer install
    ```
-3. Install Node.js dependencies:
-   ```
+2. Install Node.js dependencies:
+   ```bash
    npm install
    ```
-4. Copy the example environment file:
-   ```
+3. Copy the example environment file:
+   ```bash
    cp .env.example .env
    ```
-5. Generate application key:
-   ```
+4. Generate application key:
+   ```bash
    php artisan key:generate
    ```
-6. Configure database settings in `.env` file
-7. Run database migrations:
-   ```
+5. Configure database settings in `.env` file
+6. Run database migrations:
+   ```bash
    php artisan migrate
    ```
-8. Set up Google OAuth credentials in `.env`:
+7. Set up Google OAuth credentials in `.env`:
    ```
    GOOGLE_CLIENT_ID=your_google_client_id
    GOOGLE_CLIENT_SECRET=your_google_client_secret
    GOOGLE_REDIRECT_URI=http://localhost:8000/auth/google/callback
    ```
-9. Build frontend assets:
-   ```
+8. Build frontend assets:
+   ```bash
    npm run build
    ```
    or for development with hot-reloading:
-   ```
+   ```bash
    npm run dev
    ```
 
 ### Running the Application
+- Development Mode:
+  ```bash
+  # Terminal 1: Run Laravel development server
+  php artisan serve
 
-#### Development Mode
-To run the application in development mode with auto-reload for both backend and frontend:
+  # Terminal 2: Run Vite dev server
+  npm run dev
+  ```
 
-```
-# Terminal 1: Run Laravel development server
-php artisan serve
-
-# Terminal 2: Run Vite dev server
-npm run dev
-
-# Or alternatively, use the automated script:
-./dev-start.bat  # For Windows
-```
-
-#### Production Build
-To build for production:
-
-```
-npm run build
-```
-
-Or use the build script:
-```
-./build.bat    # For Windows
-```
-
-### Deployment
-
-#### Automated Deployment
-For production deployment, use the deploy script:
-```
-./deploy.sh    # For Linux/Mac
-```
-**Note**: Update the paths and service names in `deploy.sh` according to your production environment.
-
-#### Manual Deployment Steps
-
-1. Upload the code to your server
-2. Run `composer install --no-dev --optimize-autoloader`
-3. Run `npm install --production`
-4. Run `npm run build`
-5. Run `php artisan key:generate --force`
-6. Run `php artisan migrate --force`
-7. Run `php artisan config:cache`
-8. Run `php artisan route:cache`
-9. Run `php artisan view:cache`
+- Production Build:
+  ```bash
+  npm run build
+  ```
 
 ## Development Conventions
 
-### Code Style
-- Follow PSR-12 coding standards for PHP
-- Use Laravel conventions for naming and structure
-- Use Pint for PHP code formatting: `php artisan pint`
+### Code Structure
+- Controllers are organized in subdirectories based on feature (Mood, Admin, Auth)
+- Models use Eloquent ORM with proper relationships and scopes
+- Services contain business logic separate from controllers
+- Views use Blade templates with proper component structure
 
-### Frontend
-- CSS styling uses Tailwind CSS utility classes
-- JavaScript interactions leverage Turbo for modern UX
-- Bootstrap 5 for UI components
+### Turbo Laravel Integration
+- Uses Turbo Streams for dynamic content updates without page refresh
+- Custom `TurboStreamHelper` class for building stream responses
+- Pagination and content updates handled via Turbo Streams
 
-### Database
-- Use Laravel migrations for schema changes
-- Follow Laravel naming conventions for tables and columns
-- Use Eloquent ORM for database interactions
+### Authentication Flow
+- Google OAuth integration for user authentication
+- Verification system for new users
+- Session-based authentication with proper middleware
 
-### Authentication
-- Google OAuth is the primary authentication method
-- User verification is required after first login
-- Password authentication is available as a fallback
+### Security Considerations
+- Input validation in services and controllers
+- Proper password hashing with Laravel's built-in functionality
+- CSRF protection through Laravel's built-in middleware
+- Session management with secure configuration
 
-## Key Routes
+## Important Files and Configuration
 
-- `/` - Welcome page
-- `/auth/google/redirect` - Google login redirect
-- `/auth/google/callback` - Google login callback
-- `/auth/verify` - User verification page
-- `/home` - Main dashboard (requires authentication)
-- `/calendar` - Calendar view of moods (requires authentication)
-- `/mood/modal` - Mood selection modal
-- `/mood/save` - Save mood entry (POST)
-- `/mood/quote` - Get random inspirational quote
-- `/mood/records` - Mood records view (with pagination)
-- `/mood/records/pagination` - Mood records pagination
+### Key Configuration Files
+- `composer.json` - PHP dependencies and scripts
+- `package.json` - Node.js dependencies and build scripts
+- `vite.config.js` - Frontend build configuration
+- `routes/web.php` - Main application routing
+- `.env.example` - Environment variable configuration
 
-## Special Features
+### Database Structure
+- Users table with Google OAuth integration
+- Mood records with user relationships
+- Mood quotes for inspirational messages
+- Verification system tables
 
-### Turbo Integration
-The application leverages Turbo Laravel for modern web interactions:
-- Mood records are saved and displayed without full page refreshes
-- Pagination works via Turbo Streams
-- Modal interactions use Turbo Frames
+## Common Tasks
 
-### Caching
-- Mood quotes are cached per user with version-based invalidation
-- Quote cache is invalidated when quotes are added, updated, or deleted
+### Adding a New Mood Type
+1. Update the mood validation array in `MoodService::validateMoodData()`
+2. Add the new mood to the mood labels in `MoodRecord` and `HomeController`
+3. Update the UI components to include the new mood option
 
-### Multi-Gender Avatars
-The application serves different avatars based on user gender selection for various mood states.
+### Modifying the Admin Panel
+- Admin authentication is handled by session with credentials defined in `.env`
+- Admin routes are protected by the `admin.auth` middleware
+- Admin dashboard controller is in `app/Http/Controllers/Admin/DashboardController.php`
 
-## File Structure
+### Extending User Profile Functionality
+- User model contains fields for name, email, avatar, division, role, gender, and verification status
+- ProfileController handles profile updates
+- Profile views are in `resources/views/profile/`
 
-```
-mood-tracker/
-├── app/
-│   ├── Http/
-│   │   ├── Controllers/
-│   │   │   ├── HomeController.php
-│   │   │   ├── MoodController.php
-│   │   │   ├── GoogleLoginController.php
-│   │   │   ├── VerificationController.php
-│   │   │   ├── CalendarController.php
-│   │   │   └── Mood/
-│   │   │       └── MoodRecordController.php
-│   │   ├── Middleware/
-│   ├── Models/
-│   │   ├── User.php
-│   │   ├── MoodRecord.php
-│   │   └── MoodQuote.php
-│   ├── Services/
-│   │   └── MoodService.php
-│   ├── Helpers/
-│   │   └── TurboStreamHelper.php
-│   └── Providers/
-├── config/
-├── database/
-├── public/
-├── resources/
-│   ├── css/
-│   │   └── app.css
-│   ├── js/
-│   │   └── app.js
-│   └── views/
-│       ├── components/
-│       │   ├── mood-input-container.blade.php
-│       │   ├── mood-emoticons.blade.php
-│       │   ├── mood-emoticon-item.blade.php
-│       │   ├── record-container.blade.php
-│       │   ├── mood-modal.blade.php
-│       │   └── mood-record-item.blade.php
-│       ├── home-page/
-│       │   └── index.blade.php
-│       ├── layouts/
-│       │   └── internal.blade.php
-│       └── welcome.blade.php
-├── routes/
-│   └── web.php
-├── storage/
-├── tests/
-├── composer.json
-├── package.json
-└── vite.config.js
-```
-
-## Key Components
-
-### Views & Templates
-
-The application uses Blade templates with a component-based structure in `resources/views/components/`. The UI leverages Turbo Frames and Streams for dynamic content updates without full page refreshes.
-
-#### Dashboard Structure
-
-The main dashboard is composed of several components located in `resources/views/components/`:
-
-- **mood-input-container.blade.php**: Displays user greeting, avatar, and motivational quotes
-- **mood-emoticons.blade.php**: Shows a row of mood emoticons for user to select their current mood
-- **record-container.blade.php**: Displays the user's mood history records with pagination
-- **mood-modal.blade.php**: Modal that appears when a user selects a mood emoticon
-
-The main page layout is defined in `resources/views/home-page/index.blade.php`, which includes these components to form the complete dashboard for logged-in users.
-
-The dashboard also features a bottom navigation bar with links to Home, Calendar, Notifications, and Profile sections.
-
-### Environment Configuration
-
-Key environment variables:
-
-- `APP_NAME`: Application name (default: Laravel)
-- `APP_ENV`: Environment (local, staging, production)
-- `APP_KEY`: Laravel application key (generated with `artisan key:generate`)
-- `DB_DATABASE`: Database name (default: CereMood)
-- `DB_USERNAME`: Database username
-- `DB_PASSWORD`: Database password
-- `GOOGLE_CLIENT_ID`: Google OAuth client ID
-- `GOOGLE_CLIENT_SECRET`: Google OAuth client secret
-- `GOOGLE_REDIRECT_URI`: Google OAuth redirect URI
-- `COMPANY_VERIFICATION_CODE`: Company verification code for user registration
+This project is well-structured with separation of concerns between models, services, controllers, and views, making it easy to maintain and extend.
