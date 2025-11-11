@@ -5,20 +5,20 @@
     .admin-dashboard {
         padding: 20px;
     }
-    
+
     .dashboard-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
         margin-bottom: 30px;
     }
-    
+
     .dashboard-title {
         color: #82272c;
         font-size: 1.8rem;
         margin: 0;
     }
-    
+
     .logout-btn {
         background-color: #dc3545;
         color: white;
@@ -28,14 +28,14 @@
         font-size: 1rem;
         cursor: pointer;
     }
-    
+
     .stats-container {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
         gap: 20px;
         margin-bottom: 30px;
     }
-    
+
     .stat-card {
         background: white;
         border-radius: 10px;
@@ -43,19 +43,19 @@
         padding: 20px;
         text-align: center;
     }
-    
+
     .stat-value {
         font-size: 2rem;
         font-weight: bold;
         color: #661118ff;
         margin: 10px 0;
     }
-    
+
     .stat-label {
         color: #6c757d;
         font-size: 1rem;
     }
-    
+
     .chart-container {
         background: white;
         border-radius: 10px;
@@ -63,48 +63,40 @@
         padding: 20px;
         margin-bottom: 30px;
     }
-    
+
     .section-title {
         color: #82272c;
         margin-top: 0;
         margin-bottom: 20px;
         font-size: 1.5rem;
     }
-    
+
     .nav-tabs {
         display: flex;
         border-bottom: 2px solid #dee2e6;
         margin-bottom: 20px;
     }
-    
+
     .nav-tab {
         padding: 10px 20px;
         cursor: pointer;
         border-bottom: 3px solid transparent;
         color: #495057;
     }
-    
+
     .nav-tab.active {
         border-bottom: 3px solid #83282f;
         color: #83282f;
         font-weight: 500;
     }
-    
-    .tab-content {
-        display: none;
-    }
-    
-    .tab-content.active {
-        display: block;
-    }
-    
+
     .employee-list {
         background: white;
         border-radius: 10px;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         overflow: hidden;
     }
-    
+
     .employee-item {
         display: flex;
         justify-content: space-between;
@@ -112,47 +104,47 @@
         padding: 15px 20px;
         border-bottom: 1px solid #eee;
     }
-    
+
     .employee-item:last-child {
         border-bottom: none;
     }
-    
+
     .employee-info {
         display: flex;
         align-items: center;
         gap: 15px;
     }
-    
+
     .employee-avatar {
         width: 40px;
         height: 40px;
         border-radius: 50%;
         object-fit: cover;
     }
-    
+
     .employee-name {
         font-weight: 500;
         color: #495057;
     }
-    
+
     .employee-mood {
         display: flex;
         align-items: center;
         gap: 5px;
     }
-    
+
     .mood-indicator {
         width: 20px;
         height: 20px;
         border-radius: 50%;
     }
-    
+
     .mood-happy { background-color: #28a745; }
     .mood-sad { background-color: #dc3545; }
     .mood-tired { background-color: #ffc107; }
     .mood-angry { background-color: #6f42c1; }
     .mood-neutral { background-color: #6c757d; }
-    
+
     .notification-btn {
         background-color: #007bff;
         color: white;
@@ -162,7 +154,7 @@
         font-size: 0.9rem;
         cursor: pointer;
     }
-    
+
     .notification-btn:hover {
         background-color: #0056b3;
     }
@@ -176,7 +168,7 @@
             <button type="submit" class="logout-btn">Logout</button>
         </form>
     </div>
-    
+
     <div class="stats-container">
         <div class="stat-card">
             <div class="stat-value" id="total-employees">{{ $totalEmployees ?? 0 }}</div>
@@ -207,458 +199,102 @@
             <div class="stat-label">Marah</div>
         </div>
     </div>
-    
+
     <div class="chart-container">
         <h3 class="section-title">Tren Mood Karyawan</h3>
-        <canvas id="moodChart" width="400" height="200"></canvas>
+        <turbo-frame id="mood_chart_frame">
+            <canvas id="moodChart" width="400" height="200"></canvas>
+        </turbo-frame>
     </div>
-    
+
     <div class="nav-tabs">
-        <div class="nav-tab active" data-tab="overview">Ringkasan</div>
-        <div class="nav-tab" data-tab="employees">Daftar Karyawan</div>
-        <div class="nav-tab" data-tab="notifications">Notifikasi</div>
+        <a class="nav-tab active" href="{{ route('admin.dashboard.overview') }}" data-turbo-frame="dashboard_content">Ringkasan</a>
+        <a class="nav-tab" href="{{ route('admin.dashboard.employees') }}" data-turbo-frame="dashboard_content">Daftar Karyawan</a>
+        <a class="nav-tab" href="{{ route('admin.dashboard.notifications') }}" data-turbo-frame="dashboard_content">Notifikasi</a>
     </div>
-    
-    <div id="overview" class="tab-content active">
+
+    <turbo-frame id="dashboard_content">
+        <!-- Tab content will be loaded here via Turbo -->
         <div class="chart-container">
             <h3 class="section-title">Statistik Mood per Divisi</h3>
-            <canvas id="divisionChart" width="400" height="200"></canvas>
+            <turbo-frame id="division_chart_frame">
+                <canvas id="divisionChart" width="400" height="200"></canvas>
+            </turbo-frame>
         </div>
-    </div>
-    
-    <div id="employees" class="tab-content">
-        <div class="form-group mb-3">
-            <div class="input-group">
-                <input type="text" id="employee-search" class="form-control" placeholder="Cari karyawan berdasarkan nama atau divisi...">
-                <button class="btn btn-outline-secondary" type="button" id="search-button">Cari</button>
-            </div>
-        </div>
-        <div class="employee-list">
-            @forelse($employees as $employee)
-            <div class="employee-item">
-                <div class="employee-info">
-                    @if($employee->avatar)
-                        <img src="{{ $employee->avatar }}" alt="Avatar" class="employee-avatar">
-                    @else
-                        <div class="employee-avatar bg-light d-flex align-items-center justify-content-center">
-                            {{ strtoupper(substr($employee->name, 0, 1)) }}
-                        </div>
-                    @endif
-                    <div>
-                        <div class="employee-name">{{ $employee->name }}</div>
-                        <div class="text-muted">{{ $employee->division ?: 'Tidak ada divisi' }}</div>
-                    </div>
-                </div>
-                <button class="notification-btn" onclick="viewEmployeeDetail({{ $employee->id }})">Lihat Detail</button>
-            </div>
-            @empty
-            <div class="employee-item">
-                <div class="employee-info">
-                    <div>
-                        <div class="employee-name">Tidak ada data karyawan</div>
-                    </div>
-                </div>
-            </div>
-            @endforelse
-        </div>
-    </div>
-    
-    <div id="notifications" class="tab-content">
-        <div class="chart-container">
-            <h3 class="section-title">Kirim Notifikasi</h3>
-            <form id="notification-form">
-                <div class="form-group mb-3">
-                    <label for="notification-type" class="form-label">Jenis Notifikasi</label>
-                    <select id="notification-type" class="form-control">
-                        <option value="individual">Individu</option>
-                        <option value="group">Grup/Divisi</option>
-                        <option value="all">Semua Karyawan</option>
-                    </select>
-                </div>
-                
-                <div class="form-group mb-3">
-                    <label for="message" class="form-label">Pesan</label>
-                    <textarea id="message" class="form-control" rows="4" placeholder="Tulis pesan notifikasi..."></textarea>
-                </div>
-                
-                <div class="form-group mb-3">
-                    <label for="schedule-time" class="form-label">Jadwal Kirim (opsional)</label>
-                    <input type="datetime-local" id="schedule-time" class="form-control">
-                </div>
-                
-                <button type="submit" class="btn-login">Kirim Notifikasi</button>
-            </form>
-        </div>
-    </div>
+    </turbo-frame>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    // Tab navigation
-    document.querySelectorAll('.nav-tab').forEach(tab => {
-        tab.addEventListener('click', () => {
-            // Remove active class from all tabs and content
-            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            
-            // Add active class to clicked tab
-            tab.classList.add('active');
-            
-            // Show corresponding content
-            const tabId = tab.getAttribute('data-tab');
-            document.getElementById(tabId).classList.add('active');
-        });
+    // Initialize charts when page loads or Turbo frame renders
+    document.addEventListener('turbo:load', function() {
+        loadChart();
     });
     
-    // Initialize charts
-    fetch('/admin/dashboard/chart-data')
-    .then(response => response.json())
-    .then(data => {
-        // Mood trend chart
-        const moodCtx = document.getElementById('moodChart').getContext('2d');
-        const moodChart = new Chart(moodCtx, {
-            type: 'line',
-            data: {
-                labels: data.moodTrend.labels,
-                datasets: data.moodTrend.datasets
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    title: {
-                        display: true,
-                        text: 'Tren Mood Minggu Ini'
-                    }
-                },
-                scales: {
-                    y: {
-                        stacked: true
-                    }
-                }
-            }
-        });
-        
-        // Division mood chart
-        const divisionCtx = document.getElementById('divisionChart').getContext('2d');
-        const divisionChart = new Chart(divisionCtx, {
-            type: 'bar',
-            data: data.divisionMood,
-            options: {
-                responsive: true,
-                plugins: {
-                    title: {
-                        display: true,
-                        text: 'Rata-rata Mood per Divisi'
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
-                }
-            }
-        });
-    })
-    .catch(error => {
-        console.error('Error loading chart data:', error);
-        
-        // Fallback to original charts if API fails
-        const moodCtx = document.getElementById('moodChart').getContext('2d');
-        const moodChart = new Chart(moodCtx, {
-            type: 'line',
-            data: {
-                labels: ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'],
-                datasets: [{
-                    label: 'Senang',
-                    data: [12, 19, 3, 5, 2, 3, 15],
-                    borderColor: '#28a745',
-                    backgroundColor: 'rgba(40, 167, 69, 0.3)',
-                    tension: 0.4,
-                    pointRadius: 6,
-                    pointBackgroundColor: 'rgb(20, 80, 35)',
-                    pointBorderColor: 'rgb(20, 80, 35)',
-                    fill: true
-                }, {
-                    label: 'Sedih',
-                    data: [3, 5, 2, 8, 1, 4, 6],
-                    borderColor: '#dc3545',
-                    backgroundColor: 'rgba(220, 53, 69, 0.3)',
-                    tension: 0.4,
-                    pointRadius: 6,
-                    pointBackgroundColor: 'rgb(150, 35, 45)',
-                    pointBorderColor: 'rgb(150, 35, 45)',
-                    fill: true
-                }, {
-                    label: 'Biasa Saja',
-                    data: [5, 4, 7, 2, 9, 3, 4],
-                    borderColor: '#6c757d',
-                    backgroundColor: 'rgba(108, 117, 125, 0.3)',
-                    tension: 0.4,
-                    pointRadius: 6,
-                    pointBackgroundColor: 'rgb(70, 75, 80)',
-                    pointBorderColor: 'rgb(70, 75, 80)',
-                    fill: true
-                }, {
-                    label: 'Lelah',
-                    data: [2, 3, 5, 4, 1, 2, 3],
-                    borderColor: '#ffc107',
-                    backgroundColor: 'rgba(255, 193, 7, 0.3)',
-                    tension: 0.4,
-                    pointRadius: 6,
-                    pointBackgroundColor: 'rgb(200, 150, 0)',
-                    pointBorderColor: 'rgb(200, 150, 0)',
-                    fill: true
-                }, {
-                    label: 'Marah',
-                    data: [1, 2, 1, 3, 2, 1, 2],
-                    borderColor: '#6f42c1',
-                    backgroundColor: 'rgba(111, 66, 193, 0.3)',
-                    tension: 0.4,
-                    pointRadius: 6,
-                    pointBackgroundColor: 'rgb(75, 45, 130)',
-                    pointBorderColor: 'rgb(75, 45, 130)',
-                    fill: true
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    title: {
-                        display: true,
-                        text: 'Tren Mood Minggu Ini'
-                    }
-                },
-                scales: {
-                    y: {
-                        stacked: true
-                    }
-                }
-            }
-        });
-        
-        const divisionCtx = document.getElementById('divisionChart').getContext('2d');
-        const divisionChart = new Chart(divisionCtx, {
-            type: 'bar',
-            data: {
-                labels: ['IT', 'HR', 'Finance', 'Marketing', 'Operations'],
-                datasets: [
-                {
-                    label: 'Senang',
-                    data: [4, 3, 3, 2, 4],
-                    backgroundColor: 'rgba(40, 167, 69, 0.7)'  // Hijau
-                }, 
-                {
-                    label: 'Sedih',
-                    data: [1, 2, 1, 2, 1],
-                    backgroundColor: 'rgba(220, 53, 69, 0.7)'  // Merah
-                }, 
-                {
-                    label: 'Biasa Saja',
-                    data: [2, 2, 3, 2, 2],
-                    backgroundColor: 'rgba(108, 117, 125, 0.7)'  // Abu-abu
-                },
-                {
-                    label: 'Lelah',
-                    data: [1, 1, 1, 2, 1],
-                    backgroundColor: 'rgba(255, 193, 7, 0.7)'  // Kuning
-                },
-                {
-                    label: 'Marah',
-                    data: [0, 0, 1, 0, 0],
-                    backgroundColor: 'rgba(111, 66, 193, 0.7)'  // Ungu
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    title: {
-                        display: true,
-                        text: 'Rata-rata Mood per Divisi'
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
-                }
-            }
-        });
-    });
-    
-    // Form submission for notifications
-    document.getElementById('notification-form').addEventListener('submit', function(e) {
-        e.preventDefault();
-        alert('Notifikasi berhasil dikirim!');
-        this.reset();
-    });
-    
-    // Employee search functionality
-    document.getElementById('search-button').addEventListener('click', function() {
-        performSearch();
-    });
-    
-    document.getElementById('employee-search').addEventListener('keyup', function(event) {
-        if (event.key === 'Enter') {
-            performSearch();
-        }
-    });
-    
-    function performSearch() {
-        const searchTerm = document.getElementById('employee-search').value.toLowerCase();
-        const employeeItems = document.querySelectorAll('#employees .employee-item');
-        
-        employeeItems.forEach(function(item) {
-            const employeeName = item.querySelector('.employee-name').textContent.toLowerCase();
-            const employeeDivision = item.querySelector('.text-muted').textContent.toLowerCase();
-            
-            if (employeeName.includes(searchTerm) || employeeDivision.includes(searchTerm)) {
-                item.style.display = '';
-            } else {
-                item.style.display = 'none';
-            }
-        });
-    }
-    
-    function viewEmployeeDetail(userId) {
-        // Fetch user details and all mood records
-        fetch(`/admin/user/${userId}/detail`)
+    function loadChart() {
+        fetch('/admin/dashboard/chart-data')
         .then(response => response.json())
         .then(data => {
-            if(data.success) {
-                // Fill modal with user details
-                document.getElementById('detail-user-name').textContent = data.user.name;
-                document.getElementById('detail-user-email').textContent = data.user.email;
-                document.getElementById('detail-user-division').textContent = data.user.division || 'Tidak ada divisi';
-                document.getElementById('detail-user-gender').textContent = data.user.jenis_kelamin || 'Tidak diset';
-                
-                // Get container for mood records
-                const container = document.getElementById('mood-records-container');
-                
-                if(data.moodRecords && data.moodRecords.length > 0) {
-                    // Clear container
-                    container.innerHTML = '';
-                    
-                    // Determine gender for emoticon selection
-                    const isFemale = data.user.jenis_kelamin === 'Perempuan' || data.user.jenis_kelamin === 'Cewek';
-                    
-                    // Define emoticon paths based on mood and gender
-                    const emoticonPaths = {
-                        'netral': isFemale ? '{{ asset("logo/netral1.png") }}' : '{{ asset("logo/netral.png") }}',
-                        'senyum': isFemale ? '{{ asset("logo/senyum1.png") }}' : '{{ asset("logo/senyum.png") }}',
-                        'sedih': isFemale ? '{{ asset("logo/sedih1.png") }}' : '{{ asset("logo/sedih.png") }}',
-                        'lelah': isFemale ? '{{ asset("logo/lelah1.png") }}' : '{{ asset("logo/lelah.png") }}',
-                        'marah': isFemale ? '{{ asset("logo/marah1.png") }}' : '{{ asset("logo/marah.png") }}',
-                    };
-                    
-                    // Define mood labels
-                    const moodLabels = {
-                        'senyum': 'Senang',
-                        'sedih': 'Sedih',
-                        'lelah': 'Lelah',
-                        'marah': 'Marah',
-                        'netral': 'Biasa Saja'
-                    };
-                    
-                    // Add each mood record to container
-                    data.moodRecords.forEach((record, index) => {
-                        const moodCard = document.createElement('div');
-                        moodCard.className = 'card mb-3';
-                        
-                        // Format date using Indonesian locale
-                        const date = new Date(record.created_at);
-                        const formattedDate = date.toLocaleDateString('id-ID', {
-                            day: '2-digit',
-                            month: 'long',
-                            year: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                        });
-                        
-                        moodCard.innerHTML = `
-                            <div class="card-body">
-                                <div class="d-flex align-items-center mb-2">
-                                    <img src="${emoticonPaths[record.mood] || emoticonPaths['netral']}" 
-                                         class="me-2" 
-                                         style="width: 30px; height: 30px;" 
-                                         alt="${record.mood}">
-                                    <span class="fw-bold">${moodLabels[record.mood] || record.mood}</span>
-                                    <span class="text-muted ms-2">${formattedDate}</span>
-                                </div>
-                                
-                                <div class="mb-2">
-                                    <label class="form-label fw-bold">Alasan</label>
-                                    <p class="mb-1">${record.reason || 'Tidak ada alasan'}</p>
-                                </div>
-                                
-                                <div>
-                                    <label class="form-label fw-bold">Saran Tindakan</label>
-                                    <p class="mb-1">${record.action_suggestion || 'Tidak ada saran tindakan'}</p>
-                                </div>
-                            </div>
-                        `;
-                        
-                        container.appendChild(moodCard);
-                    });
-                } else {
-                    container.innerHTML = '<p>Tidak ada catatan mood</p>';
-                }
-                
-                // Show the modal
-                const detailModal = new bootstrap.Modal(document.getElementById('employeeDetailModal'));
-                detailModal.show();
-            } else {
-                alert('Gagal mengambil data karyawan');
+            // Mood trend chart
+            const moodCtx = document.getElementById('moodChart').getContext('2d');
+            if (moodCtx.chart) {
+                moodCtx.chart.destroy();
             }
+            const moodChart = new Chart(moodCtx, {
+                type: 'line',
+                data: {
+                    labels: data.moodTrend.labels,
+                    datasets: data.moodTrend.datasets
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Tren Mood Minggu Ini'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            stacked: true
+                        }
+                    }
+                }
+            });
+
+            // Division mood chart
+            const divisionCtx = document.getElementById('divisionChart').getContext('2d');
+            if (divisionCtx.chart) {
+                divisionCtx.chart.destroy();
+            }
+            const divisionChart = new Chart(divisionCtx, {
+                type: 'bar',
+                data: data.divisionMood,
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Rata-rata Mood per Divisi'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
         })
         .catch(error => {
-            console.error('Error:', error);
-            alert('Terjadi kesalahan saat mengambil data karyawan');
+            console.error('Error loading chart data:', error);
         });
     }
-    
 
+    // Initial chart load
+    document.addEventListener('DOMContentLoaded', function() {
+        loadChart();
+    });
 </script>
-
-<!-- Modal Detail Karyawan (dengan data-turbo-permanent untuk mencegah perubahan oleh Turbo) -->
-<div class="modal fade" id="employeeDetailModal" tabindex="-1" aria-labelledby="employeeDetailModalLabel" aria-hidden="true" data-turbo="false">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="employeeDetailModalLabel">Detail Karyawan</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div class="mb-3">
-                    <label class="form-label fw-bold">Nama</label>
-                    <p id="detail-user-name" class="mb-1"></p>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label fw-bold">Email</label>
-                    <p id="detail-user-email" class="mb-1"></p>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label fw-bold">Divisi</label>
-                    <p id="detail-user-division" class="mb-1"></p>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label fw-bold">Jenis Kelamin</label>
-                    <p id="detail-user-gender" class="mb-1"></p>
-                </div>
-                
-                <hr>
-                
-                <div class="mb-3">
-                    <label class="form-label fw-bold">Catatan Mood</label>
-                    <div id="mood-records-container">
-                        <!-- Mood records akan ditampilkan di sini -->
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
-            </div>
-        </div>
-    </div>
-</div>
 
 @endsection

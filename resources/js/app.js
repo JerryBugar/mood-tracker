@@ -12,7 +12,7 @@ Turbo.config.drive.progressBarDelay = 500; // Tunda progress bar untuk pengalama
 document.addEventListener('turbo:load', () => {
     // Logging untuk mengetahui halaman mana yang dimuat
     console.log('Turbo loaded on: ', window.location.pathname);
-    
+
     // Splash screen logic from original file
     const splashLogo = document.getElementById('splash-logo-container');
     const mainContent = document.getElementById('main-content-wrapper');
@@ -21,21 +21,21 @@ document.addEventListener('turbo:load', () => {
     if (splashLogo && mainContent && finalLogo) {
         if (!splashLogo.classList.contains('js-has-run')) {
             splashLogo.classList.add('js-has-run');
-            
+
             // Tambahkan class untuk halaman dashboard
             document.body.classList.add('dashboard-page');
-            
+
             requestAnimationFrame(() => {
                 // Ambil posisi akhir logo sebelum menampilkannya
                 mainContent.classList.remove('hidden');
                 const finalRect = finalLogo.getBoundingClientRect();
-                
+
                 // Matikan sementara transisi agar dapat menghitung posisi dengan akurat
                 mainContent.classList.add('hidden');
-        
+
                 const finalX = finalRect.left + finalRect.width / 2 - window.innerWidth / 2;
                 const finalY = finalRect.top + finalRect.height / 2 - window.innerHeight / 2;
-        
+
                 const styleSheet = document.createElement('style');
                 styleSheet.id = 'dynamic-splash-animation';
                 const keyframes = `
@@ -46,24 +46,24 @@ document.addEventListener('turbo:load', () => {
                 `;
                 styleSheet.innerHTML = keyframes;
                 document.head.appendChild(styleSheet);
-        
+
                 // Tampilkan splash logo
                 splashLogo.style.opacity = '1';
                 splashLogo.style.animation = 'settleInPlace 2.5s ease-in-out forwards';
-        
+
                 splashLogo.addEventListener('animationend', () => {
                     // Sembunyikan logo final sementara
                     finalLogo.style.visibility = 'hidden';
-                    
+
                     // Tampilkan konten utama
                     mainContent.classList.remove('hidden');
-                    
+
                     // Setelah animasi selesai, sembunyikan splash logo dan tampilkan logo final
                     setTimeout(() => {
                         finalLogo.style.visibility = 'visible';
                         splashLogo.style.opacity = '0';
                     }, 50);
-    
+
                     // Setelah splash logo disembunyikan, hapus dari DOM
                     splashLogo.addEventListener('transitionend', () => {
                         splashLogo.remove();
@@ -109,7 +109,7 @@ document.addEventListener('turbo:load', () => {
                 activeBackground.style.left = `${activeItem.offsetLeft}px`;
                 activeBackground.style.width = `${activeItem.offsetWidth}px`;
                 activeBackground.style.opacity = 1;
-                
+
                 setTimeout(() => {
                     activeBackground.style.transition = 'all 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55)';
                     isNavInitialized = true;
@@ -122,16 +122,16 @@ document.addEventListener('turbo:load', () => {
             }
         }
     }, 200); // .nav-item transition is 0.3s, so we wait 200ms.
-    
+
     // Add click event listeners to update active state and background
     navItems.forEach(item => {
         item.addEventListener('click', function(e) {
             // Remove active class from all items
             navItems.forEach(navItem => navItem.classList.remove('active'));
-            
+
             // Add active class to clicked item
             this.classList.add('active');
-            
+
             // Update background position after a short delay to allow CSS changes to take effect
             setTimeout(() => {
                 const activeBackground = bottomNav.querySelector('.nav-active-background');
@@ -158,12 +158,23 @@ document.addEventListener('turbo:before-render', (event) => {
     duplicateElements.forEach(element => {
         element.remove();
     });
-    
+
     // Jaga agar modal tetap ada di DOM yang baru
     const existingModal = document.getElementById('moodModal');
     const newModal = event.detail.newBody.querySelector('[id="moodModal"]');
-    
+
     if (existingModal && newModal) {
         newModal.replaceWith(existingModal);
+    }
+});
+
+// Debug untuk form login admin - nonaktifkan Turbo di halaman login
+document.addEventListener('turbo:load', () => {
+    if (window.location.pathname.includes('/admin/login')) {
+        const loginForm = document.getElementById('adminLoginForm');
+        if (loginForm) {
+            // Nonaktifkan Turbo untuk form ini
+            loginForm.setAttribute('data-turbo', 'false');
+        }
     }
 });

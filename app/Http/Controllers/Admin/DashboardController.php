@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\MoodRecord;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use App\Helpers\TurboStreamHelper;
 
 class DashboardController extends Controller
 {
@@ -15,7 +16,7 @@ class DashboardController extends Controller
         // Ambil data statistik dari database
         $totalEmployees = User::count();
         $activeToday = MoodRecord::where('created_at', '>=', Carbon::today())->distinct('user_id')->count();
-        
+
         // Ambil data mood breakdown untuk minggu ini (untuk statistik mingguan di dashboard)
         $startDateOfWeek = Carbon::now()->startOfWeek();
         $moodCountsWeek = MoodRecord::select('mood', \DB::raw('count(*) as count'))
@@ -23,15 +24,34 @@ class DashboardController extends Controller
             ->groupBy('mood')
             ->get()
             ->pluck('count', 'mood');
-        
+
         $senangCount = $moodCountsWeek['senyum'] ?? 0;
         $sedihCount = $moodCountsWeek['sedih'] ?? 0;
         $netralCount = $moodCountsWeek['netral'] ?? 0;
         $lelahCount = $moodCountsWeek['lelah'] ?? 0;
         $marahCount = $moodCountsWeek['marah'] ?? 0;
-        
+
         $employees = User::select('id', 'name', 'division', 'avatar')->get();
-        
+
+        // Check if this is a Turbo Stream request
+        $acceptHeader = request()->header('Accept');
+        if (strpos($acceptHeader, 'text/vnd.turbo-stream.html') !== false) {
+            // Return only the dashboard content
+            $dashboardContent = view('admin.tabs.overview', [
+                'totalEmployees' => $totalEmployees,
+                'activeToday' => $activeToday,
+                'senangCount' => $senangCount,
+                'sedihCount' => $sedihCount,
+                'netralCount' => $netralCount,
+                'lelahCount' => $lelahCount,
+                'marahCount' => $marahCount,
+                'employees' => $employees
+            ])->render();
+
+            $streamContent = TurboStreamHelper::replace('dashboard_content', $dashboardContent);
+            return response($streamContent, 200, ['Content-Type' => 'text/vnd.turbo-stream.html']);
+        }
+
         return view('admin.dashboard', [
             'totalEmployees' => $totalEmployees,
             'activeToday' => $activeToday,
@@ -43,27 +63,80 @@ class DashboardController extends Controller
             'employees' => $employees
         ]);
     }
-    
-    public function moodMonitoring()
+
+    public function moodMonitoring(Request $request)
     {
-        // Ambil semua mood records dengan informasi user
-        $moodRecords = MoodRecord::with('user')
-            ->latest()
-            ->paginate(10);
-        
+        // Ambil parameter filter dari request
+        $division = $request->get('division');
+        $mood = $request->get('mood');
+        $startDate = $request->get('start_date');
+        $endDate = $request->get('end_date');
+
+        // Buat query untuk mood records dengan filter
+        $query = MoodRecord::with('user')->latest();
+
+        if ($division) {
+            $query->whereHas('user', function ($q) use ($division) {
+                $q->where('division', $division);
+            });
+        }
+
+        if ($mood) {
+            $query->where('mood', $mood);
+        }
+
+        if ($startDate) {
+            $query->whereDate('created_at', '>=', $startDate);
+        }
+
+        if ($endDate) {
+            $query->whereDate('created_at', '<=', $endDate);
+        }
+
+        $moodRecords = $query->paginate(10);
+
+        // Check if this is a Turbo Stream request for records only
+        $acceptHeader = request()->header('Accept');
+        if (strpos($acceptHeader, 'text/vnd.turbo-stream.html') !== false) {
+            // Check if it's for filter form, records, or chart
+            $target = $request->header('Turbo-Frame');
+            
+            if ($target === 'mood_records_frame') {
+                // Return only the records table
+                $recordsContent = view('admin.mood-monitoring-records', compact('moodRecords'))->render();
+                $streamContent = TurboStreamHelper::replace('mood_records_frame', $recordsContent);
+                return response($streamContent, 200, ['Content-Type' => 'text/vnd.turbo-stream.html']);
+            } elseif ($target === 'filter_form_frame') {
+                // Return only the filter form
+                $formContent = view('admin.mood-monitoring-filters', [
+                    'division' => $division,
+                    'mood' => $mood,
+                    'startDate' => $startDate,
+                    'endDate' => $endDate
+                ])->render();
+                $streamContent = TurboStreamHelper::replace('filter_form_frame', $formContent);
+                return response($streamContent, 200, ['Content-Type' => 'text/vnd.turbo-stream.html']);
+            } elseif ($target === 'mood_chart_frame') {
+                // Return only the chart
+                $chartContent = view('admin.mood-monitoring-chart')->render();
+                $streamContent = TurboStreamHelper::replace('mood_chart_frame', $chartContent);
+                return response($streamContent, 200, ['Content-Type' => 'text/vnd.turbo-stream.html']);
+            }
+        }
+
         return view('admin.mood-monitoring', compact('moodRecords'));
     }
-    
+
     public function getChartData()
     {
         // Data untuk grafik tren mood minggu ini - berdasarkan minggu kalender
         $startDate = Carbon::now()->startOfWeek(); // Mulai dari Senin minggu ini
         $endDate = Carbon::now()->endOfWeek(); // Sampai Minggu minggu ini
-        
+
         $moodData = [];
         $dates = [];
         $dayLabels = []; // Store the day labels
-        
+
         // Generate list dates and day labels
         $currentDate = clone $startDate;
         while ($currentDate <= $endDate) {
@@ -72,7 +145,7 @@ class DashboardController extends Controller
             $dayLabels[] = $currentDate->locale('id')->dayName; // This will give us the day name in Indonesian
             $currentDate->addDay();
         }
-        
+
         // Data untuk setiap kategori mood
         $moodCategories = ['senyum', 'sedih', 'netral', 'lelah', 'marah'];
         foreach ($moodCategories as $category) {
@@ -83,10 +156,10 @@ class DashboardController extends Controller
                     ->count();
                 $data[] = $count;
             }
-            
+
             // Generate darker color for point
             $pointColor = $this->getDarkerMoodColor($category);
-            
+
             $moodData[] = [
                 'label' => $this->getMoodLabel($category),
                 'data' => $data,
@@ -99,11 +172,11 @@ class DashboardController extends Controller
                 'fill' => true // Enable area fill
             ];
         }
-        
+
         // Data untuk grafik divisi
         $divisions = User::whereNotNull('division')->distinct('division')->pluck('division');
         $divisionData = [];
-        
+
         foreach ($divisions as $division) {
             // Ambil total mood per divisi untuk semua kategori
             $moodCounts = MoodRecord::join('users', 'mood_records.user_id', '=', 'users.id')
@@ -111,7 +184,7 @@ class DashboardController extends Controller
                 ->select('mood', \DB::raw('count(*) as count'))
                 ->groupBy('mood')
                 ->get();
-                
+
             // Kategorikan mood untuk ditampilkan di grafik
             $divisionMoodData = [
                 'label' => $division,
@@ -121,10 +194,10 @@ class DashboardController extends Controller
                 'lelah' => $moodCounts->firstWhere('mood', 'lelah')['count'] ?? 0,
                 'marah' => $moodCounts->firstWhere('mood', 'marah')['count'] ?? 0,
             ];
-            
+
             $divisionData[] = $divisionMoodData;
         }
-        
+
         return response()->json([
             'moodTrend' => [
                 'labels' => $dayLabels, // Use the correct day names
@@ -177,7 +250,7 @@ class DashboardController extends Controller
             ]
         ]);
     }
-    
+
     private function getMoodLabel($moodType)
     {
         $labels = [
@@ -187,10 +260,10 @@ class DashboardController extends Controller
             'lelah' => 'Lelah',
             'marah' => 'Marah'
         ];
-        
+
         return $labels[$moodType] ?? $moodType;
     }
-    
+
     private function getMoodColor($moodType)
     {
         $colors = [
@@ -200,10 +273,10 @@ class DashboardController extends Controller
             'lelah' => '#ffc107',  // Kuning
             'marah' => '#6f42c1'   // Ungu
         ];
-        
+
         return $colors[$moodType] ?? '#000000';
     }
-    
+
     private function getMoodBackgroundColor($moodType, $opacity = 0.1)
     {
         $colors = [
@@ -213,12 +286,12 @@ class DashboardController extends Controller
             'lelah' => [255, 193, 7],   // Kuning
             'marah' => [111, 66, 193]   // Ungu
         ];
-        
+
         $color = $colors[$moodType] ?? [0, 0, 0];
-        
+
         return "rgba({$color[0]}, {$color[1]}, {$color[2]}, {$opacity})";
     }
-    
+
     private function getDarkerMoodColor($moodType)
     {
         $colors = [
@@ -228,26 +301,26 @@ class DashboardController extends Controller
             'lelah' => [200, 150, 0],   // Kuning lebih gelap
             'marah' => [75, 45, 130]    // Ungu lebih gelap
         ];
-        
+
         $color = $colors[$moodType] ?? [0, 0, 0];
-        
+
         return "rgb({$color[0]}, {$color[1]}, {$color[2]})";
     }
-    
+
     public function getUserDetail($id)
     {
         $user = User::find($id);
-        
+
         if (!$user) {
             return response()->json([
                 'success' => false,
                 'message' => 'User tidak ditemukan'
             ]);
         }
-        
+
         // Ambil semua mood record dari user, urutkan dari terbaru
         $moodRecords = $user->moodRecords()->latest()->get();
-        
+
         return response()->json([
             'success' => true,
             'user' => [
@@ -268,5 +341,61 @@ class DashboardController extends Controller
                 ];
             })->toArray()
         ]);
+    }
+
+    // Method untuk tab employees
+    public function employeesTab()
+    {
+        $employees = User::select('id', 'name', 'division', 'avatar')->get();
+
+        $content = view('admin.tabs.employees', compact('employees'))->render();
+        $streamContent = TurboStreamHelper::replace('dashboard_content', $content);
+        return response($streamContent, 200, ['Content-Type' => 'text/vnd.turbo-stream.html']);
+    }
+
+    // Method untuk tab notifications
+    public function notificationsTab()
+    {
+        $content = view('admin.tabs.notifications')->render();
+        $streamContent = TurboStreamHelper::replace('dashboard_content', $content);
+        return response($streamContent, 200, ['Content-Type' => 'text/vnd.turbo-stream.html']);
+    }
+
+    // Metode tambahan untuk bagian-bagian spesifik dashboard
+    public function overviewTab()
+    {
+        // Ambil data statistik dari database
+        $totalEmployees = User::count();
+        $activeToday = MoodRecord::where('created_at', '>=', Carbon::today())->distinct('user_id')->count();
+
+        // Ambil data mood breakdown untuk minggu ini (untuk statistik mingguan di dashboard)
+        $startDateOfWeek = Carbon::now()->startOfWeek();
+        $moodCountsWeek = MoodRecord::select('mood', \DB::raw('count(*) as count'))
+            ->where('created_at', '>=', $startDateOfWeek)
+            ->groupBy('mood')
+            ->get()
+            ->pluck('count', 'mood');
+
+        $senangCount = $moodCountsWeek['senyum'] ?? 0;
+        $sedihCount = $moodCountsWeek['sedih'] ?? 0;
+        $netralCount = $moodCountsWeek['netral'] ?? 0;
+        $lelahCount = $moodCountsWeek['lelah'] ?? 0;
+        $marahCount = $moodCountsWeek['marah'] ?? 0;
+
+        $employees = User::select('id', 'name', 'division', 'avatar')->get();
+
+        $content = view('admin.tabs.overview', [
+            'totalEmployees' => $totalEmployees,
+            'activeToday' => $activeToday,
+            'senangCount' => $senangCount,
+            'sedihCount' => $sedihCount,
+            'netralCount' => $netralCount,
+            'lelahCount' => $lelahCount,
+            'marahCount' => $marahCount,
+            'employees' => $employees
+        ])->render();
+
+        $streamContent = TurboStreamHelper::replace('dashboard_content', $content);
+        return response($streamContent, 200, ['Content-Type' => 'text/vnd.turbo-stream.html']);
     }
 }

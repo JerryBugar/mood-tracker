@@ -1,0 +1,1 @@
+<canvas id="employeeMoodChart" width="400" height="200"></canvas>
