@@ -68,6 +68,8 @@ class UserDetailService
                     'mood' => $record->mood,
                     'reason' => $record->reason,
                     'action_suggestion' => $record->suggestion_action,
+                    'admin_response' => $record->admin_response,
+                    'admin_response_at' => $record->admin_response_at,
                     'created_at' => $record->created_at
                 ];
             })->toArray(),

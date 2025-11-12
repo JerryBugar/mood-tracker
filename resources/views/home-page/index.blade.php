@@ -165,4 +165,90 @@
         });
     </script>
 
+@push('scripts')
+<script>
+// Fungsi global untuk menampilkan respons admin
+if (typeof window.showAdminResponse === 'undefined') {
+    window.showAdminResponse = function(recordId, response, responseDate) {
+        const modalElement = document.getElementById('adminResponseModal' + recordId);
+        if (modalElement) {
+            // Update modal content
+            const contentElement = document.getElementById('adminResponseContent' + recordId);
+            const dateElement = document.getElementById('adminResponseDate' + recordId);
+            
+            if (contentElement) {
+                contentElement.textContent = response;
+            }
+            if (dateElement) {
+                dateElement.textContent = 'Direspons pada: ' + responseDate;
+            }
+            
+            // Show modal
+            const modal = new bootstrap.Modal(modalElement);
+            modal.show();
+        }
+    };
+}
+
+// Setup aria-hidden handlers untuk modal respons admin
+if (typeof window.adminResponseModalAriaHandlersSetup === 'undefined') {
+    window.adminResponseModalAriaHandlersSetup = false;
+}
+
+function setupAdminResponseModalAriaHandlers() {
+    if (window.adminResponseModalAriaHandlersSetup) {
+        return;
+    }
+
+    // Setup untuk semua modal respons admin
+    document.addEventListener('show.bs.modal', function(event) {
+        const modal = event.target;
+        if (modal.id && modal.id.startsWith('adminResponseModal')) {
+            modal.removeAttribute('aria-hidden');
+        }
+    });
+
+    document.addEventListener('hide.bs.modal', function(event) {
+        const modal = event.target;
+        if (modal.id && modal.id.startsWith('adminResponseModal')) {
+            const activeElement = document.activeElement;
+            if (modal.contains(activeElement) && 
+                activeElement !== document.body && 
+                activeElement !== document.documentElement &&
+                typeof activeElement.blur === 'function') {
+                activeElement.blur();
+            }
+        }
+    });
+
+    document.addEventListener('hidden.bs.modal', function(event) {
+        const modal = event.target;
+        if (modal.id && modal.id.startsWith('adminResponseModal')) {
+            modal.setAttribute('aria-hidden', 'true');
+            const activeElement = document.activeElement;
+            if (activeElement && 
+                modal.contains(activeElement) && 
+                activeElement !== document.body && 
+                activeElement !== document.documentElement &&
+                typeof activeElement.blur === 'function') {
+                activeElement.blur();
+            }
+        }
+    });
+
+    window.adminResponseModalAriaHandlersSetup = true;
+}
+
+// Setup saat DOM ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupAdminResponseModalAriaHandlers);
+} else {
+    setupAdminResponseModalAriaHandlers();
+}
+
+// Setup ulang saat Turbo load
+document.addEventListener('turbo:load', setupAdminResponseModalAriaHandlers);
+</script>
+@endpush
+
 @endsection

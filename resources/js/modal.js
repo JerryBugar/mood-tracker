@@ -9,6 +9,23 @@ if (!moodModalScriptInitialized) {
         // Pastikan elemen ada sebelum mengakses properti style
         const modalElement = document.getElementById('moodModal');
         if (modalElement) { // Pastikan elemen ada
+            // Hapus focus dari semua elemen yang bisa di-focus sebelum modal ditutup
+            const focusableElements = modalElement.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+            focusableElements.forEach(element => {
+                if (element === document.activeElement && typeof element.blur === 'function') {
+                    element.blur();
+                }
+            });
+
+            // Juga hapus focus dari elemen aktif jika masih di dalam modal
+            const activeElement = document.activeElement;
+            if (modalElement.contains(activeElement) && 
+                activeElement !== document.body && 
+                activeElement !== document.documentElement &&
+                typeof activeElement.blur === 'function') {
+                activeElement.blur();
+            }
+
             const modalInstance = bootstrap.Modal.getInstance(modalElement);
             if (modalInstance) {
                 modalInstance.hide();

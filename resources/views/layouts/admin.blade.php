@@ -7,26 +7,6 @@
 
     <title>{{ config('app.name', 'Laravel') }} - Admin</title>
     <link rel="icon" type="image/png" href="{{ route('logo.serve', ['filename' => 'favicons.png']) }}">
-    
-    {{-- Preload logo images untuk loading yang lebih cepat --}}
-    @php
-        $preloadLogos = [
-            'favicons.png',
-            'netral.png',
-            'netral1.png',
-            'senyum.png',
-            'senyum1.png',
-            'sedih.png',
-            'sedih1.png',
-            'lelah.png',
-            'lelah1.png',
-            'marah.png',
-            'marah1.png'
-        ];
-    @endphp
-    @foreach($preloadLogos as $logo)
-        <link rel="preload" as="image" href="{{ route('logo.serve', ['filename' => $logo]) }}" fetchpriority="high">
-    @endforeach
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">

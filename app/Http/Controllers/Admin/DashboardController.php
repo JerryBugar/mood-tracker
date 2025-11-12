@@ -7,7 +7,9 @@ use App\Services\Admin\DashboardStatisticsService;
 use App\Services\Admin\DashboardChartService;
 use App\Services\Admin\DashboardTabService;
 use App\Services\Admin\UserDetailService;
+use App\Models\MoodRecord;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class DashboardController extends Controller
 {
@@ -131,5 +133,47 @@ class DashboardController extends Controller
         }
 
         return view('admin.tabs.overview', $viewData);
+    }
+
+    /**
+     * Menyimpan respons admin untuk mood record
+     *
+     * @param int $recordId
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function saveAdminResponse($recordId, Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'admin_response' => 'required|string|max:1000',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi gagal',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $moodRecord = MoodRecord::find($recordId);
+
+        if (!$moodRecord) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Mood record tidak ditemukan'
+            ], 404);
+        }
+
+        $moodRecord->admin_response = $request->admin_response;
+        $moodRecord->admin_response_at = now();
+        $moodRecord->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Respons berhasil disimpan',
+            'admin_response' => $moodRecord->admin_response,
+            'admin_response_at' => $moodRecord->admin_response_at
+        ]);
     }
 }

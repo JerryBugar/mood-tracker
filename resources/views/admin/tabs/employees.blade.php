@@ -7,7 +7,7 @@
 </div>
 <div class="employee-list">
     @forelse($employees as $employee)
-    <div class="employee-item">
+    <div class="employee-item {{ $employee->has_mood_today ?? false ? 'has-mood-today' : '' }}" data-employee-id="{{ $employee->id }}">
         <div class="employee-info">
             @if($employee->avatar)
                 <img src="{{ $employee->avatar }}" alt="Avatar" class="employee-avatar">
@@ -21,6 +21,13 @@
                 <div class="text-muted">{{ $employee->division ?: 'Tidak ada divisi' }}</div>
             </div>
         </div>
+        @if($employee->has_mood_today ?? false)
+        <div class="employee-center">
+            <span class="employee-date">
+                {{ \Carbon\Carbon::parse($employee->mood_today_date ?? now())->locale('id_ID')->translatedFormat('l, j F Y') }}
+            </span>
+        </div>
+        @endif
         <button class="notification-btn" onclick="viewEmployeeDetail({{ $employee->id }})">Lihat Detail</button>
     </div>
     @empty
@@ -83,6 +90,19 @@
                     minute: '2-digit'
                 });
 
+                // Format admin response date jika ada
+                let adminResponseDate = '';
+                if (record.admin_response_at) {
+                    const responseDate = new Date(record.admin_response_at);
+                    adminResponseDate = responseDate.toLocaleDateString('id-ID', {
+                        day: '2-digit',
+                        month: 'long',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                }
+
                 moodCard.innerHTML = `
                     <div class="card-body">
                         <div class="d-flex align-items-center mb-2">
@@ -99,9 +119,32 @@
                             <p class="mb-1">${record.reason || 'Tidak ada alasan'}</p>
                         </div>
 
-                        <div>
+                        <div class="mb-3">
                             <label class="form-label fw-bold">Saran Tindakan</label>
                             <p class="mb-1">${record.action_suggestion || 'Tidak ada saran tindakan'}</p>
+                        </div>
+
+                        <hr>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Respons Admin/HRD</label>
+                            ${record.admin_response ? `
+                                <div class="alert alert-info mb-2">
+                                    <p class="mb-1">${record.admin_response}</p>
+                                    <small class="text-muted">Direspons pada: ${adminResponseDate}</small>
+                                </div>
+                            ` : ''}
+                            <div class="admin-response-form" data-record-id="${record.id}">
+                                <textarea class="form-control mb-2" 
+                                          id="admin-response-${record.id}" 
+                                          rows="3" 
+                                          placeholder="Tulis respons untuk catatan mood ini...">${record.admin_response || ''}</textarea>
+                                <button type="button" 
+                                        class="btn btn-sm btn-primary" 
+                                        onclick="saveAdminResponse(${record.id})">
+                                    ${record.admin_response ? 'Update Respons' : 'Kirim Respons'}
+                                </button>
+                            </div>
                         </div>
                     </div>
                 `;
@@ -138,6 +181,16 @@
 
     function viewEmployeeDetail(userId) {
         currentUserId = userId;
+        
+        // Hilangkan highlight dari employee item yang diklik
+        const employeeItem = document.querySelector(`.employee-item[data-employee-id="${userId}"]`);
+        if (employeeItem) {
+            employeeItem.classList.remove('has-mood-today');
+            const employeeCenter = employeeItem.querySelector('.employee-center');
+            if (employeeCenter) {
+                employeeCenter.remove();
+            }
+        }
         
         // Reset filter
         document.getElementById('filter-type').value = '';
@@ -242,6 +295,70 @@
             if (this.value && currentUserId) {
                 loadMoodRecordsWithFilter(currentUserId, 'year', this.value.toString());
             }
+        });
+    }
+
+    // Fungsi untuk menyimpan respons admin
+    function saveAdminResponse(recordId) {
+        const responseTextarea = document.getElementById(`admin-response-${recordId}`);
+        const responseText = responseTextarea.value.trim();
+        const submitButton = responseTextarea.nextElementSibling;
+
+        if (!responseText) {
+            alert('Respons tidak boleh kosong');
+            return;
+        }
+
+        // Disable button saat submit
+        submitButton.disabled = true;
+        submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Menyimpan...';
+
+        fetch(`/admin/mood-record/${recordId}/response`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({
+                admin_response: responseText
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Reload mood records untuk menampilkan respons yang baru
+                if (currentUserId) {
+                    // Ambil filter yang sedang aktif
+                    const filterType = document.getElementById('filter-type').value;
+                    const filterDay = document.getElementById('filter-day');
+                    const filterMonth = document.getElementById('filter-month');
+                    const filterYear = document.getElementById('filter-year');
+                    
+                    let filterValue = null;
+                    if (filterType === 'day' && filterDay.value) {
+                        filterValue = filterDay.value;
+                    } else if (filterType === 'month' && filterMonth.value) {
+                        filterValue = filterMonth.value;
+                    } else if (filterType === 'year' && filterYear.value) {
+                        filterValue = filterYear.value.toString();
+                    }
+                    
+                    loadMoodRecordsWithFilter(currentUserId, filterType || null, filterValue);
+                }
+                // Tampilkan notifikasi sukses
+                alert('Respons berhasil disimpan');
+            } else {
+                alert('Gagal menyimpan respons: ' + (data.message || 'Silakan coba lagi'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Terjadi kesalahan saat menyimpan respons');
+        })
+        .finally(() => {
+            // Enable button kembali
+            submitButton.disabled = false;
+            // Button text akan diupdate setelah reload mood records
         });
     }
 

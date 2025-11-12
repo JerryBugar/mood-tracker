@@ -99,6 +99,8 @@ Route::prefix('admin')->group(function () {
         Route::get('/dashboard/chart-data', [App\Http\Controllers\Admin\DashboardController::class, 'getChartData'])->name('admin.dashboard.chart-data');
 
         Route::get('/user/{id}/detail', [App\Http\Controllers\Admin\DashboardController::class, 'getUserDetail'])->name('admin.user.detail');
+        
+        Route::post('/mood-record/{recordId}/response', [App\Http\Controllers\Admin\DashboardController::class, 'saveAdminResponse'])->name('admin.mood-record.response');
     });
 
     Route::post('/logout', function (\Illuminate\Http\Request $request) {
