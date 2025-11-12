@@ -65,17 +65,24 @@ CereMood is a web-based mood tracking application built with Laravel PHP framewo
 
 ## Running the Application
 
-### Development Mode
-To run the application in development mode with auto-reload for both backend and frontend:
+### Development Mode (Testing)
+**Catatan Penting**: Untuk menjalankan aplikasi dalam mode development, jalankan kedua perintah berikut di terminal terpisah:
 
 ```bash
-# Terminal 1: Run Laravel development server
+# Terminal 1: Menjalankan Laravel development server
 php artisan serve
 
-# Terminal 2: Run Vite dev server
+# Terminal 2: Menjalankan Vite dev server untuk hot-reload
 npm run dev
+```
 
-# Or alternatively, use the automated script:
+**Penting**: 
+- `php artisan serve` - Menjalankan server Laravel di `http://localhost:8000`
+- `npm run dev` - Menjalankan Vite dev server untuk hot-reload assets (CSS/JS)
+- Kedua perintah harus berjalan bersamaan untuk development yang optimal
+
+Atau gunakan script otomatis:
+```bash
 ./dev-start.bat  # For Windows
 ```
 

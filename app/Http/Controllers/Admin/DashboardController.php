@@ -33,25 +33,6 @@ class DashboardController extends Controller
 
         $employees = User::select('id', 'name', 'division', 'avatar')->get();
 
-        // Check if this is a Turbo Stream request
-        $acceptHeader = request()->header('Accept');
-        if (strpos($acceptHeader, 'text/vnd.turbo-stream.html') !== false) {
-            // Return only the dashboard content
-            $dashboardContent = view('admin.tabs.overview', [
-                'totalEmployees' => $totalEmployees,
-                'activeToday' => $activeToday,
-                'senangCount' => $senangCount,
-                'sedihCount' => $sedihCount,
-                'netralCount' => $netralCount,
-                'lelahCount' => $lelahCount,
-                'marahCount' => $marahCount,
-                'employees' => $employees
-            ])->render();
-
-            $streamContent = TurboStreamHelper::replace('dashboard_content', $dashboardContent);
-            return response($streamContent, 200, ['Content-Type' => 'text/vnd.turbo-stream.html']);
-        }
-
         return view('admin.dashboard', [
             'totalEmployees' => $totalEmployees,
             'activeToday' => $activeToday,
@@ -348,17 +329,50 @@ class DashboardController extends Controller
     {
         $employees = User::select('id', 'name', 'division', 'avatar')->get();
 
-        $content = view('admin.tabs.employees', compact('employees'))->render();
-        $streamContent = TurboStreamHelper::replace('dashboard_content', $content);
-        return response($streamContent, 200, ['Content-Type' => 'text/vnd.turbo-stream.html']);
+        // Check if this is a Turbo Frame request
+        $turboFrame = request()->header('Turbo-Frame');
+        $acceptHeader = request()->header('Accept', '');
+        
+        // Jika Turbo Frame request atau Turbo Stream request
+        if ($turboFrame === 'dashboard_content' || strpos($acceptHeader, 'text/vnd.turbo-stream.html') !== false) {
+            $content = view('admin.tabs.employees', compact('employees'));
+            
+            // Jika Turbo Stream, gunakan helper
+            if (strpos($acceptHeader, 'text/vnd.turbo-stream.html') !== false) {
+                $streamContent = TurboStreamHelper::replace('dashboard_content', $content->render());
+                return response($streamContent, 200, ['Content-Type' => 'text/vnd.turbo-stream.html']);
+            }
+            
+            // Jika Turbo Frame, kembalikan view yang dibungkus dalam turbo-frame
+            return view('admin.tabs.employees', compact('employees'));
+        }
+
+        // Jika bukan Turbo request, redirect ke dashboard utama
+        return redirect()->route('admin.dashboard');
     }
 
     // Method untuk tab notifications
     public function notificationsTab()
     {
-        $content = view('admin.tabs.notifications')->render();
-        $streamContent = TurboStreamHelper::replace('dashboard_content', $content);
-        return response($streamContent, 200, ['Content-Type' => 'text/vnd.turbo-stream.html']);
+        // Check if this is a Turbo Frame request
+        $turboFrame = request()->header('Turbo-Frame');
+        $acceptHeader = request()->header('Accept', '');
+        
+        // Jika Turbo Frame request atau Turbo Stream request
+        if ($turboFrame === 'dashboard_content' || strpos($acceptHeader, 'text/vnd.turbo-stream.html') !== false) {
+            // Jika Turbo Stream, gunakan helper
+            if (strpos($acceptHeader, 'text/vnd.turbo-stream.html') !== false) {
+                $content = view('admin.tabs.notifications')->render();
+                $streamContent = TurboStreamHelper::replace('dashboard_content', $content);
+                return response($streamContent, 200, ['Content-Type' => 'text/vnd.turbo-stream.html']);
+            }
+            
+            // Jika Turbo Frame, kembalikan view langsung
+            return view('admin.tabs.notifications');
+        }
+
+        // Jika bukan Turbo request, redirect ke dashboard utama
+        return redirect()->route('admin.dashboard');
     }
 
     // Metode tambahan untuk bagian-bagian spesifik dashboard
@@ -384,18 +398,35 @@ class DashboardController extends Controller
 
         $employees = User::select('id', 'name', 'division', 'avatar')->get();
 
-        $content = view('admin.tabs.overview', [
-            'totalEmployees' => $totalEmployees,
-            'activeToday' => $activeToday,
-            'senangCount' => $senangCount,
-            'sedihCount' => $sedihCount,
-            'netralCount' => $netralCount,
-            'lelahCount' => $lelahCount,
-            'marahCount' => $marahCount,
-            'employees' => $employees
-        ])->render();
+        // Check if this is a Turbo Frame request
+        $turboFrame = request()->header('Turbo-Frame');
+        $acceptHeader = request()->header('Accept', '');
+        
+        // Jika Turbo Frame request atau Turbo Stream request
+        if ($turboFrame === 'dashboard_content' || strpos($acceptHeader, 'text/vnd.turbo-stream.html') !== false) {
+            $viewData = [
+                'totalEmployees' => $totalEmployees,
+                'activeToday' => $activeToday,
+                'senangCount' => $senangCount,
+                'sedihCount' => $sedihCount,
+                'netralCount' => $netralCount,
+                'lelahCount' => $lelahCount,
+                'marahCount' => $marahCount,
+                'employees' => $employees
+            ];
+            
+            // Jika Turbo Stream, gunakan helper
+            if (strpos($acceptHeader, 'text/vnd.turbo-stream.html') !== false) {
+                $content = view('admin.tabs.overview', $viewData)->render();
+                $streamContent = TurboStreamHelper::replace('dashboard_content', $content);
+                return response($streamContent, 200, ['Content-Type' => 'text/vnd.turbo-stream.html']);
+            }
+            
+            // Jika Turbo Frame, kembalikan view langsung
+            return view('admin.tabs.overview', $viewData);
+        }
 
-        $streamContent = TurboStreamHelper::replace('dashboard_content', $content);
-        return response($streamContent, 200, ['Content-Type' => 'text/vnd.turbo-stream.html']);
+        // Jika bukan Turbo request, redirect ke dashboard utama
+        return redirect()->route('admin.dashboard');
     }
 }

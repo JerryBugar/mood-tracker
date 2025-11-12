@@ -72,7 +72,7 @@ class TurboStreamHelper
         $content = "<template data-turbo-stream=\"true\"></template>";
         $stream = '<turbo-stream action="update_attribute" target="' . $target . '" attribute="' . $attribute . '" value="' . $value . '">';
         $stream .= $content;
-        $stream .= '</turbo-stream>' . PHP_EOL;
+        $stream .= '</turbo-stream>';
         return $stream;
     }
 
@@ -87,16 +87,21 @@ class TurboStreamHelper
      */
     private static function buildStream(string $action, string $target, string $content, string $templateWrapper = 'div'): string
     {
-        $stream = '<turbo-stream action="' . $action . '" target="' . $target . '">' . PHP_EOL;
-        $stream .= '<template>' . PHP_EOL;
-        
+        $stream = '<turbo-stream action="' . $action . '" target="' . $target . '">';
+        $stream .= '<template>';
+
         if ($action !== 'remove') {
-            $stream .= '<' . $templateWrapper . ' id="' . $target . '">' . $content . '</' . $templateWrapper . '>' . PHP_EOL;
+            // Untuk 'replace', konten digantikan secara langsung 
+            if ($action === 'replace') {
+                $stream .= $content;
+            } else {
+                $stream .= '<' . $templateWrapper . ' id="' . $target . '">' . $content . '</' . $templateWrapper . '>';
+            }
         }
-        
-        $stream .= '</template>' . PHP_EOL;
-        $stream .= '</turbo-stream>' . PHP_EOL;
-        
+
+        $stream .= '</template>';
+        $stream .= '</turbo-stream>';
+
         return $stream;
     }
 
