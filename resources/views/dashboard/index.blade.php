@@ -23,4 +23,14 @@
         </p>
     </div>
 </div>
+
+@if(Auth::check() && Auth::user() && Auth::user()->is_verified)
+<script>
+    // Jika user sudah login, langsung redirect ke homepage
+    // Ini sebagai fallback jika server-side redirect tidak bekerja karena Turbo atau cache
+    (function() {
+        window.location.href = '{{ route("home") }}';
+    })();
+</script>
+@endif
 @endsection

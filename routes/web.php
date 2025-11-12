@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Auth\GoogleLoginController;
 use App\Http\Controllers\Auth\VerificationController;
 use App\Http\Controllers\MoodController;
@@ -8,14 +9,17 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\Mood\MoodRecordController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\LogoController;
 
 Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/dashboard', function () {
-    return view('dashboard.index');
-});
+Route::get('/dashboard', [DashboardController::class, 'index']);
+
+// Route untuk serve logo dengan cache headers optimal
+Route::get('/logo/{filename}', [LogoController::class, 'serve'])->where('filename', '[a-zA-Z0-9._-]+\.(png|jpeg|jpg)')->name('logo.serve');
 
 Route::get('/auth/google/redirect', [GoogleLoginController::class, 'redirect']);
 Route::get('/auth/google/callback', [GoogleLoginController::class, 'callback']);
@@ -30,7 +34,7 @@ Route::post('/logout', function () {
     return redirect('/');
 })->middleware(['auth'])->name('logout');
 
-Route::get('/home', [HomeController::class, 'index'])->middleware(['auth', 'verified']);
+Route::get('/home', [HomeController::class, 'index'])->middleware(['auth', 'verified'])->name('home');
 
 Route::get('/auth/verify', [VerificationController::class, 'show'])->name('verification.show');
 Route::post('/auth/verify', [VerificationController::class, 'verify'])->name('verification.verify');

@@ -5,12 +5,35 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ config('app.name', 'Laravel') }}</title>
-    <link rel="icon" type="image/png" href="{{ asset('logo/favicons.png') }}">
+    <link rel="icon" type="image/png" href="{{ route('logo.serve', ['filename' => 'favicons.png']) }}">
+    
+    {{-- Preload logo images untuk loading yang lebih cepat --}}
+    @php
+        $preloadLogos = [
+            'favicons.png',
+            'netral.png',
+            'netral1.png',
+            'senyum.png',
+            'senyum1.png',
+            'sedih.png',
+            'sedih1.png',
+            'lelah.png',
+            'lelah1.png',
+            'marah.png',
+            'marah1.png',
+            'google.png',
+            'love.png'
+        ];
+    @endphp
+    @foreach($preloadLogos as $logo)
+        <link rel="preload" as="image" href="{{ route('logo.serve', ['filename' => $logo]) }}" fetchpriority="high">
+    @endforeach
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    @stack('styles')
     @stack('head')
 </head>
 <body class="antialiased">
@@ -44,5 +67,6 @@
             }
         });
     </script>
+    @stack('scripts')
 </body>
 </html>

@@ -9,7 +9,9 @@ export default defineConfig({
                 'resources/css/app.css', 
                 'resources/js/app.js',
                 'resources/css/admin/dashboard.css',
-                'resources/js/admin/dashboard.js'
+                'resources/js/admin/dashboard.js',
+                'resources/css/profile/profile.css',
+                'resources/js/profile/profile.js'
             ],
             refresh: true,
         }),
