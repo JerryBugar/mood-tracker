@@ -70,9 +70,12 @@ class DashboardController extends Controller
         return response()->json($chartData);
     }
 
-    public function getUserDetail($id)
+    public function getUserDetail($id, Request $request)
     {
-        $userDetail = $this->userDetailService->getUserDetail($id);
+        $filterType = $request->get('filter_type'); // 'day', 'month', 'year', atau null
+        $filterValue = $request->get('filter_value'); // Nilai filter sesuai type
+
+        $userDetail = $this->userDetailService->getUserDetail($id, $filterType, $filterValue);
 
         if (!$userDetail) {
             return response()->json([
