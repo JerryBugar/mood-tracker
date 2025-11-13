@@ -8,8 +8,11 @@ use App\Services\Admin\DashboardChartService;
 use App\Services\Admin\DashboardTabService;
 use App\Services\Admin\UserDetailService;
 use App\Models\MoodRecord;
+use App\Models\Notification;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
@@ -111,12 +114,27 @@ class DashboardController extends Controller
             return redirect()->route('admin.dashboard');
         }
 
+        // Ambil data employees dan divisions
+        $employees = User::select('id', 'name', 'email')->orderBy('name')->get();
+        $divisions = User::select('division')
+            ->whereNotNull('division')
+            ->distinct()
+            ->orderBy('division')
+            ->pluck('division')
+            ->filter()
+            ->values();
+
+        $data = [
+            'employees' => $employees,
+            'divisions' => $divisions
+        ];
+
         if ($this->tabService->isTurboStreamRequest()) {
-            $content = view('admin.tabs.notifications')->render();
+            $content = view('admin.tabs.notifications', $data)->render();
             return $this->tabService->createTurboStreamResponse('dashboard_content', $content);
         }
 
-        return view('admin.tabs.notifications');
+        return view('admin.tabs.notifications', $data);
     }
 
     public function overviewTab()
@@ -175,5 +193,72 @@ class DashboardController extends Controller
             'admin_response' => $moodRecord->admin_response,
             'admin_response_at' => $moodRecord->admin_response_at
         ]);
+    }
+
+    /**
+     * Mengirim notifikasi
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function sendNotification(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'type' => 'required|in:individual,group,all',
+            'message' => 'required|string|max:1000',
+            'user_id' => 'required_if:type,individual|nullable|exists:users,id',
+            'division' => 'required_if:type,group|nullable|string',
+            'scheduled_at' => 'nullable|date',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi gagal',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            DB::beginTransaction();
+
+            // Buat notifikasi
+            $notification = Notification::create([
+                'type' => $request->type,
+                'message' => $request->message,
+                'division' => $request->division,
+                'scheduled_at' => $request->scheduled_at ? now()->parse($request->scheduled_at) : null,
+            ]);
+
+            // Tentukan user yang akan menerima notifikasi
+            $users = collect();
+
+            if ($request->type === 'individual') {
+                $users = User::where('id', $request->user_id)->get();
+            } elseif ($request->type === 'group') {
+                $users = User::where('division', $request->division)->get();
+            } elseif ($request->type === 'all') {
+                $users = User::all();
+            }
+
+            // Attach users ke notification
+            if ($users->isNotEmpty()) {
+                $notification->users()->attach($users->pluck('id')->toArray());
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Notifikasi berhasil dikirim ke ' . $users->count() . ' karyawan',
+                'notification_id' => $notification->id
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengirim notifikasi: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

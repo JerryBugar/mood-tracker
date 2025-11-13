@@ -42,9 +42,8 @@ Route::post('/auth/verify', [VerificationController::class, 'verify'])->name('ve
 Route::get('/calendar', [CalendarController::class, 'index'])->middleware(['auth', 'verified'])->name('calendar.index');
 Route::get('/calendar/day/{date}', [CalendarController::class, 'showDay'])->middleware(['auth', 'verified'])->name('calendar.day');
 
-Route::get('/notif', function () {
-    return view('notif.index');
-})->middleware(['auth', 'verified']);
+Route::get('/notif', [App\Http\Controllers\NotificationController::class, 'index'])->middleware(['auth', 'verified'])->name('notif.index');
+Route::post('/notif/{id}/read', [App\Http\Controllers\NotificationController::class, 'markAsRead'])->middleware(['auth', 'verified'])->name('notif.read');
 
 Route::get('/profile', [ProfileController::class, 'index'])->middleware(['auth', 'verified'])->name('profile.index');
 Route::put('/profile', [ProfileController::class, 'update'])->middleware(['auth', 'verified'])->name('profile.update');
@@ -101,6 +100,8 @@ Route::prefix('admin')->group(function () {
         Route::get('/user/{id}/detail', [App\Http\Controllers\Admin\DashboardController::class, 'getUserDetail'])->name('admin.user.detail');
         
         Route::post('/mood-record/{recordId}/response', [App\Http\Controllers\Admin\DashboardController::class, 'saveAdminResponse'])->name('admin.mood-record.response');
+        
+        Route::post('/notification/send', [App\Http\Controllers\Admin\DashboardController::class, 'sendNotification'])->name('admin.notification.send');
     });
 
     Route::post('/logout', function (\Illuminate\Http\Request $request) {
