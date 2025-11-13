@@ -218,3 +218,35 @@
     text-align: center;
 }
 
+/* Styling untuk button di semua employee item */
+#dashboard_content > div.employee-list > div > button {
+    background-color: #82242d;
+    border-color: #82242d;
+    color: white;
+}
+
+#dashboard_content > div.employee-list > div > button:hover {
+    background-color: #6a1d24;
+    border-color: #6a1d24;
+}
+
+/* Styling untuk button di admin-response-form */
+#mood-records-container .admin-response-form > button {
+    background-color: #82242d;
+    border-color: #82242d;
+    color: white;
+}
+
+#mood-records-container .admin-response-form > button:hover {
+    background-color: #6a1d24;
+    border-color: #6a1d24;
+    color: white;
+}
+
+/* Styling untuk alert-info di mood-records-container menjadi merah transparan */
+#mood-records-container .alert.alert-info {
+    background-color: rgba(130, 36, 45, 0.15);
+    border-color: rgba(130, 36, 45, 0.3);
+    color: #82242d;
+}
+

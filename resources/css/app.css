@@ -426,3 +426,26 @@ body.dashboard-page {
         padding: 0.25rem !important;
     }
 }
+
+/* Styling untuk button di record-center menjadi merah */
+#record_container_list .record-center button {
+    background-color: #82242d !important;
+    border-color: #82242d !important;
+    color: white !important;
+}
+
+#record_container_list .record-center button:hover {
+    background-color: #6a1d24 !important;
+    border-color: #6a1d24 !important;
+    color: white !important;
+}
+
+/* Styling untuk icon chat di record-right menjadi merah */
+#record_container_list .record-right .bi-chat-dots-fill.text-info {
+    color: #82242d !important;
+}
+
+/* Styling untuk modal header admin response menjadi merah */
+[id^="adminResponseModal"] .modal-header.bg-info {
+    background-color: #82242d !important;
+}
