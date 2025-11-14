@@ -200,9 +200,11 @@
         // Reset filter
         document.getElementById('filter-type').value = '';
         document.getElementById('filter-day').style.display = 'none';
+        document.getElementById('filter-week').style.display = 'none';
         document.getElementById('filter-month').style.display = 'none';
         document.getElementById('filter-year').style.display = 'none';
         document.getElementById('filter-day').value = '';
+        document.getElementById('filter-week').value = '';
         document.getElementById('filter-month').value = '';
         document.getElementById('filter-year').value = '2025';
 
@@ -242,6 +244,7 @@
     function setupFilterListeners() {
         const filterType = document.getElementById('filter-type');
         const filterDay = document.getElementById('filter-day');
+        const filterWeek = document.getElementById('filter-week');
         const filterMonth = document.getElementById('filter-month');
         const filterYear = document.getElementById('filter-year');
 
@@ -255,6 +258,7 @@
             
             // Sembunyikan semua input filter
             filterDay.style.display = 'none';
+            filterWeek.style.display = 'none';
             filterMonth.style.display = 'none';
             filterYear.style.display = 'none';
             
@@ -264,6 +268,15 @@
                 filterDay.style.display = 'block';
                 filterDay.value = new Date().toISOString().split('T')[0]; // Set default ke hari ini
                 filterValue = filterDay.value;
+            } else if (selectedType === 'week') {
+                filterWeek.style.display = 'block';
+                // Set default ke minggu ini (input type="week" menggunakan format ISO: YYYY-Www)
+                const today = new Date();
+                const year = today.getFullYear();
+                const week = getWeekNumber(today);
+                // Format untuk input type="week": YYYY-Www (contoh: 2025-W14)
+                filterWeek.value = `${year}-W${week.toString().padStart(2, '0')}`;
+                filterValue = filterWeek.value;
             } else if (selectedType === 'month') {
                 filterMonth.style.display = 'block';
                 filterMonth.value = new Date().toISOString().slice(0, 7); // Set default ke bulan ini
@@ -290,6 +303,12 @@
             }
         });
 
+        filterWeek.addEventListener('change', function() {
+            if (this.value && window.currentUserId) {
+                loadMoodRecordsWithFilter(window.currentUserId, 'week', this.value);
+            }
+        });
+
         filterMonth.addEventListener('change', function() {
             if (this.value && window.currentUserId) {
                 loadMoodRecordsWithFilter(window.currentUserId, 'month', this.value);
@@ -301,6 +320,15 @@
                 loadMoodRecordsWithFilter(window.currentUserId, 'year', this.value.toString());
             }
         });
+    }
+
+    // Fungsi helper untuk mendapatkan nomor minggu
+    function getWeekNumber(date) {
+        const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+        const dayNum = d.getUTCDay() || 7;
+        d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+        const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+        return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
     }
 
     // Fungsi untuk menyimpan respons admin
@@ -336,12 +364,15 @@
                     // Ambil filter yang sedang aktif
                     const filterType = document.getElementById('filter-type').value;
                     const filterDay = document.getElementById('filter-day');
+                    const filterWeek = document.getElementById('filter-week');
                     const filterMonth = document.getElementById('filter-month');
                     const filterYear = document.getElementById('filter-year');
                     
                     let filterValue = null;
                     if (filterType === 'day' && filterDay.value) {
                         filterValue = filterDay.value;
+                    } else if (filterType === 'week' && filterWeek.value) {
+                        filterValue = filterWeek.value;
                     } else if (filterType === 'month' && filterMonth.value) {
                         filterValue = filterMonth.value;
                     } else if (filterType === 'year' && filterYear.value) {

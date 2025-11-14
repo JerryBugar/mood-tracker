@@ -75,8 +75,10 @@ Route::prefix('admin')->middleware(['admin.desktop'])->group(function () {
         $adminPassword = env('ADMIN_PASSWORD');
 
         if ($request->username === $adminUsername && $request->password === $adminPassword) {
+            // Clear intended URL untuk menghindari redirect ke URL yang tidak diinginkan
+            $request->session()->forget('url.intended');
             $request->session()->put('is_admin_authenticated', true);
-            return redirect()->intended('/admin/dashboard');
+            return redirect('/admin/dashboard');
         }
 
         return redirect()->back()->withErrors(['credentials' => 'Username atau password salah']);

@@ -118,10 +118,12 @@
                             <select id="filter-type" class="form-select form-select-sm" style="width: auto;">
                                 <option value="">Semua</option>
                                 <option value="day">Hari</option>
+                                <option value="week">Minggu</option>
                                 <option value="month">Bulan</option>
                                 <option value="year">Tahun</option>
                             </select>
                             <input type="date" id="filter-day" class="form-control form-control-sm" style="width: auto; display: none;" max="{{ date('Y-m-d') }}">
+                            <input type="week" id="filter-week" class="form-control form-control-sm" style="width: auto; display: none;">
                             <input type="month" id="filter-month" class="form-control form-control-sm" style="width: auto; display: none;" max="{{ date('Y-m') }}">
                             <input type="number" id="filter-year" class="form-control form-control-sm" style="width: auto; display: none;" min="2020" max="2025" value="2025" placeholder="Tahun">
                         </div>
