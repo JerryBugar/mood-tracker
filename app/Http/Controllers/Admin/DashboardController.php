@@ -7,7 +7,12 @@ use App\Services\Admin\DashboardStatisticsService;
 use App\Services\Admin\DashboardChartService;
 use App\Services\Admin\DashboardTabService;
 use App\Services\Admin\UserDetailService;
+use App\Models\MoodRecord;
+use App\Models\Notification;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
@@ -109,12 +114,27 @@ class DashboardController extends Controller
             return redirect()->route('admin.dashboard');
         }
 
+        // Ambil data employees dan divisions
+        $employees = User::select('id', 'name', 'email')->orderBy('name')->get();
+        $divisions = User::select('division')
+            ->whereNotNull('division')
+            ->distinct()
+            ->orderBy('division')
+            ->pluck('division')
+            ->filter()
+            ->values();
+
+        $data = [
+            'employees' => $employees,
+            'divisions' => $divisions
+        ];
+
         if ($this->tabService->isTurboStreamRequest()) {
-            $content = view('admin.tabs.notifications')->render();
+            $content = view('admin.tabs.notifications', $data)->render();
             return $this->tabService->createTurboStreamResponse('dashboard_content', $content);
         }
 
-        return view('admin.tabs.notifications');
+        return view('admin.tabs.notifications', $data);
     }
 
     public function overviewTab()
@@ -131,5 +151,134 @@ class DashboardController extends Controller
         }
 
         return view('admin.tabs.overview', $viewData);
+    }
+
+    /**
+     * Menyimpan respons admin untuk mood record
+     *
+     * @param int $recordId
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function saveAdminResponse($recordId, Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'admin_response' => 'required|string|max:1000',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi gagal',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $moodRecord = MoodRecord::find($recordId);
+
+        if (!$moodRecord) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Mood record tidak ditemukan'
+            ], 404);
+        }
+
+        $moodRecord->admin_response = $request->admin_response;
+        $moodRecord->admin_response_at = now();
+        $moodRecord->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Respons berhasil disimpan',
+            'admin_response' => $moodRecord->admin_response,
+            'admin_response_at' => $moodRecord->admin_response_at
+        ]);
+    }
+
+    /**
+     * Mengirim notifikasi
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function sendNotification(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'type' => 'required|in:individual,group,all',
+            'message' => 'required|string|max:1000',
+            'user_id' => 'required_if:type,individual|nullable|exists:users,id',
+            'division' => 'required_if:type,group|nullable|string',
+            'scheduled_at' => 'nullable|date',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi gagal',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            DB::beginTransaction();
+
+            // Parse scheduled_at jika ada
+            // datetime-local mengirim format: YYYY-MM-DDTHH:mm (tanpa timezone)
+            // Asumsikan waktu input adalah waktu lokal (WIB/UTC+7)
+            $scheduledAt = null;
+            if ($request->scheduled_at) {
+                // Parse waktu dari input (format: YYYY-MM-DDTHH:mm)
+                // Asumsikan waktu input dalam timezone Asia/Jakarta (WIB/UTC+7)
+                $scheduledAt = \Carbon\Carbon::createFromFormat('Y-m-d\TH:i', $request->scheduled_at, 'Asia/Jakarta');
+                // Konversi ke UTC untuk disimpan di database
+                $scheduledAt = $scheduledAt->utc();
+            }
+            $isScheduled = $scheduledAt && $scheduledAt->isFuture();
+
+            // Buat notifikasi
+            $notification = Notification::create([
+                'type' => $request->type,
+                'message' => $request->message,
+                'division' => $request->division,
+                'scheduled_at' => $scheduledAt,
+                'target_user_id' => $request->type === 'individual' ? $request->user_id : null,
+            ]);
+
+            // Tentukan user yang akan menerima notifikasi
+            $users = collect();
+
+            if ($request->type === 'individual') {
+                $users = User::where('id', $request->user_id)->get();
+            } elseif ($request->type === 'group') {
+                $users = User::where('division', $request->division)->get();
+            } elseif ($request->type === 'all') {
+                $users = User::all();
+            }
+
+            // Attach users ke notification hanya jika tidak dijadwalkan (langsung kirim)
+            // Jika dijadwalkan, tidak perlu attach sekarang - akan diproses oleh middleware
+            if ($users->isNotEmpty() && !$isScheduled) {
+                $notification->users()->attach($users->pluck('id')->toArray());
+            }
+            // Untuk scheduled notifications, biarkan middleware yang memproses saat waktunya tiba
+
+            DB::commit();
+
+            $message = $isScheduled 
+                ? 'Notifikasi berhasil dijadwalkan untuk ' . $users->count() . ' karyawan pada ' . $scheduledAt->format('d/m/Y H:i')
+                : 'Notifikasi berhasil dikirim ke ' . $users->count() . ' karyawan';
+
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'notification_id' => $notification->id
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengirim notifikasi: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

@@ -51,7 +51,36 @@ class DashboardTabService
      */
     public function getEmployeesTabData()
     {
-        return User::select('id', 'name', 'division', 'avatar')->get();
+        $employees = User::select('id', 'name', 'division', 'avatar')->get();
+        
+        // Cek apakah setiap karyawan mengisi mood hari ini
+        $today = Carbon::today();
+        $employeeIdsWithMoodToday = MoodRecord::whereDate('created_at', $today)
+            ->distinct('user_id')
+            ->pluck('user_id')
+            ->toArray();
+        
+        // Tambahkan informasi apakah karyawan mengisi mood hari ini
+        // Highlight hanya muncul jika mood record hari ini belum direspons oleh admin
+        $employees->each(function ($employee) use ($employeeIdsWithMoodToday, $today) {
+            $hasMoodToday = in_array($employee->id, $employeeIdsWithMoodToday);
+            
+            if ($hasMoodToday) {
+                // Ambil mood record hari ini untuk mendapatkan created_at
+                $moodRecord = MoodRecord::where('user_id', $employee->id)
+                    ->whereDate('created_at', $today)
+                    ->latest()
+                    ->first();
+                
+                // Highlight hanya muncul jika mood record hari ini belum direspons oleh admin
+                $employee->has_mood_today = $moodRecord && empty($moodRecord->admin_response);
+                $employee->mood_today_date = $moodRecord ? $moodRecord->created_at : $today;
+            } else {
+                $employee->has_mood_today = false;
+            }
+        });
+        
+        return $employees;
     }
 
     /**

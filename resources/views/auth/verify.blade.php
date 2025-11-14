@@ -27,7 +27,14 @@
 
                         <div class="mb-3">
                             <label for="division" class="form-label">Divisi</label>
-                            <input id="division" type="text" name="division" class="form-control @error('division') is-invalid @enderror" value="{{ old('division') }}" required>
+                            <select id="division" name="division" class="form-select @error('division') is-invalid @enderror" required>
+                                <option value="" disabled {{ old('division') ? '' : 'selected' }}>Pilih Divisi</option>
+                                <option value="Marketing" {{ old('division') == 'Marketing' ? 'selected' : '' }}>Marketing</option>
+                                <option value="Product" {{ old('division') == 'Product' ? 'selected' : '' }}>Product</option>
+                                <option value="IT" {{ old('division') == 'IT' ? 'selected' : '' }}>IT</option>
+                                <option value="CDS" {{ old('division') == 'CDS' ? 'selected' : '' }}>CDS</option>
+                                <option value="HRD" {{ old('division') == 'HRD' ? 'selected' : '' }}>HRD</option>
+                            </select>
                             @error('division')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror

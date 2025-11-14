@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Auth\GoogleLoginController;
 use App\Http\Controllers\Auth\VerificationController;
 use App\Http\Controllers\MoodController;
@@ -8,14 +9,17 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\Mood\MoodRecordController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\LogoController;
 
 Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/dashboard', function () {
-    return view('dashboard.index');
-});
+Route::get('/dashboard', [DashboardController::class, 'index']);
+
+// Route untuk serve logo dengan cache headers optimal
+Route::get('/logo/{filename}', [LogoController::class, 'serve'])->where('filename', '[a-zA-Z0-9._-]+\.(png|jpeg|jpg)')->name('logo.serve');
 
 Route::get('/auth/google/redirect', [GoogleLoginController::class, 'redirect']);
 Route::get('/auth/google/callback', [GoogleLoginController::class, 'callback']);
@@ -30,7 +34,7 @@ Route::post('/logout', function () {
     return redirect('/');
 })->middleware(['auth'])->name('logout');
 
-Route::get('/home', [HomeController::class, 'index'])->middleware(['auth', 'verified']);
+Route::get('/home', [HomeController::class, 'index'])->middleware(['auth', 'verified'])->name('home');
 
 Route::get('/auth/verify', [VerificationController::class, 'show'])->name('verification.show');
 Route::post('/auth/verify', [VerificationController::class, 'verify'])->name('verification.verify');
@@ -38,9 +42,10 @@ Route::post('/auth/verify', [VerificationController::class, 'verify'])->name('ve
 Route::get('/calendar', [CalendarController::class, 'index'])->middleware(['auth', 'verified'])->name('calendar.index');
 Route::get('/calendar/day/{date}', [CalendarController::class, 'showDay'])->middleware(['auth', 'verified'])->name('calendar.day');
 
-Route::get('/notif', function () {
-    return view('notif.index');
-})->middleware(['auth', 'verified']);
+Route::get('/notif', [App\Http\Controllers\NotificationController::class, 'index'])->middleware(['auth', 'verified'])->name('notif.index');
+Route::post('/notif/{id}/read', [App\Http\Controllers\NotificationController::class, 'markAsRead'])->middleware(['auth', 'verified'])->name('notif.read');
+Route::post('/notif/read-all', [App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->middleware(['auth', 'verified'])->name('notif.read-all');
+Route::delete('/notif/delete-all', [App\Http\Controllers\NotificationController::class, 'deleteAll'])->middleware(['auth', 'verified'])->name('notif.delete-all');
 
 Route::get('/profile', [ProfileController::class, 'index'])->middleware(['auth', 'verified'])->name('profile.index');
 Route::put('/profile', [ProfileController::class, 'update'])->middleware(['auth', 'verified'])->name('profile.update');
@@ -60,7 +65,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 // Routes untuk admin panel
-Route::prefix('admin')->group(function () {
+Route::prefix('admin')->middleware(['admin.desktop'])->group(function () {
     Route::get('/login', function () {
         return view('admin.login');
     })->name('admin.login');
@@ -70,8 +75,10 @@ Route::prefix('admin')->group(function () {
         $adminPassword = env('ADMIN_PASSWORD');
 
         if ($request->username === $adminUsername && $request->password === $adminPassword) {
+            // Clear intended URL untuk menghindari redirect ke URL yang tidak diinginkan
+            $request->session()->forget('url.intended');
             $request->session()->put('is_admin_authenticated', true);
-            return redirect()->intended('/admin/dashboard');
+            return redirect('/admin/dashboard');
         }
 
         return redirect()->back()->withErrors(['credentials' => 'Username atau password salah']);
@@ -95,6 +102,10 @@ Route::prefix('admin')->group(function () {
         Route::get('/dashboard/chart-data', [App\Http\Controllers\Admin\DashboardController::class, 'getChartData'])->name('admin.dashboard.chart-data');
 
         Route::get('/user/{id}/detail', [App\Http\Controllers\Admin\DashboardController::class, 'getUserDetail'])->name('admin.user.detail');
+        
+        Route::post('/mood-record/{recordId}/response', [App\Http\Controllers\Admin\DashboardController::class, 'saveAdminResponse'])->name('admin.mood-record.response');
+        
+        Route::post('/notification/send', [App\Http\Controllers\Admin\DashboardController::class, 'sendNotification'])->name('admin.notification.send');
     });
 
     Route::post('/logout', function (\Illuminate\Http\Request $request) {

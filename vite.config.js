@@ -9,7 +9,14 @@ export default defineConfig({
                 'resources/css/app.css', 
                 'resources/js/app.js',
                 'resources/css/admin/dashboard.css',
-                'resources/js/admin/dashboard.js'
+                'resources/js/admin/dashboard.js',
+                'resources/css/admin/notifications.css',
+                'resources/js/admin/notifications.js',
+                'resources/css/profile/profile.css',
+                'resources/js/profile/profile.js',
+                'resources/css/notif/notif.css',
+                'resources/js/notif/notif.js',
+                'resources/js/admin/employees.js'
             ],
             refresh: true,
         }),

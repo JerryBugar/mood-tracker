@@ -27,14 +27,15 @@ class VerificationController extends \App\Http\Controllers\Controller
 
         $request->validate([
             'name' => ['required', 'string', 'max:60', 'regex:/^[a-zA-Z\\s]+$/'],
-            'division' => ['required', 'string', 'max:60'],
+            'division' => 'required|string|in:Marketing,Product,IT,CDS,HRD',
             'role' => ['required', 'string', 'max:60'],
             'jenis_kelamin' => 'required|string|in:Laki-laki,Perempuan',
             'company_code' => 'required|string',
         ],[
             'name.regex' => 'Nama Lengkap hanya boleh berisi huruf dan spasi.',
             'name.max' => 'Nama Lengkap tidak boleh lebih dari :max karakter.',
-            'division.max' => 'Divisi tidak boleh lebih dari :max karakter.',
+            'division.required' => 'Divisi harus dipilih.',
+            'division.in' => 'Divisi yang dipilih tidak valid.',
             'role.max' => 'Role / Jabatan tidak boleh lebih dari :max karakter.',
         ]);
 

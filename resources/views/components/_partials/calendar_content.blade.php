@@ -102,6 +102,39 @@
             align-content: center !important;
         }
         
+        .mood-emoticon-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .admin-response-indicator-calendar {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            background-color: #82242d;
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            z-index: 10;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+            border: 2px solid white;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+        
+        .admin-response-indicator-calendar:hover {
+            transform: scale(1.1);
+        }
+        
+        .admin-response-indicator-calendar i {
+            line-height: 1;
+        }
+        
         /* Responsif untuk mobile */
         @media (max-width: 767px) {
             .calendar-navigation {
@@ -122,6 +155,15 @@
             .mood-emoticon {
                 width: 20px !important; /* Lebih kecil di mobile */
                 height: 20px !important;
+            }
+            
+            .admin-response-indicator-calendar {
+                width: 14px !important;
+                height: 14px !important;
+                font-size: 8px !important;
+                top: -3px !important;
+                right: -3px !important;
+                border-width: 1.5px !important;
             }
         }
         
@@ -170,6 +212,15 @@
             .mood-emoticon {
                 width: 30px !important; /* Ukuran 30px di mobile */
                 height: 30px !important;
+            }
+            
+            .admin-response-indicator-calendar {
+                width: 16px !important;
+                height: 16px !important;
+                font-size: 9px !important;
+                top: -3px !important;
+                right: -3px !important;
+                border-width: 1.5px !important;
             }
             
             .day-records {
@@ -363,13 +414,27 @@
                                 'marah' => $isFemale ? asset('logo/marah1.png') : asset('logo/marah.png'),
                             ];
                             $emoticonPath = $emoticonPaths[$record->mood] ?? $emoticonPaths['netral'];
+                            
+                            $tooltipText = $record->reason ?? 'Mood: ' . (['netral' => 'Biasa saja', 'senyum' => 'Senang', 'sedih' => 'Sedih', 'lelah' => 'Lelah', 'marah' => 'Marah'][$record->mood] ?? $record->mood);
+                            if ($record->admin_response) {
+                                $tooltipText .= ' - Direspons oleh Admin/HRD';
+                            }
                         @endphp
-                        <img src="{{ $emoticonPath }}" 
-                             alt="{{ $record->mood }}" 
-                             class="mood-emoticon {{ $record->mood }}" 
-                             data-bs-toggle="tooltip" 
-                             title="{{ $record->reason ?? 'Mood: ' . (['netral' => 'Biasa saja', 'senyum' => 'Senang', 'sedih' => 'Sedih', 'lelah' => 'Lelah', 'marah' => 'Marah'][$record->mood] ?? $record->mood) }}"
-                             onclick="showDayRecords('{{ $date->format('Y-m-d') }}')">
+                        <div class="mood-emoticon-wrapper">
+                            <img src="{{ $emoticonPath }}" 
+                                 alt="{{ $record->mood }}" 
+                                 class="mood-emoticon {{ $record->mood }}" 
+                                 data-bs-toggle="tooltip" 
+                                 title="{{ $tooltipText }}"
+                                 onclick="showDayRecords('{{ $date->format('Y-m-d') }}')">
+                            @if($record->admin_response)
+                                <span class="admin-response-indicator-calendar" 
+                                      data-bs-toggle="tooltip" 
+                                      title="Direspons oleh Admin/HRD">
+                                    <i class="bi bi-check-circle-fill"></i>
+                                </span>
+                            @endif
+                        </div>
                     @endforeach
                 </div>
             </div>

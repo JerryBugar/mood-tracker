@@ -61,6 +61,18 @@
         text-align: center;
     }
     
+    .admin-response-indicator {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .admin-response-badge {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    
     .record-right {
         font-size: 0.9rem;
         font-weight: 500;
