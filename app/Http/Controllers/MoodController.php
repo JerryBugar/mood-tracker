@@ -35,11 +35,11 @@ class MoodController extends Controller
         $mood = $request->input('mood', 'netral'); // Default ke netral jika tidak ada
 
         $moodData = [
-            'netral' => ['title' => 'Biasa saja', 'explanation' => 'Kenapa Biasa saja? Coba ceritain...', 'suggestion' => 'Kira-kira apa yang bisa bikin kamu gak Biasa aja?'],
-            'senyum' => ['title' => 'Senang', 'explanation' => 'Kenapa kamu merasa senang hari ini? Bagikan ceritanya...', 'suggestion' => 'Apa yang bisa bikin kamu tetap merasa senang?'],
-            'sedih' => ['title' => 'Sedih', 'explanation' => 'Kenapa kamu merasa sedih? Ceritakan perasaanmu...', 'suggestion' => 'Apa yang bisa membantumu merasa lebih baik?'],
-            'lelah' => ['title' => 'Lelah', 'explanation' => 'Kenapa kamu merasa lelah? Apa penyebabnya?', 'suggestion' => 'Apa yang bisa kamu lakukan untuk mengurangi rasa lelah ini?'],
-            'marah' => ['title' => 'Marah', 'explanation' => 'Kenapa kamu merasa marah? Ceritakan penyebabnya...', 'suggestion' => 'Apa yang bisa membantumu meredakan amarah ini?']
+            'netral' => ['title' => 'Biasa saja', 'explanation' => 'Ada hal yang lagi kamu pikirin belakangan ini? Kadang ngobrol dikit bisa bantu juga loh', 'suggestion' => 'Kira-kira apa ya yang bisa bikin kamu tambah semangat dikit?'],
+            'senyum' => ['title' => 'Senang', 'explanation' => 'Lagi happy banget nih! Cerita dong, apa sih yang bikin hari kamu secerah ini?', 'suggestion' => 'Menurut kamu, apa yang paling ampuh buat jaga mood biar tetap bagus?'],
+            'sedih' => ['title' => 'Sedih', 'explanation' => 'Lagi ada perasaan yang mengganggu di hati, ya? Gak usah ditahan sendiri, pelan-pelan aja diceritain', 'suggestion' => 'Kalau boleh tahu, hal kecil apa yang bisa bantu nyembuhin sedih kamu sekarang?'],
+            'lelah' => ['title' => 'Lelah', 'explanation' => 'Lagi drop energinya, ya? Kalau mau, ceritakan sedikit aja, biar lebih lega', 'suggestion' => 'Apa ya yang bisa bantu kamu balik semangat pelan-pelan?'],
+            'marah' => ['title' => 'Marah', 'explanation' => 'Lagi agak down ya? Cerita dikit dong, siapa tahu bisa bantu nyemangatin', 'suggestion' => 'Kalau lagi kayak gini, apa sih yang bisa bantu kamu merasa lebih baik lagi?']
         ];
 
         $data = $moodData[$mood] ?? $moodData['netral'];

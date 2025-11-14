@@ -126,7 +126,7 @@
                     <div class="mb-3">
                         <label for="avatar" class="form-label">Avatar</label>
                         <input type="file" class="form-control" id="avatar" name="avatar" accept="image/*">
-                        <div class="form-text">Pilih gambar baru untuk avatar Anda</div>
+                        <div class="form-text">Pilih gambar baru untuk avatar Anda (Maksimal: 3 MB)</div>
                     </div>
                 </div>
                 <div class="modal-footer">
