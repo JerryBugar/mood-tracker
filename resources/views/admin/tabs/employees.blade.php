@@ -43,8 +43,13 @@
 
 <script>
     // Simpan userId yang sedang dilihat untuk filter
-    let currentUserId = null;
-    let currentUserData = null;
+    // Gunakan window object untuk menghindari redeclaration error saat Turbo replaceWith
+    if (typeof window.currentUserId === 'undefined') {
+        window.currentUserId = null;
+    }
+    if (typeof window.currentUserData === 'undefined') {
+        window.currentUserData = null;
+    }
 
     // Fungsi untuk render mood records
     function renderMoodRecords(data) {
@@ -168,7 +173,7 @@
         .then(response => response.json())
         .then(data => {
             if(data.success) {
-                currentUserData = data;
+                window.currentUserData = data;
                 renderMoodRecords(data);
             } else {
                 console.error('Error loading mood records:', data.message);
@@ -180,7 +185,7 @@
     }
 
     function viewEmployeeDetail(userId) {
-        currentUserId = userId;
+        window.currentUserId = userId;
         
         // Hilangkan highlight dari employee item yang diklik
         const employeeItem = document.querySelector(`.employee-item[data-employee-id="${userId}"]`);
@@ -206,7 +211,7 @@
         .then(response => response.json())
         .then(data => {
             if(data.success) {
-                currentUserData = data;
+                window.currentUserData = data;
                 
                 // Fill modal with user details
                 document.getElementById('detail-user-name').textContent = data.user.name;
@@ -270,30 +275,30 @@
             }
             
             // Load data dengan filter baru
-            if (selectedType && currentUserId && filterValue) {
-                loadMoodRecordsWithFilter(currentUserId, selectedType, filterValue);
-            } else if (!selectedType && currentUserId) {
+            if (selectedType && window.currentUserId && filterValue) {
+                loadMoodRecordsWithFilter(window.currentUserId, selectedType, filterValue);
+            } else if (!selectedType && window.currentUserId) {
                 // Load semua data jika filter direset
-                loadMoodRecordsWithFilter(currentUserId, null, null);
+                loadMoodRecordsWithFilter(window.currentUserId, null, null);
             }
         });
 
         // Event listener untuk perubahan nilai filter
         filterDay.addEventListener('change', function() {
-            if (this.value && currentUserId) {
-                loadMoodRecordsWithFilter(currentUserId, 'day', this.value);
+            if (this.value && window.currentUserId) {
+                loadMoodRecordsWithFilter(window.currentUserId, 'day', this.value);
             }
         });
 
         filterMonth.addEventListener('change', function() {
-            if (this.value && currentUserId) {
-                loadMoodRecordsWithFilter(currentUserId, 'month', this.value);
+            if (this.value && window.currentUserId) {
+                loadMoodRecordsWithFilter(window.currentUserId, 'month', this.value);
             }
         });
 
         filterYear.addEventListener('change', function() {
-            if (this.value && currentUserId) {
-                loadMoodRecordsWithFilter(currentUserId, 'year', this.value.toString());
+            if (this.value && window.currentUserId) {
+                loadMoodRecordsWithFilter(window.currentUserId, 'year', this.value.toString());
             }
         });
     }
@@ -327,7 +332,7 @@
         .then(data => {
             if (data.success) {
                 // Reload mood records untuk menampilkan respons yang baru
-                if (currentUserId) {
+                if (window.currentUserId) {
                     // Ambil filter yang sedang aktif
                     const filterType = document.getElementById('filter-type').value;
                     const filterDay = document.getElementById('filter-day');
@@ -343,7 +348,7 @@
                         filterValue = filterYear.value.toString();
                     }
                     
-                    loadMoodRecordsWithFilter(currentUserId, filterType || null, filterValue);
+                    loadMoodRecordsWithFilter(window.currentUserId, filterType || null, filterValue);
                 }
                 // Tampilkan notifikasi sukses
                 alert('Respons berhasil disimpan');

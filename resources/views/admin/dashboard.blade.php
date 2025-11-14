@@ -1,7 +1,7 @@
 @extends('layouts.admin')
 
 @push('styles')
-@vite('resources/css/admin/dashboard.css')
+@vite(['resources/css/admin/dashboard.css', 'resources/css/admin/notifications.css'])
 @endpush
 
 @section('main-content')
@@ -140,7 +140,7 @@
 
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-@vite('resources/js/admin/dashboard.js')
+@vite(['resources/js/admin/dashboard.js', 'resources/js/admin/notifications.js'])
 @endpush
 
 @endsection

@@ -53,6 +53,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'verified' => \App\Http\Middleware\EnsureUserIsVerified::class,
             'admin.auth' => \App\Http\Middleware\AdminAuth::class,
+            'admin.desktop' => \App\Http\Middleware\EnsureDesktopDevice::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

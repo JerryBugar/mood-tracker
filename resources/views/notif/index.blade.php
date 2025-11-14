@@ -9,6 +9,23 @@
 
         <div class="notifications-container {{ $notifications->count() == 0 ? 'empty-state' : '' }}">
             @if($notifications->count() > 0)
+                @php
+                    $totalNotifications = $notifications->count();
+                    $hasUnread = false;
+                    foreach ($notifications as $notification) {
+                        if (!($notification->pivot->is_read ?? false)) {
+                            $hasUnread = true;
+                            break;
+                        }
+                    }
+                @endphp
+                @if($totalNotifications > 1 && $hasUnread)
+                    <div class="mark-all-container">
+                        <button class="btn-mark-all-read" onclick="markAllAsRead()">
+                            <i class="bi bi-check-all"></i> Tandai Semua Sudah Dibaca
+                        </button>
+                    </div>
+                @endif
                 <div class="notification-list">
                     @foreach($notifications as $notification)
                         @php
@@ -76,6 +93,35 @@
 
         .notifications-container > .notification-list {
             width: 100%;
+        }
+
+        .mark-all-container {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 20px;
+        }
+
+        .btn-mark-all-read {
+            background-color: #82242d;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-mark-all-read:hover {
+            background-color: #6a1d24;
+        }
+
+        .btn-mark-all-read:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
         }
 
         .notification-list {
@@ -259,6 +305,9 @@
                             button.outerHTML = '<span class="read-badge"><i class="bi bi-check-circle-fill"></i> Sudah Dibaca</span>';
                         }
                     }
+                    
+                    // Cek apakah masih ada unread, jika tidak sembunyikan tombol mark all
+                    checkUnreadCount();
                 } else {
                     alert('Gagal menandai notifikasi sebagai sudah dibaca');
                 }
@@ -267,6 +316,73 @@
                 console.error('Error:', error);
                 alert('Terjadi kesalahan');
             });
+        }
+
+        function markAllAsRead() {
+            const button = document.querySelector('.btn-mark-all-read');
+            if (button) {
+                button.disabled = true;
+                button.innerHTML = '<i class="bi bi-hourglass-split"></i> Memproses...';
+            }
+
+            fetch('/notif/read-all', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update semua notifikasi yang belum dibaca
+                    const unreadItems = document.querySelectorAll('.notification-item.unread');
+                    unreadItems.forEach(item => {
+                        item.classList.remove('unread');
+                        item.classList.add('read');
+                        item.style.background = 'white';
+                        item.style.borderLeftWidth = '4px';
+                        
+                        // Ganti button dengan badge
+                        const button = item.querySelector('.btn-mark-read');
+                        if (button) {
+                            button.outerHTML = '<span class="read-badge"><i class="bi bi-check-circle-fill"></i> Sudah Dibaca</span>';
+                        }
+                    });
+                    
+                    // Sembunyikan tombol mark all
+                    const markAllContainer = document.querySelector('.mark-all-container');
+                    if (markAllContainer) {
+                        markAllContainer.style.display = 'none';
+                    }
+                } else {
+                    alert('Gagal menandai semua notifikasi sebagai sudah dibaca');
+                    if (button) {
+                        button.disabled = false;
+                        button.innerHTML = '<i class="bi bi-check-all"></i> Tandai Semua Sudah Dibaca';
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Terjadi kesalahan');
+                if (button) {
+                    button.disabled = false;
+                    button.innerHTML = '<i class="bi bi-check-all"></i> Tandai Semua Sudah Dibaca';
+                }
+            });
+        }
+
+        function checkUnreadCount() {
+            const unreadItems = document.querySelectorAll('.notification-item.unread');
+            const allItems = document.querySelectorAll('.notification-item');
+            const markAllContainer = document.querySelector('.mark-all-container');
+            
+            // Sembunyikan tombol jika tidak ada unread atau jumlah notifikasi <= 1
+            if ((unreadItems.length === 0 || allItems.length <= 1) && markAllContainer) {
+                markAllContainer.style.display = 'none';
+            }
         }
     </script>
 @endsection

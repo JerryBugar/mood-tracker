@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use App\Models\Notification;
 use App\Services\NotificationService;
 
@@ -53,6 +54,31 @@ class NotificationController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Notifikasi ditandai sebagai sudah dibaca'
+        ]);
+    }
+
+    /**
+     * Tandai semua notifikasi sebagai sudah dibaca
+     */
+    public function markAllAsRead()
+    {
+        $user = Auth::user();
+        
+        // Update semua notifikasi yang belum dibaca menggunakan DB facade
+        DB::table('notification_user')
+            ->where('user_id', $user->id)
+            ->where(function($query) {
+                $query->where('is_read', false)
+                      ->orWhereNull('is_read');
+            })
+            ->update([
+                'is_read' => true,
+                'read_at' => now()
+            ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Semua notifikasi ditandai sebagai sudah dibaca'
         ]);
     }
 }

@@ -44,6 +44,7 @@ Route::get('/calendar/day/{date}', [CalendarController::class, 'showDay'])->midd
 
 Route::get('/notif', [App\Http\Controllers\NotificationController::class, 'index'])->middleware(['auth', 'verified'])->name('notif.index');
 Route::post('/notif/{id}/read', [App\Http\Controllers\NotificationController::class, 'markAsRead'])->middleware(['auth', 'verified'])->name('notif.read');
+Route::post('/notif/read-all', [App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->middleware(['auth', 'verified'])->name('notif.read-all');
 
 Route::get('/profile', [ProfileController::class, 'index'])->middleware(['auth', 'verified'])->name('profile.index');
 Route::put('/profile', [ProfileController::class, 'update'])->middleware(['auth', 'verified'])->name('profile.update');
@@ -63,7 +64,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 // Routes untuk admin panel
-Route::prefix('admin')->group(function () {
+Route::prefix('admin')->middleware(['admin.desktop'])->group(function () {
     Route::get('/login', function () {
         return view('admin.login');
     })->name('admin.login');
