@@ -45,6 +45,7 @@ Route::get('/calendar/day/{date}', [CalendarController::class, 'showDay'])->midd
 Route::get('/notif', [App\Http\Controllers\NotificationController::class, 'index'])->middleware(['auth', 'verified'])->name('notif.index');
 Route::post('/notif/{id}/read', [App\Http\Controllers\NotificationController::class, 'markAsRead'])->middleware(['auth', 'verified'])->name('notif.read');
 Route::post('/notif/read-all', [App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->middleware(['auth', 'verified'])->name('notif.read-all');
+Route::delete('/notif/delete-all', [App\Http\Controllers\NotificationController::class, 'deleteAll'])->middleware(['auth', 'verified'])->name('notif.delete-all');
 
 Route::get('/profile', [ProfileController::class, 'index'])->middleware(['auth', 'verified'])->name('profile.index');
 Route::put('/profile', [ProfileController::class, 'update'])->middleware(['auth', 'verified'])->name('profile.update');

@@ -240,9 +240,9 @@ document.addEventListener('submit', function(e) {
                 }
                 
                 // Tampilkan notifikasi Toast berhasil
-                const toastEl = document.getElementById('successToast');
-                const toast = new bootstrap.Toast(toastEl);
-                toast.show();
+                setTimeout(() => {
+                    showToast('Profil berhasil diperbarui!', 'success');
+                }, 100);
             } else {
                 alert('Terjadi kesalahan saat memperbarui profil: ' + (data.message || 'Silakan coba lagi'));
             }
@@ -259,7 +259,111 @@ document.addEventListener('submit', function(e) {
     }
 });
 
+// Fungsi untuk menampilkan toast notification
+function showToast(message, type = 'success') {
+    // Pastikan Bootstrap tersedia
+    if (typeof bootstrap === 'undefined') {
+        console.error('Bootstrap tidak tersedia');
+        alert(message); // Fallback ke alert jika Bootstrap tidak tersedia
+        return;
+    }
+
+    const toastElement = document.getElementById('successToast');
+    const toastMessage = document.getElementById('toast-message');
+    const toastTitle = document.getElementById('toast-title');
+    
+    if (!toastElement || !toastMessage || !toastTitle) {
+        console.error('Toast element tidak ditemukan', {
+            toastElement: !!toastElement,
+            toastMessage: !!toastMessage,
+            toastTitle: !!toastTitle
+        });
+        alert(message); // Fallback ke alert
+        return;
+    }
+
+    const toastIconWrapper = toastElement.querySelector('.toast-icon-wrapper');
+    const toastIcon = toastElement.querySelector('.toast-icon');
+
+    // Update message dan title
+    toastMessage.textContent = message;
+    
+    // Update styling berdasarkan type
+    if (type === 'success') {
+        toastTitle.textContent = 'Berhasil';
+        toastTitle.classList.remove('error');
+        toastElement.classList.remove('error');
+        toastElement.classList.add('success');
+        
+        if (toastIconWrapper) {
+            toastIconWrapper.classList.remove('error');
+        }
+        
+        if (toastIcon) {
+            toastIcon.className = 'toast-icon bi bi-check-circle-fill';
+        }
+    } else {
+        toastTitle.textContent = 'Error';
+        toastTitle.classList.add('error');
+        toastElement.classList.remove('success');
+        toastElement.classList.add('error');
+        
+        if (toastIconWrapper) {
+            toastIconWrapper.classList.add('error');
+        }
+        
+        if (toastIcon) {
+            toastIcon.className = 'toast-icon bi bi-exclamation-circle-fill';
+        }
+    }
+
+    // Hide toast yang sedang ditampilkan sebelumnya jika ada
+    const existingToast = bootstrap.Toast.getInstance(toastElement);
+    if (existingToast) {
+        existingToast.hide();
+        // Tunggu animasi hide selesai
+        setTimeout(() => {
+            showToastNow(toastElement);
+        }, 200);
+    } else {
+        showToastNow(toastElement);
+    }
+}
+
+function showToastNow(toastElement) {
+    // Reset class untuk animasi
+    toastElement.classList.remove('hiding', 'show');
+    
+    // Hapus event listener lama jika ada
+    const hideHandler = toastElement._hideHandler;
+    if (hideHandler) {
+        toastElement.removeEventListener('hide.bs.toast', hideHandler);
+    }
+    
+    // Buat handler baru untuk animasi hide
+    const newHideHandler = function() {
+        toastElement.classList.add('hiding');
+    };
+    toastElement._hideHandler = newHideHandler;
+    toastElement.addEventListener('hide.bs.toast', newHideHandler);
+    
+    // Pastikan toast container visible
+    const toastContainer = toastElement.closest('.toast-container');
+    if (toastContainer) {
+        toastContainer.style.display = 'block';
+    }
+    
+    // Show toast
+    const toast = new bootstrap.Toast(toastElement, {
+        autohide: true,
+        delay: 4000
+    });
+    
+    toast.show();
+}
+
 // Export functions untuk digunakan di global scope jika diperlukan
 window.showEditProfile = showEditProfile;
 window.confirmLogout = confirmLogout;
+window.showToast = showToast;
 

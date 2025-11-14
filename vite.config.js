@@ -13,7 +13,9 @@ export default defineConfig({
                 'resources/css/admin/notifications.css',
                 'resources/js/admin/notifications.js',
                 'resources/css/profile/profile.css',
-                'resources/js/profile/profile.js'
+                'resources/js/profile/profile.js',
+                'resources/css/notif/notif.css',
+                'resources/js/notif/notif.js'
             ],
             refresh: true,
         }),

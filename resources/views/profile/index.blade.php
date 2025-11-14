@@ -158,14 +158,19 @@
 </div>
 
 <!-- Toast Container -->
-<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1100;">
-    <div id="successToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
-        <div class="toast-header" style="background-color: #d4edda; color: #155724;">
-            <strong class="me-auto">Notifikasi</strong>
-            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
-        </div>
-        <div class="toast-body" style="background-color: #d4edda; color: #155724;">
-            Profil berhasil diperbarui!
+<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 99999;">
+    <div id="successToast" class="toast custom-toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-content-wrapper">
+            <div class="toast-icon-wrapper">
+                <i class="toast-icon bi bi-check-circle-fill"></i>
+            </div>
+            <div class="toast-body-content">
+                <div class="toast-title" id="toast-title">Berhasil</div>
+                <div class="toast-message" id="toast-message">Profil berhasil diperbarui!</div>
+            </div>
+            <button type="button" class="toast-close-btn" data-bs-dismiss="toast" aria-label="Close">
+                <i class="bi bi-x-lg"></i>
+            </button>
         </div>
     </div>
 </div>

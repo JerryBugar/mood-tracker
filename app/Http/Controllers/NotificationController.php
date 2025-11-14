@@ -81,4 +81,72 @@ class NotificationController extends Controller
             'message' => 'Semua notifikasi ditandai sebagai sudah dibaca'
         ]);
     }
+
+    /**
+     * Hapus semua notifikasi yang sudah dibaca
+     */
+    public function deleteAll()
+    {
+        $user = Auth::user();
+        
+        try {
+            DB::beginTransaction();
+            
+            // Ambil semua notification ID yang sudah dibaca oleh user
+            $readNotificationIds = DB::table('notification_user')
+                ->where('user_id', $user->id)
+                ->where('is_read', true)
+                ->pluck('notification_id')
+                ->toArray();
+            
+            if (empty($readNotificationIds)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tidak ada notifikasi yang bisa dihapus'
+                ], 400);
+            }
+            
+            // Hapus relasi dari pivot table
+            DB::table('notification_user')
+                ->where('user_id', $user->id)
+                ->where('is_read', true)
+                ->delete();
+            
+            // Hapus notification individual yang hanya untuk user ini
+            Notification::whereIn('id', $readNotificationIds)
+                ->where('type', 'individual')
+                ->where('target_user_id', $user->id)
+                ->delete();
+            
+            // Hapus notification yang tidak memiliki relasi lagi (tidak ada user yang terhubung)
+            $notificationsWithoutUsers = DB::table('notifications')
+                ->whereIn('id', $readNotificationIds)
+                ->whereNotExists(function($query) {
+                    $query->select(DB::raw(1))
+                          ->from('notification_user')
+                          ->whereColumn('notification_user.notification_id', 'notifications.id');
+                })
+                ->pluck('id')
+                ->toArray();
+            
+            if (!empty($notificationsWithoutUsers)) {
+                Notification::whereIn('id', $notificationsWithoutUsers)->delete();
+            }
+            
+            DB::commit();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Semua notifikasi berhasil dihapus'
+            ]);
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menghapus notifikasi: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }
