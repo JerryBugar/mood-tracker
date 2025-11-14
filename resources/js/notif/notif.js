@@ -171,28 +171,15 @@ function markAllAsRead() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // Update semua notifikasi yang belum dibaca
-            const unreadItems = document.querySelectorAll('.notification-item.unread');
-            unreadItems.forEach(item => {
-                item.classList.remove('unread');
-                item.classList.add('read');
-                item.style.background = 'white';
-                item.style.borderLeftWidth = '4px';
-                
-                // Ganti button dengan badge
-                const button = item.querySelector('.btn-mark-read');
-                if (button) {
-                    button.outerHTML = '<span class="read-badge"><i class="bi bi-check-circle-fill"></i> Sudah Dibaca</span>';
-                }
-            });
+            // Tampilkan toast
+            showToast('Semua notifikasi ditandai sebagai sudah dibaca', 'success');
             
-            // Update tombol setelah semua ditandai sebagai sudah dibaca
-            checkUnreadCount();
-            
-            // Tampilkan toast setelah sedikit delay untuk memastikan UI sudah update
-            setTimeout(() => {
-                showToast('Semua notifikasi ditandai sebagai sudah dibaca', 'success');
-            }, 100);
+            // Reload hanya frame notifikasi menggunakan Turbo Frame
+            const frame = document.getElementById('notifications_frame');
+            if (frame) {
+                // Reload frame dengan mengubah src, Turbo akan otomatis fetch dan update
+                frame.src = window.location.href;
+            }
         } else {
             showToast('Gagal menandai semua notifikasi sebagai sudah dibaca', 'error');
             if (button) {
@@ -277,10 +264,13 @@ function performDeleteAll() {
     .then(data => {
         if (data.success) {
             showToast('Semua notifikasi berhasil dihapus', 'success');
-            // Reload halaman setelah toast ditampilkan
-            setTimeout(() => {
-                window.location.reload();
-            }, 1500);
+            
+            // Reload hanya frame notifikasi menggunakan Turbo Frame
+            const frame = document.getElementById('notifications_frame');
+            if (frame) {
+                // Reload frame dengan mengubah src, Turbo akan otomatis fetch dan update
+                frame.src = window.location.href;
+            }
         } else {
             showToast(data.message || 'Gagal menghapus notifikasi', 'error');
             if (button) {

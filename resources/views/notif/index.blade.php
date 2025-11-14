@@ -11,6 +11,7 @@
             Notifikasi
         </h1>
 
+        <turbo-frame id="notifications_frame" data-turbo-action="replace">
         <div class="notifications-container {{ $notifications->count() == 0 ? 'empty-state' : '' }}">
             @if($notifications->count() > 0)
                 @php
@@ -87,6 +88,7 @@
                 </div>
             @endif
         </div>
+        </turbo-frame>
     </div>
 
     <!-- Toast Container -->

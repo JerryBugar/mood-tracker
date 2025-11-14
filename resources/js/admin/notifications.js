@@ -160,27 +160,11 @@ function initializeNotificationForm() {
             // Tampilkan dropdown jika ada hasil
             if (term !== '' && visibleCount > 0) {
                 employeeDropdownList.classList.add('show');
-                // Pastikan z-index dan margin sudah diatur
-                if (employeeSelectContainer) {
-                    employeeSelectContainer.style.zIndex = '10000';
-                    employeeSelectContainer.style.position = 'relative';
-                    employeeSelectContainer.style.marginBottom = '280px';
-                }
             } else if (term === '') {
                 employeeDropdownList.classList.add('show');
-                if (employeeSelectContainer) {
-                    employeeSelectContainer.style.zIndex = '10000';
-                    employeeSelectContainer.style.position = 'relative';
-                    employeeSelectContainer.style.marginBottom = '280px';
-                }
             } else {
                 // Jika tidak ada hasil, tetap tampilkan dropdown dengan pesan no results
                 employeeDropdownList.classList.add('show');
-                if (employeeSelectContainer) {
-                    employeeSelectContainer.style.zIndex = '10000';
-                    employeeSelectContainer.style.position = 'relative';
-                    employeeSelectContainer.style.marginBottom = '280px';
-                }
             }
         }
 
@@ -195,12 +179,6 @@ function initializeNotificationForm() {
                 allItems.forEach(item => item.style.display = 'flex');
             }
             employeeDropdownList.classList.add('show');
-            // Tingkatkan z-index form-group saat dropdown terbuka
-            if (employeeSelectContainer) {
-                employeeSelectContainer.style.zIndex = '10000';
-                employeeSelectContainer.style.position = 'relative';
-                employeeSelectContainer.style.marginBottom = '280px';
-            }
         });
 
         // Event listener untuk click item
@@ -227,11 +205,6 @@ function initializeNotificationForm() {
 
                 // Sembunyikan dropdown
                 employeeDropdownList.classList.remove('show');
-                // Reset z-index dan margin form-group
-                if (employeeSelectContainer) {
-                    employeeSelectContainer.style.zIndex = '';
-                    employeeSelectContainer.style.marginBottom = '';
-                }
             });
         });
 
@@ -239,11 +212,6 @@ function initializeNotificationForm() {
         document.addEventListener('click', function(e) {
             if (!employeeSelectContainer.contains(e.target)) {
                 employeeDropdownList.classList.remove('show');
-                // Reset z-index dan margin form-group
-                if (employeeSelectContainer) {
-                    employeeSelectContainer.style.zIndex = '';
-                    employeeSelectContainer.style.marginBottom = '';
-                }
             }
         });
     }
