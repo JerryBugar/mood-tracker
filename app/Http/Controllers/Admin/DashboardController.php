@@ -222,12 +222,26 @@ class DashboardController extends Controller
         try {
             DB::beginTransaction();
 
+            // Parse scheduled_at jika ada
+            // datetime-local mengirim format: YYYY-MM-DDTHH:mm (tanpa timezone)
+            // Asumsikan waktu input adalah waktu lokal (WIB/UTC+7)
+            $scheduledAt = null;
+            if ($request->scheduled_at) {
+                // Parse waktu dari input (format: YYYY-MM-DDTHH:mm)
+                // Asumsikan waktu input dalam timezone Asia/Jakarta (WIB/UTC+7)
+                $scheduledAt = \Carbon\Carbon::createFromFormat('Y-m-d\TH:i', $request->scheduled_at, 'Asia/Jakarta');
+                // Konversi ke UTC untuk disimpan di database
+                $scheduledAt = $scheduledAt->utc();
+            }
+            $isScheduled = $scheduledAt && $scheduledAt->isFuture();
+
             // Buat notifikasi
             $notification = Notification::create([
                 'type' => $request->type,
                 'message' => $request->message,
                 'division' => $request->division,
-                'scheduled_at' => $request->scheduled_at ? now()->parse($request->scheduled_at) : null,
+                'scheduled_at' => $scheduledAt,
+                'target_user_id' => $request->type === 'individual' ? $request->user_id : null,
             ]);
 
             // Tentukan user yang akan menerima notifikasi
@@ -241,16 +255,22 @@ class DashboardController extends Controller
                 $users = User::all();
             }
 
-            // Attach users ke notification
-            if ($users->isNotEmpty()) {
+            // Attach users ke notification hanya jika tidak dijadwalkan (langsung kirim)
+            // Jika dijadwalkan, tidak perlu attach sekarang - akan diproses oleh middleware
+            if ($users->isNotEmpty() && !$isScheduled) {
                 $notification->users()->attach($users->pluck('id')->toArray());
             }
+            // Untuk scheduled notifications, biarkan middleware yang memproses saat waktunya tiba
 
             DB::commit();
 
+            $message = $isScheduled 
+                ? 'Notifikasi berhasil dijadwalkan untuk ' . $users->count() . ' karyawan pada ' . $scheduledAt->format('d/m/Y H:i')
+                : 'Notifikasi berhasil dikirim ke ' . $users->count() . ' karyawan';
+
             return response()->json([
                 'success' => true,
-                'message' => 'Notifikasi berhasil dikirim ke ' . $users->count() . ' karyawan',
+                'message' => $message,
                 'notification_id' => $notification->id
             ]);
         } catch (\Exception $e) {

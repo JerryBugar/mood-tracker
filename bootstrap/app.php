@@ -47,6 +47,9 @@ return Application::configure(basePath: dirname(__DIR__))
             // Exclude routes that need CORS
         ]);
         
+        // Tambahkan middleware untuk memproses scheduled notifications
+        $middleware->append(\App\Http\Middleware\ProcessScheduledNotifications::class);
+        
         $middleware->alias([
             'verified' => \App\Http\Middleware\EnsureUserIsVerified::class,
             'admin.auth' => \App\Http\Middleware\AdminAuth::class,

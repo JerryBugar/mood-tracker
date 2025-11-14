@@ -12,6 +12,7 @@ class Notification extends Model
         'message',
         'division',
         'scheduled_at',
+        'target_user_id',
     ];
 
     protected $casts = [

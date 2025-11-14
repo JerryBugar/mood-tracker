@@ -60,6 +60,24 @@
     </form>
 </div>
 
+<!-- Toast Container -->
+<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 99999;">
+    <div id="notificationToast" class="toast custom-toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-content-wrapper">
+            <div class="toast-icon-wrapper">
+                <i class="toast-icon bi bi-check-circle-fill"></i>
+            </div>
+            <div class="toast-body-content">
+                <div class="toast-title" id="toast-title">Berhasil</div>
+                <div class="toast-message" id="toast-message">Notifikasi berhasil dikirim!</div>
+            </div>
+            <button type="button" class="toast-close-btn" data-bs-dismiss="toast" aria-label="Close">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
 <style>
     .notification-form-container {
         max-width: 700px;
@@ -311,6 +329,144 @@
         background: #d98695;
     }
 
+    /* Toast Notification Styles */
+    .toast-container {
+        z-index: 99999;
+    }
+
+    .custom-toast {
+        min-width: 380px;
+        max-width: 450px;
+        border: none;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 8px 32px rgba(130, 36, 45, 0.25);
+        background: white;
+        animation: slideInRight 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    }
+
+    @keyframes slideInRight {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    .toast-content-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 18px 20px;
+        position: relative;
+    }
+
+    .toast-icon-wrapper {
+        flex-shrink: 0;
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #82242d 0%, #a82d3a 100%);
+        box-shadow: 0 4px 12px rgba(130, 36, 45, 0.3);
+    }
+
+    .toast-icon-wrapper.error {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+    }
+
+    .toast-icon {
+        font-size: 24px;
+        color: white;
+    }
+
+    .toast-body-content {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .toast-title {
+        font-size: 15px;
+        font-weight: 700;
+        color: #82242d;
+        margin-bottom: 4px;
+        letter-spacing: 0.3px;
+    }
+
+    .toast-title.error {
+        color: #dc3545;
+    }
+
+    .toast-message {
+        font-size: 14px;
+        color: #555;
+        line-height: 1.5;
+        word-wrap: break-word;
+    }
+
+    .toast-close-btn {
+        flex-shrink: 0;
+        width: 32px;
+        height: 32px;
+        border: none;
+        background: transparent;
+        color: #999;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        padding: 0;
+        margin: 0;
+    }
+
+    .toast-close-btn:hover {
+        background: #f5f5f5;
+        color: #82242d;
+        transform: scale(1.1);
+    }
+
+    .toast-close-btn:active {
+        transform: scale(0.95);
+    }
+
+    .toast-close-btn i {
+        font-size: 16px;
+    }
+
+    /* Success Toast Variant */
+    .custom-toast.success {
+        border-left: 4px solid #82242d;
+    }
+
+    /* Error Toast Variant */
+    .custom-toast.error {
+        border-left: 4px solid #dc3545;
+    }
+
+    /* Toast Animation saat hide */
+    .custom-toast.hiding {
+        animation: slideOutRight 0.3s ease forwards;
+    }
+
+    @keyframes slideOutRight {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+    }
+
     /* Responsive */
     @media (max-width: 768px) {
         .notification-form {
@@ -329,6 +485,33 @@
         .dropdown-list {
             max-height: 250px;
         }
+
+        .custom-toast {
+            min-width: 280px;
+            max-width: 90vw;
+        }
+
+        .toast-content-wrapper {
+            padding: 16px 18px;
+            gap: 12px;
+        }
+
+        .toast-icon-wrapper {
+            width: 42px;
+            height: 42px;
+        }
+
+        .toast-icon {
+            font-size: 20px;
+        }
+
+        .toast-title {
+            font-size: 14px;
+        }
+
+        .toast-message {
+            font-size: 13px;
+        }
     }
 </style>
 
@@ -336,6 +519,90 @@
     // Flag untuk mencegah multiple submissions
     let isSubmitting = false;
     let submitHandler = null;
+
+    // Fungsi untuk menampilkan toast notification
+    function showToast(message, type = 'success') {
+        // Pastikan Bootstrap tersedia
+        if (typeof bootstrap === 'undefined') {
+            console.error('Bootstrap tidak tersedia');
+            alert(message); // Fallback ke alert jika Bootstrap tidak tersedia
+            return;
+        }
+
+        const toastElement = document.getElementById('notificationToast');
+        const toastMessage = document.getElementById('toast-message');
+        const toastTitle = document.getElementById('toast-title');
+        const toastIconWrapper = toastElement?.querySelector('.toast-icon-wrapper');
+        const toastIcon = toastElement?.querySelector('.toast-icon');
+
+        if (!toastElement || !toastMessage || !toastTitle) {
+            console.error('Toast element tidak ditemukan');
+            alert(message); // Fallback ke alert
+            return;
+        }
+
+        // Update message dan title
+        toastMessage.textContent = message;
+        
+        // Update styling berdasarkan type
+        if (type === 'success') {
+            toastTitle.textContent = 'Berhasil';
+            toastTitle.classList.remove('error');
+            toastElement.classList.remove('error');
+            toastElement.classList.add('success');
+            
+            if (toastIconWrapper) {
+                toastIconWrapper.classList.remove('error');
+            }
+            
+            if (toastIcon) {
+                toastIcon.className = 'toast-icon bi bi-check-circle-fill';
+            }
+        } else {
+            toastTitle.textContent = 'Error';
+            toastTitle.classList.add('error');
+            toastElement.classList.remove('success');
+            toastElement.classList.add('error');
+            
+            if (toastIconWrapper) {
+                toastIconWrapper.classList.add('error');
+            }
+            
+            if (toastIcon) {
+                toastIcon.className = 'toast-icon bi bi-exclamation-circle-fill';
+            }
+        }
+
+        // Hide toast yang sedang ditampilkan sebelumnya jika ada
+        const existingToast = bootstrap.Toast.getInstance(toastElement);
+        if (existingToast) {
+            existingToast.hide();
+            // Tunggu animasi hide selesai
+            setTimeout(() => {
+                showToastNow(toastElement);
+            }, 300);
+        } else {
+            showToastNow(toastElement);
+        }
+    }
+
+    function showToastNow(toastElement) {
+        // Reset class untuk animasi
+        toastElement.classList.remove('hiding');
+        
+        // Show toast
+        const toast = new bootstrap.Toast(toastElement, {
+            autohide: true,
+            delay: 4500
+        });
+        
+        // Tambahkan event listener untuk animasi hide
+        toastElement.addEventListener('hide.bs.toast', function() {
+            toastElement.classList.add('hiding');
+        });
+        
+        toast.show();
+    }
 
     function initializeNotificationForm() {
         const notificationForm = document.getElementById('notification-form');
@@ -535,17 +802,17 @@
 
             // Validasi
             if (!message.trim()) {
-                alert('Pesan tidak boleh kosong!');
+                showToast('Pesan tidak boleh kosong!', 'error');
                 return false;
             }
 
             if (type === 'individual' && (!userId || userId === '')) {
-                alert('Silakan pilih karyawan!');
+                showToast('Silakan pilih karyawan!', 'error');
                 return false;
             }
 
             if (type === 'group' && !division) {
-                alert('Silakan pilih divisi!');
+                showToast('Silakan pilih divisi!', 'error');
                 return false;
             }
 
@@ -587,7 +854,7 @@
             })
             .then(data => {
                 if (data.success) {
-                    alert(data.message);
+                    showToast(data.message, 'success');
                     // Reset form
                     notificationForm.reset();
                     // Reset search input juga
@@ -603,12 +870,12 @@
                     }
                     toggleDropdowns();
                 } else {
-                    alert('Gagal mengirim notifikasi: ' + (data.message || 'Terjadi kesalahan'));
+                    showToast('Gagal mengirim notifikasi: ' + (data.message || 'Terjadi kesalahan'), 'error');
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Terjadi kesalahan saat mengirim notifikasi: ' + error.message);
+                showToast('Terjadi kesalahan saat mengirim notifikasi: ' + error.message, 'error');
             })
             .finally(() => {
                 // Reset flag dan enable button kembali

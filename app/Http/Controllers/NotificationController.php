@@ -5,22 +5,23 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Notification;
+use App\Services\NotificationService;
 
 class NotificationController extends Controller
 {
     /**
      * Menampilkan halaman notifikasi
      */
-    public function index()
+    public function index(NotificationService $service)
     {
         $user = Auth::user();
         
-        // Ambil notifikasi user yang belum dijadwalkan atau sudah waktunya
+        // Polling fallback: Proses notifikasi yang sudah waktunya (jika queue worker tidak jalan)
+        // Ini memastikan notifikasi tetap muncul meski queue worker tidak berjalan
+        $service->processScheduledNotifications();
+        
+        // Ambil notifikasi user yang sudah di-attach
         $notifications = $user->notifications()
-            ->where(function($query) {
-                $query->whereNull('scheduled_at')
-                      ->orWhere('scheduled_at', '<=', now());
-            })
             ->orderBy('created_at', 'desc')
             ->paginate(10);
 
