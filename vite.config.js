@@ -15,7 +15,8 @@ export default defineConfig({
                 'resources/css/profile/profile.css',
                 'resources/js/profile/profile.js',
                 'resources/css/notif/notif.css',
-                'resources/js/notif/notif.js'
+                'resources/js/notif/notif.js',
+                'resources/js/admin/employees.js'
             ],
             refresh: true,
         }),

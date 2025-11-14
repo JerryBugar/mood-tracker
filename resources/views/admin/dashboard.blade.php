@@ -160,7 +160,7 @@
 
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-@vite(['resources/js/admin/dashboard.js', 'resources/js/admin/notifications.js'])
+@vite(['resources/js/admin/dashboard.js', 'resources/js/admin/notifications.js', 'resources/js/admin/employees.js'])
 @endpush
 
 @endsection

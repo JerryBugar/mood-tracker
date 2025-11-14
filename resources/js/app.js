@@ -24,8 +24,22 @@ document.addEventListener('turbo:load', () => {
 
             // Tambahkan class untuk halaman dashboard
             document.body.classList.add('dashboard-page');
+            
+            // Mencegah scroll pada mobile kecil saat splash aktif
+            if (window.innerWidth <= 375 && window.innerHeight <= 600) {
+                document.body.style.position = 'fixed';
+                document.body.style.overflow = 'hidden';
+                document.body.style.width = '100vw';
+                document.body.style.height = '100vh';
+                document.documentElement.style.overflow = 'hidden';
+                document.documentElement.style.height = '100vh';
+            }
 
             requestAnimationFrame(() => {
+                // Pastikan logo final tersembunyi dulu sebelum menghitung posisi
+                finalLogo.style.visibility = 'hidden';
+                finalLogo.style.opacity = '0';
+                
                 // Ambil posisi akhir logo sebelum menampilkannya
                 mainContent.classList.remove('hidden');
                 const finalRect = finalLogo.getBoundingClientRect();
@@ -52,16 +66,28 @@ document.addEventListener('turbo:load', () => {
                 splashLogo.style.animation = 'settleInPlace 2.5s ease-in-out forwards';
 
                 splashLogo.addEventListener('animationend', () => {
-                    // Sembunyikan logo final sementara
-                    finalLogo.style.visibility = 'hidden';
-
-                    // Tampilkan konten utama
-                    mainContent.classList.remove('hidden');
-
-                    // Setelah animasi selesai, sembunyikan splash logo dan tampilkan logo final
+                    // Pastikan splash logo sudah di posisi akhir sebelum menyembunyikan
+                    // Tunggu sedikit untuk memastikan animasi benar-benar selesai
                     setTimeout(() => {
-                        finalLogo.style.visibility = 'visible';
-                        splashLogo.style.opacity = '0';
+                        // Sembunyikan logo final sementara
+                        finalLogo.style.visibility = 'hidden';
+                        finalLogo.style.opacity = '0';
+
+                        // Tampilkan konten utama
+                        mainContent.classList.remove('hidden');
+
+                        // Setelah konten muncul, sembunyikan splash logo dan tampilkan logo final
+                        setTimeout(() => {
+                            splashLogo.style.opacity = '0';
+                            splashLogo.style.transition = 'opacity 0.5s ease-out';
+                            
+                            // Setelah splash logo fade out, tampilkan logo final
+                            setTimeout(() => {
+                                finalLogo.style.visibility = 'visible';
+                                finalLogo.style.opacity = '1';
+                                finalLogo.style.transition = 'opacity 0.3s ease-in';
+                            }, 100);
+                        }, 50);
                     }, 50);
 
                     // Setelah splash logo disembunyikan, hapus dari DOM
@@ -69,6 +95,16 @@ document.addEventListener('turbo:load', () => {
                         splashLogo.remove();
                         if (document.getElementById('dynamic-splash-animation')) {
                             document.getElementById('dynamic-splash-animation').remove();
+                        }
+                        
+                        // Kembalikan scroll pada mobile kecil setelah splash selesai
+                        if (window.innerWidth <= 375 && window.innerHeight <= 600) {
+                            document.body.style.position = '';
+                            document.body.style.overflow = '';
+                            document.body.style.width = '';
+                            document.body.style.height = '';
+                            document.documentElement.style.overflow = '';
+                            document.documentElement.style.height = '';
                         }
                     });
                 });
