@@ -61,15 +61,22 @@ class DashboardTabService
             ->toArray();
         
         // Tambahkan informasi apakah karyawan mengisi mood hari ini
+        // Highlight hanya muncul jika mood record hari ini belum direspons oleh admin
         $employees->each(function ($employee) use ($employeeIdsWithMoodToday, $today) {
-            $employee->has_mood_today = in_array($employee->id, $employeeIdsWithMoodToday);
-            if ($employee->has_mood_today) {
+            $hasMoodToday = in_array($employee->id, $employeeIdsWithMoodToday);
+            
+            if ($hasMoodToday) {
                 // Ambil mood record hari ini untuk mendapatkan created_at
                 $moodRecord = MoodRecord::where('user_id', $employee->id)
                     ->whereDate('created_at', $today)
                     ->latest()
                     ->first();
+                
+                // Highlight hanya muncul jika mood record hari ini belum direspons oleh admin
+                $employee->has_mood_today = $moodRecord && empty($moodRecord->admin_response);
                 $employee->mood_today_date = $moodRecord ? $moodRecord->created_at : $today;
+            } else {
+                $employee->has_mood_today = false;
             }
         });
         

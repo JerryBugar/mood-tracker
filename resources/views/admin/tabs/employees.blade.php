@@ -42,6 +42,86 @@
 </div>
 
 <script>
+    // Fungsi untuk menampilkan toast notification
+    function showEmployeeToast(message, type = 'success') {
+        if (typeof bootstrap === 'undefined') {
+            console.error('Bootstrap tidak tersedia');
+            return;
+        }
+
+        const toastElement = document.getElementById('notificationToast');
+        const toastMessage = document.getElementById('toast-message');
+        const toastTitle = document.getElementById('toast-title');
+        const toastIconWrapper = toastElement?.querySelector('.toast-icon-wrapper');
+        const toastIcon = toastElement?.querySelector('.toast-icon');
+
+        if (!toastElement || !toastMessage || !toastTitle) {
+            console.error('Toast element tidak ditemukan');
+            return;
+        }
+
+        // Update message dan title
+        toastMessage.textContent = message;
+        
+        // Update styling berdasarkan type
+        if (type === 'success') {
+            toastTitle.textContent = 'Berhasil';
+            toastTitle.classList.remove('error');
+            toastElement.classList.remove('error');
+            toastElement.classList.add('success');
+            
+            if (toastIconWrapper) {
+                toastIconWrapper.classList.remove('error');
+            }
+            
+            if (toastIcon) {
+                toastIcon.className = 'toast-icon bi bi-check-circle-fill';
+            }
+        } else {
+            toastTitle.textContent = 'Error';
+            toastTitle.classList.add('error');
+            toastElement.classList.remove('success');
+            toastElement.classList.add('error');
+            
+            if (toastIconWrapper) {
+                toastIconWrapper.classList.add('error');
+            }
+            
+            if (toastIcon) {
+                toastIcon.className = 'toast-icon bi bi-exclamation-circle-fill';
+            }
+        }
+
+        // Hide toast yang sedang ditampilkan sebelumnya jika ada
+        const existingToast = bootstrap.Toast.getInstance(toastElement);
+        if (existingToast) {
+            existingToast.hide();
+            setTimeout(() => {
+                showEmployeeToastNow(toastElement);
+            }, 300);
+        } else {
+            showEmployeeToastNow(toastElement);
+        }
+    }
+
+    function showEmployeeToastNow(toastElement) {
+        // Reset class untuk animasi
+        toastElement.classList.remove('hiding');
+        
+        // Show toast
+        const toast = new bootstrap.Toast(toastElement, {
+            autohide: true,
+            delay: 4500
+        });
+        
+        // Tambahkan event listener untuk animasi hide
+        toastElement.addEventListener('hide.bs.toast', function() {
+            toastElement.classList.add('hiding');
+        });
+        
+        toast.show();
+    }
+
     // Simpan userId yang sedang dilihat untuk filter
     // Gunakan window object untuk menghindari redeclaration error saat Turbo replaceWith
     if (typeof window.currentUserId === 'undefined') {
@@ -231,12 +311,12 @@
                 const detailModal = new bootstrap.Modal(document.getElementById('employeeDetailModal'));
                 detailModal.show();
             } else {
-                alert('Gagal mengambil data karyawan');
+                showEmployeeToast('Gagal mengambil data karyawan', 'error');
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('Terjadi kesalahan saat mengambil data karyawan');
+            showEmployeeToast('Terjadi kesalahan saat mengambil data karyawan', 'error');
         });
     }
 
@@ -338,7 +418,7 @@
         const submitButton = responseTextarea.nextElementSibling;
 
         if (!responseText) {
-            alert('Respons tidak boleh kosong');
+            showEmployeeToast('Respons tidak boleh kosong', 'error');
             return;
         }
 
@@ -359,6 +439,10 @@
         .then(response => response.json())
         .then(data => {
             if (data.success) {
+                // Cek apakah mood record yang direspons adalah dari hari ini
+                const moodRecord = window.currentUserData?.moodRecords?.find(r => r.id === recordId);
+                const isTodayRecord = moodRecord && new Date(moodRecord.created_at).toDateString() === new Date().toDateString();
+                
                 // Reload mood records untuk menampilkan respons yang baru
                 if (window.currentUserId) {
                     // Ambil filter yang sedang aktif
@@ -381,15 +465,41 @@
                     
                     loadMoodRecordsWithFilter(window.currentUserId, filterType || null, filterValue);
                 }
-                // Tampilkan notifikasi sukses
-                alert('Respons berhasil disimpan');
+                
+                // Jika mood record dari hari ini, hilangkan highlight dari employee item
+                if (isTodayRecord && window.currentUserId) {
+                    // Hapus highlight dari employee item yang sesuai
+                    const employeeItem = document.querySelector(`.employee-item[data-employee-id="${window.currentUserId}"]`);
+                    if (employeeItem) {
+                        employeeItem.classList.remove('has-mood-today');
+                        employeeItem.style.backgroundColor = 'white';
+                        employeeItem.style.borderLeft = 'none';
+                        
+                        // Hapus employee-center (tanggal) jika ada
+                        const employeeCenter = employeeItem.querySelector('.employee-center');
+                        if (employeeCenter) {
+                            employeeCenter.remove();
+                        }
+                    }
+                }
+                
+                // Tampilkan notifikasi sukses dengan toast
+                setTimeout(() => {
+                    showEmployeeToast('Respons berhasil disimpan', 'success');
+                }, 100);
             } else {
-                alert('Gagal menyimpan respons: ' + (data.message || 'Silakan coba lagi'));
+                // Tampilkan error dengan toast
+                setTimeout(() => {
+                    showEmployeeToast('Gagal menyimpan respons: ' + (data.message || 'Silakan coba lagi'), 'error');
+                }, 100);
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('Terjadi kesalahan saat menyimpan respons');
+            // Tampilkan error dengan toast
+            setTimeout(() => {
+                showEmployeeToast('Terjadi kesalahan saat menyimpan respons', 'error');
+            }, 100);
         })
         .finally(() => {
             // Enable button kembali

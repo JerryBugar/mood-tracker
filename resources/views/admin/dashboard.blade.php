@@ -83,6 +83,24 @@
     </turbo-frame>
 </div>
 
+<!-- Toast Container -->
+<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 99999;">
+    <div id="notificationToast" class="toast custom-toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-content-wrapper">
+            <div class="toast-icon-wrapper">
+                <i class="toast-icon bi bi-check-circle-fill"></i>
+            </div>
+            <div class="toast-body-content">
+                <div class="toast-title" id="toast-title">Berhasil</div>
+                <div class="toast-message" id="toast-message">Notifikasi berhasil!</div>
+            </div>
+            <button type="button" class="toast-close-btn" data-bs-dismiss="toast" aria-label="Close">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
 <!-- Modal Detail Karyawan (permanen di dashboard) -->
 <div class="modal fade" id="employeeDetailModal" tabindex="-1" aria-labelledby="employeeDetailModalLabel" aria-hidden="true" data-turbo="false">
     <div class="modal-dialog modal-lg">

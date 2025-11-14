@@ -8,7 +8,8 @@ if (typeof window.submitHandler === 'undefined') {
 }
 
 // Fungsi untuk menampilkan toast notification
-function showToast(message, type = 'success') {
+// Export ke window object agar bisa diakses dari semua scope
+window.showToast = function(message, type = 'success') {
     // Pastikan Bootstrap tersedia
     if (typeof bootstrap === 'undefined') {
         console.error('Bootstrap tidak tersedia');
@@ -71,7 +72,7 @@ function showToast(message, type = 'success') {
     } else {
         showToastNow(toastElement);
     }
-}
+};
 
 function showToastNow(toastElement) {
     // Reset class untuk animasi
