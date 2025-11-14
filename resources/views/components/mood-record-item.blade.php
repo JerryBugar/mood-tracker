@@ -42,9 +42,53 @@ Props:
     <div class="record-center">
         <span class="record-date">{{ $formattedDate }}</span>
         <span class="record-reason">{{ $record->reason ?? 'Tidak ada catatan' }}</span>
+        @if($record->admin_response)
+            <div class="admin-response-indicator mt-2">
+                <button type="button" 
+                        class="badge bg-info d-inline-flex align-items-center gap-1 border-0" 
+                        style="cursor: pointer;"
+                        onclick="showAdminResponse({{ $record->id }}, {{ json_encode($record->admin_response) }}, {{ json_encode($record->admin_response_at ? \Carbon\Carbon::parse($record->admin_response_at)->locale('id_ID')->translatedFormat('l, j F Y H:i') : '') }})">
+                    <i class="bi bi-check-circle-fill"></i>
+                    Direspons oleh Admin/HRD
+                </button>
+            </div>
+        @endif
     </div>
     
     <div class="record-right">
         {{ $formattedTime }}
+        @if($record->admin_response)
+            <div class="admin-response-badge mt-1">
+                <i class="bi bi-chat-dots-fill text-info" 
+                   style="font-size: 1.2rem; cursor: pointer;" 
+                   title="Ada respons dari Admin/HRD"
+                   onclick="showAdminResponse({{ $record->id }}, {{ json_encode($record->admin_response) }}, {{ json_encode($record->admin_response_at ? \Carbon\Carbon::parse($record->admin_response_at)->locale('id_ID')->translatedFormat('l, j F Y H:i') : '') }})"></i>
+            </div>
+        @endif
     </div>
 </div>
+
+@if($record->admin_response)
+<!-- Modal untuk menampilkan respons admin -->
+<div class="modal fade" id="adminResponseModal{{ $record->id }}" tabindex="-1" aria-labelledby="adminResponseModalLabel{{ $record->id }}" aria-hidden="true" data-turbo-permanent>
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="adminResponseModalLabel{{ $record->id }}">
+                    <i class="bi bi-chat-dots-fill me-2"></i>Respons dari Admin/HRD
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p id="adminResponseContent{{ $record->id }}">{{ $record->admin_response }}</p>
+                <small class="text-muted" id="adminResponseDate{{ $record->id }}">
+                    Direspons pada: {{ $record->admin_response_at ? \Carbon\Carbon::parse($record->admin_response_at)->locale('id_ID')->translatedFormat('l, j F Y H:i') : '' }}
+                </small>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+@endif

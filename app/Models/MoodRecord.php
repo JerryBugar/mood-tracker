@@ -26,6 +26,8 @@ class MoodRecord extends Model
         'reason',
         'suggestion_action',
         'date_recorded',
+        'admin_response',
+        'admin_response_at',
     ];
 
     /**
@@ -37,6 +39,7 @@ class MoodRecord extends Model
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
         'date_recorded' => 'date',
+        'admin_response_at' => 'datetime',
     ];
 
     /**

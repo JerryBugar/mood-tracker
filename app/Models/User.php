@@ -7,7 +7,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use App\Models\MoodRecord;
+use App\Models\Notification;
 
 /**
  * User adalah model yang merepresentasikan pengguna aplikasi.
@@ -66,6 +68,19 @@ class User extends Authenticatable
     public function moodRecords(): HasMany
     {
         return $this->hasMany(MoodRecord::class);
+    }
+
+    /**
+     * Relasi: Satu User bisa memiliki banyak Notification
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
+     */
+    public function notifications(): BelongsToMany
+    {
+        return $this->belongsToMany(Notification::class, 'notification_user')
+                    ->withPivot('is_read', 'read_at')
+                    ->withTimestamps()
+                    ->orderBy('created_at', 'desc');
     }
 
     /**

@@ -14,8 +14,8 @@ class UserDetailService
      * Mendapatkan detail user beserta mood records dengan filter
      *
      * @param int $userId
-     * @param string|null $filterType Filter type: 'day', 'month', 'year', atau null untuk semua
-     * @param string|null $filterValue Nilai filter (format: YYYY-MM-DD untuk day, YYYY-MM untuk month, YYYY untuk year)
+     * @param string|null $filterType Filter type: 'day', 'week', 'month', 'year', atau null untuk semua
+     * @param string|null $filterValue Nilai filter (format: YYYY-MM-DD untuk day, YYYY-Www untuk week, YYYY-MM untuk month, YYYY untuk year)
      * @return array|null
      */
     public function getUserDetail(int $userId, ?string $filterType = null, ?string $filterValue = null): ?array
@@ -34,6 +34,19 @@ class UserDetailService
                 case 'day':
                     // Filter berdasarkan hari tertentu
                     $query->whereDate('created_at', $filterValue);
+                    break;
+                case 'week':
+                    // Filter berdasarkan minggu tertentu (format: YYYY-Www)
+                    // Parse format YYYY-Www menjadi start dan end date minggu
+                    if (preg_match('/^(\d{4})-W(\d{2})$/', $filterValue, $matches)) {
+                        $year = (int)$matches[1];
+                        $week = (int)$matches[2];
+                        
+                        // Buat tanggal dari tahun dan minggu
+                        $startDate = Carbon::now()->setISODate($year, $week, 1)->startOfDay();
+                        $endDate = Carbon::now()->setISODate($year, $week, 7)->endOfDay();
+                        $query->whereBetween('created_at', [$startDate, $endDate]);
+                    }
                     break;
                 case 'month':
                     // Filter berdasarkan bulan tertentu (format: YYYY-MM)
@@ -68,6 +81,8 @@ class UserDetailService
                     'mood' => $record->mood,
                     'reason' => $record->reason,
                     'action_suggestion' => $record->suggestion_action,
+                    'admin_response' => $record->admin_response,
+                    'admin_response_at' => $record->admin_response_at,
                     'created_at' => $record->created_at
                 ];
             })->toArray(),

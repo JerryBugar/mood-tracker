@@ -131,5 +131,86 @@ if (!window.moodModalInitialized) {
             sessionStorage.removeItem('moodModalWasOpen');
         }
     });
+
+    // Setup aria-hidden handlers untuk modal mood
+    if (typeof window.moodModalAriaHandlersSetup === 'undefined') {
+        window.moodModalAriaHandlersSetup = false;
+    }
+
+    function setupMoodModalAriaHandlers() {
+        // Hanya setup sekali untuk menghindari duplikasi
+        if (window.moodModalAriaHandlersSetup) {
+            return;
+        }
+
+        const moodModal = document.getElementById('moodModal');
+        if (!moodModal) {
+            return;
+        }
+
+        // Hapus focus dari semua elemen yang bisa di-focus sebelum modal disembunyikan
+        moodModal.addEventListener('hide.bs.modal', function() {
+            // Hapus focus dari semua elemen yang bisa di-focus di dalam modal
+            const focusableElements = moodModal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+            focusableElements.forEach(element => {
+                if (element === document.activeElement && typeof element.blur === 'function') {
+                    element.blur();
+                }
+            });
+
+            // Juga hapus focus dari elemen aktif jika masih di dalam modal
+            const activeElement = document.activeElement;
+            if (moodModal.contains(activeElement) && 
+                activeElement !== document.body && 
+                activeElement !== document.documentElement &&
+                typeof activeElement.blur === 'function') {
+                activeElement.blur();
+            }
+        });
+
+        moodModal.addEventListener('hidden.bs.modal', function() {
+            // Pastikan tidak ada elemen yang masih focused setelah modal tersembunyi
+            const activeElement = document.activeElement;
+            if (activeElement && 
+                moodModal.contains(activeElement) && 
+                activeElement !== document.body && 
+                activeElement !== document.documentElement &&
+                typeof activeElement.blur === 'function') {
+                activeElement.blur();
+            }
+        });
+
+        // Setup event listener untuk tombol close - hapus focus sebelum modal ditutup
+        const closeBtn = moodModal.querySelector('[data-bs-dismiss="modal"]');
+        if (closeBtn) {
+            // Hapus focus saat mousedown (sebelum click) untuk mencegah aria-hidden error
+            closeBtn.addEventListener('mousedown', function(e) {
+                // Hapus focus sebelum Bootstrap menutup modal
+                if (document.activeElement === closeBtn) {
+                    closeBtn.blur();
+                }
+            }, { passive: true });
+
+            // Juga hapus focus saat click sebagai backup
+            closeBtn.addEventListener('click', function(e) {
+                // Hapus focus sebelum modal ditutup untuk mencegah aria-hidden error
+                if (document.activeElement === closeBtn) {
+                    closeBtn.blur();
+                }
+            });
+        }
+
+        window.moodModalAriaHandlersSetup = true;
+    }
+
+    // Setup aria-hidden handlers saat DOM ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', setupMoodModalAriaHandlers);
+    } else {
+        setupMoodModalAriaHandlers();
+    }
+
+    // Setup ulang saat Turbo load (jika modal belum di-setup)
+    document.addEventListener('turbo:load', setupMoodModalAriaHandlers);
 }
 </script>

@@ -110,6 +110,10 @@
     border-radius: 10px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     overflow: hidden;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
 
 .employee-item {
@@ -117,17 +121,38 @@
     justify-content: space-between;
     align-items: center;
     padding: 15px 20px;
-    border-bottom: 1px solid #eee;
+    border-bottom: none;
+    border-radius: 8px;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    position: relative;
+    transition: background-color 0.3s ease;
+    gap: 15px;
 }
 
-.employee-item:last-child {
-    border-bottom: none;
+.employee-item.has-mood-today {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    background-color: #e8f5e9;
+    border-left: 4px solid #4caf50;
+}
+
+.employee-item:not(.has-mood-today) {
+    justify-content: space-between;
+}
+
+.employee-item.has-mood-today:hover {
+    background-color: #c8e6c9;
 }
 
 .employee-info {
     display: flex;
     align-items: center;
     gap: 15px;
+    flex-shrink: 0;
+    z-index: 1;
 }
 
 .employee-avatar {
@@ -168,9 +193,67 @@
     border-radius: 4px;
     font-size: 0.9rem;
     cursor: pointer;
+    flex-shrink: 0;
+    z-index: 1;
+    position: relative;
 }
 
 .notification-btn:hover {
     background-color: #0056b3;
+}
+
+.employee-center {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    margin: 0;
+    padding: 0;
+    pointer-events: none;
+}
+
+.employee-date {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #2e7d32;
+    text-align: center;
+    white-space: nowrap;
+    margin: 0;
+    padding: 0;
+}
+
+/* Styling untuk button di semua employee item */
+#dashboard_content > div.employee-list > div > button {
+    background-color: #82242d;
+    border-color: #82242d;
+    color: white;
+}
+
+#dashboard_content > div.employee-list > div > button:hover {
+    background-color: #6a1d24;
+    border-color: #6a1d24;
+}
+
+/* Styling untuk button di admin-response-form */
+#mood-records-container .admin-response-form > button {
+    background-color: #82242d;
+    border-color: #82242d;
+    color: white;
+}
+
+#mood-records-container .admin-response-form > button:hover {
+    background-color: #6a1d24;
+    border-color: #6a1d24;
+    color: white;
+}
+
+/* Styling untuk alert-info di mood-records-container menjadi merah transparan */
+#mood-records-container .alert.alert-info {
+    background-color: rgba(130, 36, 45, 0.15);
+    border-color: rgba(130, 36, 45, 0.3);
+    color: #82242d;
 }
 

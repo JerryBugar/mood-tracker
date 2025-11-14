@@ -1,5 +1,12 @@
 @extends('layouts.app')
 
+@push('head')
+{{-- Preload hanya gambar yang digunakan di halaman ini --}}
+<link rel="preload" as="image" href="{{ route('logo.serve', ['filename' => 'favicons.png']) }}" fetchpriority="high">
+<link rel="preload" as="image" href="{{ route('logo.serve', ['filename' => 'google.png']) }}">
+<link rel="preload" as="image" href="{{ route('logo.serve', ['filename' => 'love.png']) }}">
+@endpush
+
 @section('content')
 <!-- Animated splash logo -->
 <div id="splash-logo-container">
@@ -23,4 +30,14 @@
         </p>
     </div>
 </div>
+
+@if(Auth::check() && Auth::user() && Auth::user()->is_verified)
+<script>
+    // Jika user sudah login, langsung redirect ke homepage
+    // Ini sebagai fallback jika server-side redirect tidak bekerja karena Turbo atau cache
+    (function() {
+        window.location.href = '{{ route("home") }}';
+    })();
+</script>
+@endif
 @endsection

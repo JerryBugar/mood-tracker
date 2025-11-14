@@ -1,148 +1,10 @@
 @extends('layouts.internal')
 
+@push('styles')
+@vite(['resources/css/profile/profile.css'])
+@endpush
+
 @section('main-content')
-<style>
-    .profile-card {
-        background-color: #fff;
-        border-radius: 15px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        padding: 30px;
-        margin-top: 20px;
-    }
-
-    .profile-header {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        margin-bottom: 30px;
-    }
-
-    .profile-avatar {
-        width: 120px;
-        height: 120px;
-        border-radius: 50%;
-        object-fit: cover;
-        border: 4px solid #d98695;
-        margin-bottom: 15px;
-    }
-
-    .profile-name {
-        font-size: 1.8rem;
-        color: #82272c;
-        margin-bottom: 5px;
-        font-weight: bold;
-    }
-
-    .profile-email {
-        color: #6c757d;
-        margin-bottom: 20px;
-    }
-
-    .profile-detail {
-        display: flex;
-        flex-direction: column;
-        padding: 12px 0;
-        border-bottom: 1px solid #eee;
-    }
-
-    .detail-label {
-        font-weight: 500;
-        color: #495057;
-        margin-bottom: 5px;
-    }
-
-    .detail-value {
-        color: #6c757d;
-    }
-    
-    @media (min-width: 768px) {
-        .profile-detail {
-            flex-direction: row;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .detail-label {
-            margin-bottom: 0;
-        }
-    }
-
-    .btn-edit {
-        background-color: #661118ff;
-        color: white;
-        border: none;
-        padding: 10px 20px;
-        border-radius: 8px;
-        font-size: 1rem;
-        cursor: pointer;
-        width: 100%;
-        margin-top: 20px;
-    }
-
-    .btn-logout {
-        background-color: #dc3545;
-        color: white;
-        border: none;
-        padding: 10px 20px;
-        border-radius: 8px;
-        font-size: 1rem;
-        cursor: pointer;
-        width: 100%;
-        margin-top: 10px;
-    }
-    
-    .profile-section {
-        margin-bottom: 20px;
-    }
-    
-    .button-container {
-        display: flex;
-        gap: 10px;
-        flex-direction: column;
-    }
-    
-    @media (min-width: 768px) {
-        .profile-detail {
-            flex-direction: row;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 0;
-        }
-        
-        .detail-label {
-            flex: 1;
-            text-align: left;
-            margin-bottom: 0;
-        }
-        
-        .detail-value {
-            flex: 1.5;
-            text-align: right;
-            padding-left: 15px;
-        }
-        
-        .button-container {
-            flex-direction: row;
-        }
-        
-        .btn-edit, .btn-logout {
-            flex: 1;
-            width: auto;
-            margin-top: 20px;
-        }
-    }
-    
-    @media (max-width: 767px) {
-        .profile-card {
-            padding: 20px;
-            margin: 10px;
-        }
-        
-        .profile-name {
-            font-size: 1.5rem;
-        }
-    }
-</style>
 
 <div class="container-fluid">
 
@@ -264,7 +126,7 @@
                     <div class="mb-3">
                         <label for="avatar" class="form-label">Avatar</label>
                         <input type="file" class="form-control" id="avatar" name="avatar" accept="image/*">
-                        <div class="form-text">Pilih gambar baru untuk avatar Anda</div>
+                        <div class="form-text">Pilih gambar baru untuk avatar Anda (Maksimal: 3 MB)</div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -276,107 +138,44 @@
     </div>
 </div>
 
-<!-- Toast Container -->
-<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1100;">
-    <div id="successToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
-        <div class="toast-header" style="background-color: #d4edda; color: #155724;">
-            <strong class="me-auto">Notifikasi</strong>
-            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
-        </div>
-        <div class="toast-body" style="background-color: #d4edda; color: #155724;">
-            Profil berhasil diperbarui!
+<!-- Modal Konfirmasi Logout -->
+<div class="modal fade" id="logoutConfirmModal" tabindex="-1" aria-labelledby="logoutConfirmModalLabel" aria-hidden="true" data-turbo-permanent>
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="logoutConfirmModalLabel">Konfirmasi Keluar</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" id="closeLogoutModalBtn"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-0">Apakah Anda yakin ingin keluar?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="cancelLogoutBtn">Tidak</button>
+                <button type="button" class="btn btn-danger" id="confirmLogoutBtn">Ya, Keluar</button>
+            </div>
         </div>
     </div>
 </div>
 
-<script>
-    function showEditProfile() {
-        // Buka modal edit profil
-        const modal = new bootstrap.Modal(document.getElementById('editProfileModal'));
-        modal.show();
-    }
-    
-    function confirmLogout() {
-        if (confirm('Apakah Anda yakin ingin keluar?')) {
-            document.getElementById('logout-form').submit();
-        }
-    }
-    
-    // Fungsi untuk menangani submit form edit profil
-    document.addEventListener('submit', function(e) {
-        if (e.target.id === 'edit-profile-form') {
-            e.preventDefault(); // Mencegah submit standar
-            
-            // Cegah pengiriman ganda dengan menonaktifkan tombol submit
-            const submitButton = e.target.querySelector('button[type="submit"]');
-            if (submitButton.disabled) {
-                // Jika tombol sudah dinonaktifkan, hentikan eksekusi
-                return;
-            }
-            
-            submitButton.disabled = true;
-            submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Menyimpan...';
-            
-            const formData = new FormData(e.target);
-            
-            fetch(e.target.action, {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                    'X-HTTP-Method-Override': 'PUT'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Update informasi profil di halaman
-                    document.querySelector('.profile-name').textContent = data.user.name;
-                    document.querySelector('.profile-email').textContent = data.user.email;
-                    
-                    // Update avatar jika ada
-                    if (data.user.avatar) {
-                        const avatarElement = document.querySelector('.profile-avatar');
-                        if (avatarElement.tagName === 'IMG') {
-                            avatarElement.src = data.user.avatar;
-                        } else {
-                            // Jika sebelumnya menggunakan placeholder teks
-                            avatarElement.outerHTML = `<img src="${data.user.avatar}" alt="Avatar" class="profile-avatar">`;
-                        }
-                    }
-                    
-                    // Update info detail
-                    document.querySelectorAll('.detail-value')[0].textContent = data.user.name;
-                    document.querySelectorAll('.detail-value')[1].textContent = data.user.email;
-                    document.querySelectorAll('.detail-value')[2].textContent = data.user.division || '-';
-                    document.querySelectorAll('.detail-value')[3].textContent = data.user.role || '-';
-                    document.querySelectorAll('.detail-value')[4].textContent = data.user.jenis_kelamin || '-';
-                    
-                    // Tutup modal
-                    const modalElement = document.getElementById('editProfileModal');
-                    const modal = bootstrap.Modal.getInstance(modalElement);
-                    if (modal) {
-                        modal.hide();
-                    }
-                    
-                    // Tampilkan notifikasi Toast berhasil
-                    const toastEl = document.getElementById('successToast');
-                    const toast = new bootstrap.Toast(toastEl);
-                    toast.show();
-                } else {
-                    alert('Terjadi kesalahan saat memperbarui profil: ' + (data.message || 'Silakan coba lagi'));
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Terjadi kesalahan saat memperbarui profil. Silakan coba lagi.');
-            })
-            .finally(() => {
-                // Selalu aktifkan kembali tombol submit setelah selesai
-                submitButton.disabled = false;
-                submitButton.innerHTML = 'Simpan';
-            });
-        }
-    });
-</script>
+<!-- Toast Container -->
+<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 99999;">
+    <div id="successToast" class="toast custom-toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-content-wrapper">
+            <div class="toast-icon-wrapper">
+                <i class="toast-icon bi bi-check-circle-fill"></i>
+            </div>
+            <div class="toast-body-content">
+                <div class="toast-title" id="toast-title">Berhasil</div>
+                <div class="toast-message" id="toast-message">Profil berhasil diperbarui!</div>
+            </div>
+            <button type="button" class="toast-close-btn" data-bs-dismiss="toast" aria-label="Close">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+@push('scripts')
+@vite(['resources/js/profile/profile.js'])
+@endpush
 @endsection

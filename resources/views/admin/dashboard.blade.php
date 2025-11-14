@@ -1,7 +1,7 @@
 @extends('layouts.admin')
 
 @push('styles')
-@vite('resources/css/admin/dashboard.css')
+@vite(['resources/css/admin/dashboard.css', 'resources/css/admin/notifications.css'])
 @endpush
 
 @section('main-content')
@@ -83,6 +83,24 @@
     </turbo-frame>
 </div>
 
+<!-- Toast Container -->
+<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 99999;">
+    <div id="notificationToast" class="toast custom-toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-content-wrapper">
+            <div class="toast-icon-wrapper">
+                <i class="toast-icon bi bi-check-circle-fill"></i>
+            </div>
+            <div class="toast-body-content">
+                <div class="toast-title" id="toast-title">Berhasil</div>
+                <div class="toast-message" id="toast-message">Notifikasi berhasil!</div>
+            </div>
+            <button type="button" class="toast-close-btn" data-bs-dismiss="toast" aria-label="Close">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
 <!-- Modal Detail Karyawan (permanen di dashboard) -->
 <div class="modal fade" id="employeeDetailModal" tabindex="-1" aria-labelledby="employeeDetailModalLabel" aria-hidden="true" data-turbo="false">
     <div class="modal-dialog modal-lg">
@@ -118,10 +136,12 @@
                             <select id="filter-type" class="form-select form-select-sm" style="width: auto;">
                                 <option value="">Semua</option>
                                 <option value="day">Hari</option>
+                                <option value="week">Minggu</option>
                                 <option value="month">Bulan</option>
                                 <option value="year">Tahun</option>
                             </select>
                             <input type="date" id="filter-day" class="form-control form-control-sm" style="width: auto; display: none;" max="{{ date('Y-m-d') }}">
+                            <input type="week" id="filter-week" class="form-control form-control-sm" style="width: auto; display: none;">
                             <input type="month" id="filter-month" class="form-control form-control-sm" style="width: auto; display: none;" max="{{ date('Y-m') }}">
                             <input type="number" id="filter-year" class="form-control form-control-sm" style="width: auto; display: none;" min="2020" max="2025" value="2025" placeholder="Tahun">
                         </div>
@@ -140,7 +160,7 @@
 
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-@vite('resources/js/admin/dashboard.js')
+@vite(['resources/js/admin/dashboard.js', 'resources/js/admin/notifications.js', 'resources/js/admin/employees.js'])
 @endpush
 
 @endsection
