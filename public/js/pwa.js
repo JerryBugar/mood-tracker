@@ -34,9 +34,27 @@
                 });
 
             // Listen for controller change (new service worker activated)
+            // Hanya reload jika benar-benar diperlukan untuk mencegah splash screen terload 2 kali
             navigator.serviceWorker.addEventListener('controllerchange', function() {
                 console.log('[PWA] New service worker activated');
-                window.location.reload();
+                // Hanya reload jika tidak sedang dalam proses redirect atau navigasi
+                // Cek apakah halaman sedang dalam proses redirect
+                const isRedirecting = sessionStorage.getItem('dashboard-redirect-executed');
+                const isNavigating = document.visibilityState === 'hidden';
+                
+                // Jangan reload jika sedang redirect atau navigate
+                if (isRedirecting || isNavigating) {
+                    console.log('[PWA] Skip reload: redirect or navigation in progress');
+                    return;
+                }
+                
+                // Delay reload sedikit untuk memastikan tidak konflik dengan splash screen
+                setTimeout(function() {
+                    // Double check sebelum reload
+                    if (!sessionStorage.getItem('dashboard-redirect-executed')) {
+                        window.location.reload();
+                    }
+                }, 500);
             });
         });
     }

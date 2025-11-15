@@ -19,7 +19,29 @@ document.addEventListener('turbo:load', () => {
     const finalLogo = document.getElementById('final-logo-position');
 
     if (splashLogo && mainContent && finalLogo) {
+        // Guard menggunakan sessionStorage untuk mencegah splash screen terload 2 kali
+        // Ini penting karena Turbo bisa memicu event beberapa kali atau service worker bisa reload halaman
+        const splashKey = 'splash-screen-executed';
+        const currentUrl = window.location.href;
+        const executedUrl = sessionStorage.getItem(splashKey);
+        
+        // Jika splash sudah dieksekusi untuk URL yang sama, skip
+        if (executedUrl === currentUrl && splashLogo.classList.contains('js-has-run')) {
+            console.log('[Splash] Splash screen sudah dieksekusi untuk URL ini, skip');
+            // Pastikan splash logo sudah dihapus jika sudah selesai
+            if (splashLogo && splashLogo.parentNode) {
+                splashLogo.remove();
+            }
+            // Pastikan main content visible
+            if (mainContent) {
+                mainContent.classList.remove('hidden');
+            }
+            return;
+        }
+        
         if (!splashLogo.classList.contains('js-has-run')) {
+            // Tandai splash sudah dieksekusi untuk URL ini
+            sessionStorage.setItem(splashKey, currentUrl);
             splashLogo.classList.add('js-has-run');
 
             // Tambahkan class untuk halaman dashboard
@@ -96,6 +118,20 @@ document.addEventListener('turbo:load', () => {
                         if (document.getElementById('dynamic-splash-animation')) {
                             document.getElementById('dynamic-splash-animation').remove();
                         }
+                        
+                        // Cleanup sessionStorage setelah splash selesai (untuk next visit)
+                        // Tapi jangan hapus jika masih di URL yang sama (untuk mencegah double load)
+                        const splashKey = 'splash-screen-executed';
+                        const currentUrl = window.location.href;
+                        const executedUrl = sessionStorage.getItem(splashKey);
+                        
+                        // Hanya hapus jika URL berbeda (berarti sudah navigate ke halaman lain)
+                        // Atau hapus setelah delay untuk memastikan tidak ada double load
+                        setTimeout(() => {
+                            if (executedUrl !== currentUrl) {
+                                sessionStorage.removeItem(splashKey);
+                            }
+                        }, 1000);
                         
                         // Kembalikan scroll pada mobile kecil setelah splash selesai
                         if (window.innerWidth <= 375 && window.innerHeight <= 600) {
