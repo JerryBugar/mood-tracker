@@ -2,6 +2,15 @@
 (function() {
     'use strict';
 
+    // Jangan aktifkan PWA di halaman welcome atau admin
+    const isWelcomePage = window.location.pathname === '/' || window.location.pathname === '/welcome';
+    const isAdminPage = window.location.pathname.startsWith('/admin');
+    
+    if (isWelcomePage || isAdminPage) {
+        console.log('[PWA] PWA disabled for this page');
+        return; // Exit early, jangan aktifkan PWA
+    }
+
     // Register Service Worker
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', function() {
@@ -44,11 +53,14 @@
     }
 
     window.addEventListener('beforeinstallprompt', function(e) {
-        // Jangan tampilkan install prompt di halaman admin
-        if (window.location.pathname.startsWith('/admin')) {
-            // Prevent the prompt from appearing di admin pages
+        // Jangan tampilkan install prompt di halaman admin atau welcome
+        const isWelcomePage = window.location.pathname === '/' || window.location.pathname === '/welcome';
+        const isAdminPage = window.location.pathname.startsWith('/admin');
+        
+        if (isAdminPage || isWelcomePage) {
+            // Prevent the prompt from appearing di admin atau welcome pages
             e.preventDefault();
-            // Jangan stash event untuk admin pages
+            // Jangan stash event untuk admin atau welcome pages
             return;
         }
         
@@ -62,8 +74,11 @@
 
     // Show install button
     function showInstallButton() {
-        // Jangan tampilkan di halaman admin
-        if (window.location.pathname.startsWith('/admin')) {
+        // Jangan tampilkan di halaman admin atau welcome
+        const isWelcomePage = window.location.pathname === '/' || window.location.pathname === '/welcome';
+        const isAdminPage = window.location.pathname.startsWith('/admin');
+        
+        if (isAdminPage || isWelcomePage) {
             return;
         }
         

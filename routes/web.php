@@ -21,7 +21,7 @@ Route::get('/offline', function () {
     return response()->file(public_path('offline.html'));
 })->name('offline');
 
-Route::get('/dashboard', [DashboardController::class, 'index']);
+Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
 // Route untuk serve logo dengan cache headers optimal
 Route::get('/logo/{filename}', [LogoController::class, 'serve'])->where('filename', '[a-zA-Z0-9._-]+\.(png|jpeg|jpg)')->name('logo.serve');

@@ -4,10 +4,18 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ config('app.name', 'Laravel') }}</title>
+    @if(request()->path() === '/' || request()->path() === 'welcome')
+    <meta name="description" content="Ceremood adalah aplikasi mood tracker dari Cerebrum untuk HRD, memantau kesejahteraan karyawan & mendukung keputusan strategis.">
+    <meta name="keywords" content="ceremood, mood tracker, cerebrum, employee wellness, mood tracking, kesehatan mental, productivity, mood calendar, real-time notification">
+    <meta name="author" content="Cerebrum">
+    <title>Ceremood – Mood Tracker untuk Memahami Perasaan Karyawanmu</title>
+    @else
+    <title>{{ config('app.name', 'Ceremood') }}</title>
+    @endif
     <link rel="icon" type="image/png" href="{{ route('logo.serve', ['filename' => 'favicons.png']) }}">
 
-    <!-- PWA Meta Tags -->
+    <!-- PWA Meta Tags - Disabled untuk welcome page -->
+    @if(request()->path() !== '/' && request()->path() !== 'welcome')
     <meta name="theme-color" content="#6366f1">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -15,6 +23,10 @@
     <meta name="apple-mobile-web-app-title" content="{{ config('app.name', 'Ceremood') }}">
     <link rel="apple-touch-icon" href="{{ route('logo.serve', ['filename' => 'favicons.png']) }}">
     <link rel="manifest" href="{{ asset('manifest.json') }}">
+    @else
+    <meta name="theme-color" content="#6366f1">
+    <!-- Manifest link dihapus untuk mencegah install prompt di welcome page -->
+    @endif
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
