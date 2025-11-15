@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Models\Notification;
 use App\Services\NotificationService;
+use App\Helpers\TurboStreamHelper;
 
 class NotificationController extends Controller
 {
@@ -32,13 +33,17 @@ class NotificationController extends Controller
     /**
      * Tandai notifikasi sebagai sudah dibaca
      */
-    public function markAsRead($id)
+    public function markAsRead($id, Request $request)
     {
         $user = Auth::user();
         
         $notification = $user->notifications()->where('notifications.id', $id)->first();
         
         if (!$notification) {
+            $acceptHeader = $request->header('Accept', '');
+            if (strpos($acceptHeader, 'text/vnd.turbo-stream.html') !== false) {
+                return response('', 404);
+            }
             return response()->json([
                 'success' => false,
                 'message' => 'Notifikasi tidak ditemukan'
@@ -51,6 +56,23 @@ class NotificationController extends Controller
             'read_at' => now()
         ]);
 
+        // Jika request Turbo Stream, return Turbo Stream response
+        $acceptHeader = $request->header('Accept', '');
+        if (strpos($acceptHeader, 'text/vnd.turbo-stream.html') !== false) {
+            // Reload notifications frame
+            $notifications = $user->notifications()
+                ->orderBy('created_at', 'desc')
+                ->paginate(10);
+            
+            $notificationsContent = view('notif._partials.notifications_list', compact('notifications'))->render();
+            
+            return response(
+                TurboStreamHelper::replace('notifications_frame', $notificationsContent),
+                200,
+                ['Content-Type' => 'text/vnd.turbo-stream.html']
+            );
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'Notifikasi ditandai sebagai sudah dibaca'
@@ -60,7 +82,7 @@ class NotificationController extends Controller
     /**
      * Tandai semua notifikasi sebagai sudah dibaca
      */
-    public function markAllAsRead()
+    public function markAllAsRead(Request $request)
     {
         $user = Auth::user();
         
@@ -76,6 +98,23 @@ class NotificationController extends Controller
                 'read_at' => now()
             ]);
 
+        // Jika request Turbo Stream, return Turbo Stream response
+        $acceptHeader = $request->header('Accept', '');
+        if (strpos($acceptHeader, 'text/vnd.turbo-stream.html') !== false) {
+            // Reload notifications frame
+            $notifications = $user->notifications()
+                ->orderBy('created_at', 'desc')
+                ->paginate(10);
+            
+            $notificationsContent = view('notif._partials.notifications_list', compact('notifications'))->render();
+            
+            return response(
+                TurboStreamHelper::replace('notifications_frame', $notificationsContent),
+                200,
+                ['Content-Type' => 'text/vnd.turbo-stream.html']
+            );
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'Semua notifikasi ditandai sebagai sudah dibaca'
@@ -85,7 +124,7 @@ class NotificationController extends Controller
     /**
      * Hapus semua notifikasi yang sudah dibaca
      */
-    public function deleteAll()
+    public function deleteAll(Request $request)
     {
         $user = Auth::user();
         
@@ -100,6 +139,10 @@ class NotificationController extends Controller
                 ->toArray();
             
             if (empty($readNotificationIds)) {
+                $acceptHeader = $request->header('Accept', '');
+                if (strpos($acceptHeader, 'text/vnd.turbo-stream.html') !== false) {
+                    return response('', 400);
+                }
                 return response()->json([
                     'success' => false,
                     'message' => 'Tidak ada notifikasi yang bisa dihapus'
@@ -135,6 +178,23 @@ class NotificationController extends Controller
             
             DB::commit();
             
+            // Jika request Turbo Stream, return Turbo Stream response
+            $acceptHeader = $request->header('Accept', '');
+            if (strpos($acceptHeader, 'text/vnd.turbo-stream.html') !== false) {
+                // Reload notifications frame
+                $notifications = $user->notifications()
+                    ->orderBy('created_at', 'desc')
+                    ->paginate(10);
+                
+                $notificationsContent = view('notif._partials.notifications_list', compact('notifications'))->render();
+                
+                return response(
+                    TurboStreamHelper::replace('notifications_frame', $notificationsContent),
+                    200,
+                    ['Content-Type' => 'text/vnd.turbo-stream.html']
+                );
+            }
+            
             return response()->json([
                 'success' => true,
                 'message' => 'Semua notifikasi berhasil dihapus'
@@ -142,6 +202,11 @@ class NotificationController extends Controller
             
         } catch (\Exception $e) {
             DB::rollBack();
+            
+            $acceptHeader = $request->header('Accept', '');
+            if (strpos($acceptHeader, 'text/vnd.turbo-stream.html') !== false) {
+                return response('', 500);
+            }
             
             return response()->json([
                 'success' => false,

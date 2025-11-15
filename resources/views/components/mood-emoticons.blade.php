@@ -52,8 +52,52 @@
     }
 
     @media (min-width: 768px) {
+        .emoticons-wrapper {
+            flex-wrap: nowrap !important;
+            overflow-x: auto;
+            overflow-y: visible;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .emoticons-wrapper::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .emoticons-wrapper {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        
         .mood-emoticons-grid > div > div {
-            margin: 0 90px !important;
+            margin: 0 10px !important;
+            flex-shrink: 0;
+        }
+        
+        /* Untuk desktop yang lebih lebar */
+        @media (min-width: 1200px) {
+            .mood-emoticons-grid > div > div {
+                margin: 0 20px !important;
+            }
+        }
+        
+        /* Untuk desktop yang sangat lebar */
+        @media (min-width: 1600px) {
+            .mood-emoticons-grid > div > div {
+                margin: 0 40px !important;
+            }
+        }
+        
+        /* Untuk resolusi sekitar 1536px (desktop non-maximized) */
+        @media (min-width: 1400px) and (max-width: 1599px) {
+            .mood-emoticons-grid > div > div {
+                margin: 0 90px !important;
+            }
+        }
+        
+        /* Pastikan container tidak overflow */
+        .mood-emoticons-container {
+            overflow-x: hidden;
+            overflow-y: visible;
         }
     }
 
@@ -74,12 +118,12 @@
     
 </style>
 
-<div class="mood-emoticons-container" style="background-color: #d98695; border-radius: 15px; margin-top: 0px; text-align: center;">
+<div id="mood-emoticons-container" class="mood-emoticons-container" style="background-color: #d98695; border-radius: 15px; margin-top: 0px; text-align: center;">
     <h3 class="d-none d-sm-block mb-0" style="color: white;">Bagaimana kabarmu hari ini?</h3>
     <h5 class="d-block d-sm-none mb-0" style="color: white;">Bagaimana kabarmu hari ini?</h5>
 
     <div class="mood-emoticons-grid mt-3">
-        <div class="d-flex justify-content-center align-items-center" style="flex-wrap: nowrap; margin: 0 -15px;">
+        <div class="d-flex justify-content-center align-items-center emoticons-wrapper" style="flex-wrap: wrap; margin: 0 -15px;">
             
             <x-mood-emoticon-item 
                 mood="senyum" 

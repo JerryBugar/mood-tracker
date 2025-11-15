@@ -7,6 +7,15 @@
     <title>{{ config('app.name', 'Laravel') }}</title>
     <link rel="icon" type="image/png" href="{{ route('logo.serve', ['filename' => 'favicons.png']) }}">
 
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#6366f1">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="{{ config('app.name', 'Ceremood') }}">
+    <link rel="apple-touch-icon" href="{{ route('logo.serve', ['filename' => 'favicons.png']) }}">
+    <link rel="manifest" href="{{ asset('manifest.json') }}">
+
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -45,6 +54,10 @@
             }
         });
     </script>
+    
+    <!-- PWA Service Worker Registration -->
+    <script src="{{ asset('js/pwa.js') }}"></script>
+    
     @stack('scripts')
 </body>
 </html>

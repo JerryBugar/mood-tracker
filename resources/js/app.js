@@ -133,17 +133,24 @@ document.addEventListener('turbo:load', () => {
         newActiveItem.classList.add('active');
     }
 
-    // Wait for the .nav-item's own CSS transition to finish before measuring its width.
-    setTimeout(() => {
+    // Function to update nav background position
+    function updateNavBackground() {
         const activeBackground = bottomNav.querySelector('.nav-active-background');
         const activeItem = bottomNav.querySelector('.nav-item.active');
 
         if (activeBackground && activeItem) {
+            // Use getBoundingClientRect for more accurate positioning
+            const navRect = bottomNav.getBoundingClientRect();
+            const itemRect = activeItem.getBoundingClientRect();
+            
+            const leftPosition = itemRect.left - navRect.left;
+            const itemWidth = itemRect.width;
+            
             if (!isNavInitialized) {
                 // On first load, just snap to position without animation
                 activeBackground.style.transition = 'none';
-                activeBackground.style.left = `${activeItem.offsetLeft}px`;
-                activeBackground.style.width = `${activeItem.offsetWidth}px`;
+                activeBackground.style.left = `${leftPosition}px`;
+                activeBackground.style.width = `${itemWidth}px`;
                 activeBackground.style.opacity = 1;
 
                 setTimeout(() => {
@@ -153,11 +160,25 @@ document.addEventListener('turbo:load', () => {
 
             } else {
                 // On subsequent loads, the transition is already enabled. Just move it.
-                activeBackground.style.left = `${activeItem.offsetLeft}px`;
-                activeBackground.style.width = `${activeItem.offsetWidth}px`;
+                activeBackground.style.left = `${leftPosition}px`;
+                activeBackground.style.width = `${itemWidth}px`;
             }
         }
+    }
+
+    // Wait for the .nav-item's own CSS transition to finish before measuring its width.
+    setTimeout(() => {
+        updateNavBackground();
     }, 200); // .nav-item transition is 0.3s, so we wait 200ms.
+    
+    // Update nav background on window resize
+    let resizeTimeout;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => {
+            updateNavBackground();
+        }, 100);
+    });
 
     // Add click event listeners to update active state and background
     navItems.forEach(item => {
@@ -171,9 +192,14 @@ document.addEventListener('turbo:load', () => {
             // Update background position after a short delay to allow CSS changes to take effect
             setTimeout(() => {
                 const activeBackground = bottomNav.querySelector('.nav-active-background');
+                const navRect = bottomNav.getBoundingClientRect();
+                const itemRect = this.getBoundingClientRect();
+                
                 if (activeBackground) {
-                    activeBackground.style.left = `${this.offsetLeft}px`;
-                    activeBackground.style.width = `${this.offsetWidth}px`;
+                    const leftPosition = itemRect.left - navRect.left;
+                    const itemWidth = itemRect.width;
+                    activeBackground.style.left = `${leftPosition}px`;
+                    activeBackground.style.width = `${itemWidth}px`;
                 }
             }, 50);
         });

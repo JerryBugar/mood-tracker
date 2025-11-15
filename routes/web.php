@@ -16,6 +16,11 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+// Route untuk offline page
+Route::get('/offline', function () {
+    return response()->file(public_path('offline.html'));
+})->name('offline');
+
 Route::get('/dashboard', [DashboardController::class, 'index']);
 
 // Route untuk serve logo dengan cache headers optimal

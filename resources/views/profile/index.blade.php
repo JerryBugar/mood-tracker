@@ -10,55 +10,7 @@
 
     <div class="profile-card">
         <div id="profile-content">
-            <div class="profile-header">
-                @if(Auth::user()->avatar)
-                    <img src="{{ Auth::user()->avatar }}" alt="Avatar" class="profile-avatar">
-                @else
-                    <div class="profile-avatar bg-light d-flex align-items-center justify-content-center" style="border: 4px solid #d98695;">
-                        <span class="text-muted" style="font-size: 3rem;">{{ strtoupper(substr(Auth::user()->name, 0, 1)) }}</span>
-                    </div>
-                @endif
-                <h2 class="profile-name">{{ Auth::user()->name }}</h2>
-                <p class="profile-email">{{ Auth::user()->email }}</p>
-            </div>
-
-            <div class="profile-section">
-                <div class="profile-detail">
-                    <span class="detail-label">Nama Lengkap</span>
-                    <span class="detail-value">{{ Auth::user()->name }}</span>
-                </div>
-                
-                <div class="profile-detail">
-                    <span class="detail-label">Email</span>
-                    <span class="detail-value">{{ Auth::user()->email }}</span>
-                </div>
-                
-                <div class="profile-detail">
-                    <span class="detail-label">Divisi</span>
-                    <span class="detail-value">{{ Auth::user()->division ?: '-' }}</span>
-                </div>
-                
-                <div class="profile-detail">
-                    <span class="detail-label">Role</span>
-                    <span class="detail-value">{{ Auth::user()->role ?: '-' }}</span>
-                </div>
-                
-                <div class="profile-detail">
-                    <span class="detail-label">Jenis Kelamin</span>
-                    <span class="detail-value">{{ Auth::user()->jenis_kelamin ?: '-' }}</span>
-                </div>
-                
-                <div class="profile-detail">
-                    <span class="detail-label">Status Verifikasi</span>
-                    <span class="detail-value">
-                        @if(Auth::user()->is_verified)
-                            <span class="badge bg-success">Terverifikasi</span>
-                        @else
-                            <span class="badge bg-warning text-dark">Belum Terverifikasi</span>
-                        @endif
-                    </span>
-                </div>
-            </div>
+            @include('profile._partials.profile_content')
         </div>
 
         <div class="button-container">
@@ -89,51 +41,9 @@
                 <h5 class="modal-title" id="editProfileModalLabel">Edit Profil</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form id="edit-profile-form" method="POST" action="{{ route('profile.update') }}" enctype="multipart/form-data" data-turbo="true">
-                @csrf
-                @method('PUT')
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="name" class="form-label">Nama Lengkap</label>
-                        <input type="text" class="form-control" id="name" name="name" value="{{ Auth::user()->name }}" required>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="email" class="form-label">Email</label>
-                        <input type="email" class="form-control" id="email" name="email" value="{{ Auth::user()->email }}" disabled>
-                        <div class="form-text">Email tidak dapat diubah</div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="division" class="form-label">Divisi</label>
-                        <input type="text" class="form-control" id="division" name="division" value="{{ Auth::user()->division ?: '' }}">
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="role" class="form-label">Role</label>
-                        <input type="text" class="form-control" id="role" name="role" value="{{ Auth::user()->role ?: '' }}">
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="jenis_kelamin" class="form-label">Jenis Kelamin</label>
-                        <select class="form-select" id="jenis_kelamin" name="jenis_kelamin">
-                            <option value="">Pilih jenis kelamin</option>
-                            <option value="Laki-laki" {{ Auth::user()->jenis_kelamin === 'Laki-laki' ? 'selected' : '' }}>Laki-laki</option>
-                            <option value="Perempuan" {{ Auth::user()->jenis_kelamin === 'Perempuan' || Auth::user()->jenis_kelamin === 'Cewek' ? 'selected' : '' }}>Perempuan</option>
-                        </select>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="avatar" class="form-label">Avatar</label>
-                        <input type="file" class="form-control" id="avatar" name="avatar" accept="image/*">
-                        <div class="form-text">Pilih gambar baru untuk avatar Anda (Maksimal: 3 MB)</div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn" style="background-color: #83282f; color: white;">Simpan</button>
-                </div>
-            </form>
+            <div id="edit-profile-form-container">
+                @include('profile._partials.profile_form')
+            </div>
         </div>
     </div>
 </div>
