@@ -36,7 +36,20 @@
     // Jika user sudah login, langsung redirect ke homepage
     // Ini sebagai fallback jika server-side redirect tidak bekerja karena Turbo atau cache
     (function() {
-        window.location.href = '{{ route("home") }}';
+        // Pastikan redirect bekerja di PWA dengan menggunakan window.location.replace
+        // Ini akan memastikan redirect bekerja bahkan jika service worker meng-cache halaman
+        const homeUrl = '{{ route("home") }}';
+        
+        // Gunakan setTimeout untuk memastikan script dieksekusi setelah DOM ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                // Gunakan replace untuk mencegah back button kembali ke dashboard
+                window.location.replace(homeUrl);
+            });
+        } else {
+            // DOM sudah ready, langsung redirect
+            window.location.replace(homeUrl);
+        }
     })();
 </script>
 @endif

@@ -115,35 +115,33 @@ function markAsRead(notificationId) {
         headers: {
             'Content-Type': 'application/json',
             'X-CSRF-TOKEN': getCsrfToken(),
-            'Accept': 'application/json'
+            'Accept': 'text/vnd.turbo-stream.html, application/json'
         }
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Update UI
-            const notificationItem = document.querySelector(`[data-notification-id="${notificationId}"]`);
-            if (notificationItem) {
-                notificationItem.classList.remove('unread');
-                notificationItem.classList.add('read');
-                notificationItem.style.background = 'white';
-                notificationItem.style.borderLeftWidth = '4px';
-                
-                // Ganti button dengan badge
-                const button = notificationItem.querySelector('.btn-mark-read');
-                if (button) {
-                    button.outerHTML = '<span class="read-badge"><i class="bi bi-check-circle-fill"></i> Sudah Dibaca</span>';
-                }
-            }
-            
-            // Cek apakah masih ada unread, jika tidak sembunyikan tombol mark all
-            checkUnreadCount();
-            
-            // Tampilkan toast setelah sedikit delay untuk memastikan UI sudah update
-            setTimeout(() => {
+    .then(response => {
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('text/vnd.turbo-stream.html')) {
+            // Turbo Stream response - Turbo akan otomatis memproses
+            return response.text().then(text => {
+                // Inject stream ke Turbo untuk diproses
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(text, 'text/html');
+                const streams = doc.querySelectorAll('turbo-stream');
+                streams.forEach(stream => {
+                    if (window.Turbo) {
+                        window.Turbo.renderStreamMessage(stream.outerHTML);
+                    }
+                });
                 showToast('Notifikasi ditandai sebagai sudah dibaca', 'success');
-            }, 100);
+                return { success: true };
+            });
         } else {
+            // JSON response (fallback)
+            return response.json();
+        }
+    })
+    .then(data => {
+        if (data && !data.success) {
             showToast('Gagal menandai notifikasi sebagai sudah dibaca', 'error');
         }
     })
@@ -165,22 +163,33 @@ function markAllAsRead() {
         headers: {
             'Content-Type': 'application/json',
             'X-CSRF-TOKEN': getCsrfToken(),
-            'Accept': 'application/json'
+            'Accept': 'text/vnd.turbo-stream.html, application/json'
         }
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Tampilkan toast
-            showToast('Semua notifikasi ditandai sebagai sudah dibaca', 'success');
-            
-            // Reload hanya frame notifikasi menggunakan Turbo Frame
-            const frame = document.getElementById('notifications_frame');
-            if (frame) {
-                // Reload frame dengan mengubah src, Turbo akan otomatis fetch dan update
-                frame.src = window.location.href;
-            }
+    .then(response => {
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('text/vnd.turbo-stream.html')) {
+            // Turbo Stream response - Turbo akan otomatis memproses
+            return response.text().then(text => {
+                // Inject stream ke Turbo untuk diproses
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(text, 'text/html');
+                const streams = doc.querySelectorAll('turbo-stream');
+                streams.forEach(stream => {
+                    if (window.Turbo) {
+                        window.Turbo.renderStreamMessage(stream.outerHTML);
+                    }
+                });
+                showToast('Semua notifikasi ditandai sebagai sudah dibaca', 'success');
+                return { success: true };
+            });
         } else {
+            // JSON response (fallback)
+            return response.json();
+        }
+    })
+    .then(data => {
+        if (data && !data.success) {
             showToast('Gagal menandai semua notifikasi sebagai sudah dibaca', 'error');
             if (button) {
                 button.disabled = false;
@@ -231,15 +240,35 @@ function deleteAllNotifications() {
     const modalElement = document.getElementById('deleteConfirmModal');
     const modal = new bootstrap.Modal(modalElement);
     
-    // Hapus event listener lama jika ada
+    // Setup event listener untuk tombol konfirmasi
     const confirmBtn = document.getElementById('confirmDeleteBtn');
+    
+    // Hapus event listener lama jika ada
     const newConfirmBtn = confirmBtn.cloneNode(true);
     confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
     
     // Setup event listener baru untuk tombol konfirmasi
     newConfirmBtn.addEventListener('click', function() {
-        modal.hide();
+        // Modal akan ditutup otomatis karena data-bs-dismiss="modal"
         performDeleteAll();
+    });
+    
+    // Pastikan modal tidak menggunakan aria-hidden saat focus
+    modalElement.addEventListener('shown.bs.modal', function() {
+        modalElement.removeAttribute('aria-hidden');
+        // Hapus inert saat modal terbuka
+        const modalContent = modalElement.querySelector('.modal-content');
+        if (modalContent) {
+            modalContent.removeAttribute('inert');
+        }
+    });
+    
+    modalElement.addEventListener('hidden.bs.modal', function() {
+        // Set inert saat modal tertutup untuk mencegah focus
+        const modalContent = modalElement.querySelector('.modal-content');
+        if (modalContent) {
+            modalContent.setAttribute('inert', 'true');
+        }
     });
     
     modal.show();
@@ -257,21 +286,33 @@ function performDeleteAll() {
         headers: {
             'Content-Type': 'application/json',
             'X-CSRF-TOKEN': getCsrfToken(),
-            'Accept': 'application/json'
+            'Accept': 'text/vnd.turbo-stream.html, application/json'
         }
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showToast('Semua notifikasi berhasil dihapus', 'success');
-            
-            // Reload hanya frame notifikasi menggunakan Turbo Frame
-            const frame = document.getElementById('notifications_frame');
-            if (frame) {
-                // Reload frame dengan mengubah src, Turbo akan otomatis fetch dan update
-                frame.src = window.location.href;
-            }
+    .then(response => {
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('text/vnd.turbo-stream.html')) {
+            // Turbo Stream response - Turbo akan otomatis memproses
+            return response.text().then(text => {
+                // Inject stream ke Turbo untuk diproses
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(text, 'text/html');
+                const streams = doc.querySelectorAll('turbo-stream');
+                streams.forEach(stream => {
+                    if (window.Turbo) {
+                        window.Turbo.renderStreamMessage(stream.outerHTML);
+                    }
+                });
+                showToast('Semua notifikasi berhasil dihapus', 'success');
+                return { success: true };
+            });
         } else {
+            // JSON response (fallback)
+            return response.json();
+        }
+    })
+    .then(data => {
+        if (data && !data.success) {
             showToast(data.message || 'Gagal menghapus notifikasi', 'error');
             if (button) {
                 button.disabled = false;

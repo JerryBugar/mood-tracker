@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
+use App\Helpers\TurboStreamHelper;
 
 class ProfileController extends Controller
 {
@@ -80,9 +81,38 @@ class ProfileController extends Controller
         }
 
         $user->update($updateData);
+        
+        // Refresh user data dari database
+        $user->refresh();
 
-        // Karena modal menggunakan data-turbo-permanent, kembalikan response JSON
-        // agar bisa diproses oleh JavaScript untuk menutup modal dan update UI
+        // Jika request Turbo Stream, return Turbo Stream response
+        $acceptHeader = $request->header('Accept', '');
+        if (strpos($acceptHeader, 'text/vnd.turbo-stream.html') !== false) {
+            // Update profile content
+            $profileContent = view('profile._partials.profile_content')->render();
+            
+            // Update form modal dengan data terbaru
+            $formContent = view('profile._partials.profile_form')->render();
+            
+            // Gabungkan stream untuk update profile dan form
+            $streams = [
+                TurboStreamHelper::replace('profile-content', $profileContent),
+                TurboStreamHelper::replace('edit-profile-form-container', $formContent)
+            ];
+            
+            // Update emoticons di homepage jika container ada (user sedang di homepage)
+            // Turbo Stream akan otomatis skip jika target tidak ada
+            $emoticonsContent = view('components.mood-emoticons')->render();
+            $streams[] = TurboStreamHelper::replace('mood-emoticons-container', $emoticonsContent);
+            
+            return response(
+                TurboStreamHelper::combine($streams),
+                200,
+                ['Content-Type' => 'text/vnd.turbo-stream.html']
+            );
+        }
+
+        // Fallback ke JSON response
         return response()->json([
             'success' => true,
             'message' => 'Profil berhasil diperbarui',

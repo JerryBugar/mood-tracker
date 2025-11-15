@@ -1,0 +1,89 @@
+{
+    "name": "Ceremood",
+    "short_name": "Ceremood",
+    "description": "Aplikasi untuk tracking mood harian tim Cerebrum",
+    "start_url": "/dashboard",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#83282f",
+    "orientation": "portrait-primary",
+    "icons": [
+        {
+            "src": "/logo/favicons.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/logo/favicons.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ],
+    "categories": ["health", "productivity"],
+    "screenshots": [],
+    "shortcuts": [
+        {
+            "name": "Dashboard",
+            "short_name": "Dashboard",
+            "description": "Halaman dashboard",
+            "url": "/dashboard",
+            "icons": [
+                {
+                    "src": "/logo/favicons.png",
+                    "sizes": "96x96"
+                }
+            ]
+        },
+        {
+            "name": "Home",
+            "short_name": "Home",
+            "description": "Halaman utama",
+            "url": "/home",
+            "icons": [
+                {
+                    "src": "/logo/favicons.png",
+                    "sizes": "96x96"
+                }
+            ]
+        },
+        {
+            "name": "Calendar",
+            "short_name": "Calendar",
+            "description": "Lihat kalender mood",
+            "url": "/calendar",
+            "icons": [
+                {
+                    "src": "/logo/favicons.png",
+                    "sizes": "96x96"
+                }
+            ]
+        },
+        {
+            "name": "Notifikasi",
+            "short_name": "Notif",
+            "description": "Lihat notifikasi",
+            "url": "/notif",
+            "icons": [
+                {
+                    "src": "/logo/favicons.png",
+                    "sizes": "96x96"
+                }
+            ]
+        },
+        {
+            "name": "Profile",
+            "short_name": "Profile",
+            "description": "Lihat profil",
+            "url": "/profile",
+            "icons": [
+                {
+                    "src": "/logo/favicons.png",
+                    "sizes": "96x96"
+                }
+            ]
+        }
+    ]
+}
+

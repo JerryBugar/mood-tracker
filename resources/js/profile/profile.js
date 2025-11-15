@@ -204,46 +204,44 @@ document.addEventListener('submit', function(e) {
             body: formData,
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                'X-HTTP-Method-Override': 'PUT'
+                'X-HTTP-Method-Override': 'PUT',
+                'Accept': 'text/vnd.turbo-stream.html, application/json'
             }
         })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Update informasi profil di halaman
-                document.querySelector('.profile-name').textContent = data.user.name;
-                document.querySelector('.profile-email').textContent = data.user.email;
-                
-                // Update avatar jika ada
-                if (data.user.avatar) {
-                    const avatarElement = document.querySelector('.profile-avatar');
-                    if (avatarElement.tagName === 'IMG') {
-                        avatarElement.src = data.user.avatar;
-                    } else {
-                        // Jika sebelumnya menggunakan placeholder teks
-                        avatarElement.outerHTML = `<img src="${data.user.avatar}" alt="Avatar" class="profile-avatar">`;
+        .then(response => {
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('text/vnd.turbo-stream.html')) {
+                // Turbo Stream response - Turbo akan otomatis memproses
+                return response.text().then(text => {
+                    // Inject stream ke Turbo untuk diproses
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(text, 'text/html');
+                    const streams = doc.querySelectorAll('turbo-stream');
+                    streams.forEach(stream => {
+                        if (window.Turbo) {
+                            window.Turbo.renderStreamMessage(stream.outerHTML);
+                        }
+                    });
+                    
+                    // Tutup modal
+                    const modalElement = document.getElementById('editProfileModal');
+                    const modal = bootstrap.Modal.getInstance(modalElement);
+                    if (modal) {
+                        modal.hide();
                     }
-                }
-                
-                // Update info detail
-                document.querySelectorAll('.detail-value')[0].textContent = data.user.name;
-                document.querySelectorAll('.detail-value')[1].textContent = data.user.email;
-                document.querySelectorAll('.detail-value')[2].textContent = data.user.division || '-';
-                document.querySelectorAll('.detail-value')[3].textContent = data.user.role || '-';
-                document.querySelectorAll('.detail-value')[4].textContent = data.user.jenis_kelamin || '-';
-                
-                // Tutup modal
-                const modalElement = document.getElementById('editProfileModal');
-                const modal = bootstrap.Modal.getInstance(modalElement);
-                if (modal) {
-                    modal.hide();
-                }
-                
-                // Tampilkan notifikasi Toast berhasil
-                setTimeout(() => {
+                    
+                    // Tampilkan notifikasi Toast berhasil
                     showToast('Profil berhasil diperbarui!', 'success');
-                }, 100);
+                    
+                    return { success: true };
+                });
             } else {
+                // JSON response (fallback)
+                return response.json();
+            }
+        })
+        .then(data => {
+            if (data && !data.success) {
                 alert('Terjadi kesalahan saat memperbarui profil: ' + (data.message || 'Silakan coba lagi'));
             }
         })
