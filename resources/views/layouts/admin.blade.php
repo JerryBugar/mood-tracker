@@ -10,7 +10,7 @@
 
     <!-- PWA Meta Tags - Disabled untuk admin pages -->
     <!-- Admin pages tidak boleh diinstall sebagai PWA -->
-    <meta name="theme-color" content="#6366f1">
+    <meta name="theme-color" content="#83282f">
     <!-- Manifest link dihapus untuk mencegah install prompt di admin pages -->
 
     <!-- Fonts -->

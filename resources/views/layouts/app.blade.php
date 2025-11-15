@@ -16,7 +16,7 @@
 
     <!-- PWA Meta Tags - Disabled untuk welcome page -->
     @if(request()->path() !== '/' && request()->path() !== 'welcome')
-    <meta name="theme-color" content="#6366f1">
+    <meta name="theme-color" content="#83282f">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -24,7 +24,7 @@
     <link rel="apple-touch-icon" href="{{ route('logo.serve', ['filename' => 'favicons.png']) }}">
     <link rel="manifest" href="{{ asset('manifest.json') }}">
     @else
-    <meta name="theme-color" content="#6366f1">
+    <meta name="theme-color" content="#83282f">
     <!-- Manifest link dihapus untuk mencegah install prompt di welcome page -->
     @endif
 
