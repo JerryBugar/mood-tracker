@@ -68,9 +68,31 @@
         e.preventDefault();
         // Stash the event so it can be triggered later
         deferredPrompt = e;
+        console.log('[PWA] beforeinstallprompt event received, showing install button');
         // Show install button (hanya di dashboard)
         showInstallButton();
     });
+    
+    // Fallback: Cek apakah sudah ada deferredPrompt yang tersimpan (untuk testing)
+    // Jika di dashboard dan belum ada button, coba tampilkan setelah delay
+    (function() {
+        const currentPath = window.location.pathname;
+        const isWelcome = currentPath === '/' || currentPath === '/welcome';
+        const isAdmin = currentPath.startsWith('/admin');
+        
+        if (currentPath === '/dashboard' && !isWelcome && !isAdmin) {
+            // Tunggu DOM ready dan splash screen selesai
+            setTimeout(function() {
+                // Jika deferredPrompt sudah ada tapi button belum muncul, panggil showInstallButton
+                if (deferredPrompt && !document.getElementById('pwa-install-button') && !isStandalone()) {
+                    console.log('[PWA] Fallback: Showing install button (deferredPrompt exists)');
+                    showInstallButton();
+                } else if (!deferredPrompt) {
+                    console.log('[PWA] No deferredPrompt available yet');
+                }
+            }, 3000); // Delay lebih lama untuk memastikan splash screen selesai
+        }
+    })();
 
     // Show install button
     function showInstallButton() {
@@ -79,23 +101,29 @@
         const isAdminPage = window.location.pathname.startsWith('/admin');
         
         if (isAdminPage || isWelcomePage) {
+            console.log('[PWA] Install button skipped: welcome or admin page');
             return;
         }
         
         // Hanya tampilkan di halaman dashboard
         if (window.location.pathname !== '/dashboard') {
+            console.log('[PWA] Install button skipped: not dashboard page');
             return;
         }
 
         // Jangan tampilkan jika app sudah diinstall (standalone mode)
         if (isStandalone()) {
+            console.log('[PWA] Install button skipped: app already installed');
             return;
         }
 
         // Check if button already exists
         if (document.getElementById('pwa-install-button')) {
+            console.log('[PWA] Install button already exists');
             return;
         }
+        
+        console.log('[PWA] Creating install button...');
 
         // Tunggu splash screen selesai sebelum menampilkan button
         waitForSplashScreen(() => {
@@ -103,33 +131,82 @@
             const button = document.createElement('button');
             button.id = 'pwa-install-button';
             button.className = 'btn position-fixed';
-            button.style.cssText = `
-                top: 20px;
-                right: 20px;
+            
+            // Deteksi mobile device
+            const isMobile = window.innerWidth <= 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            
+            // Styling untuk desktop dan mobile
+            const baseStyles = `
                 z-index: 1050;
                 background-color: #dc3545;
                 border-color: #dc3545;
                 color: white;
                 border-radius: 10px;
-                padding: 8px 16px;
                 box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-                transition: opacity 0.15s ease-in, background-color 0.2s ease;
+                transition: opacity 0.15s ease-in, background-color 0.2s ease, transform 0.2s ease;
                 opacity: 0;
                 border: none;
                 cursor: pointer;
+                font-size: 14px;
+                font-weight: 600;
+                white-space: nowrap;
             `;
             
-            // Hover effect
-            button.addEventListener('mouseenter', function() {
+            if (isMobile) {
+                // Styling untuk mobile - posisi di kanan atas, lebih besar dan mudah diakses
+                button.style.cssText = baseStyles + `
+                    top: 15px !important;
+                    right: 15px !important;
+                    padding: 12px 16px !important;
+                    font-size: 18px !important;
+                    min-width: 44px !important;
+                    min-height: 44px !important;
+                    width: 44px !important;
+                    height: 44px !important;
+                    display: flex !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.25) !important;
+                    position: fixed !important;
+                    z-index: 9999 !important;
+                    visibility: visible !important;
+                `;
+                button.innerHTML = '<i class="bi bi-download"></i>';
+                button.setAttribute('aria-label', 'Install App');
+            } else {
+                // Styling untuk desktop
+                button.style.cssText = baseStyles + `
+                    top: 20px;
+                    right: 20px;
+                    padding: 8px 16px;
+                `;
+                button.innerHTML = '<i class="bi bi-download me-2"></i>Install App';
+            }
+            
+            // Hover effect (hanya untuk desktop)
+            if (!isMobile) {
+                button.addEventListener('mouseenter', function() {
+                    this.style.backgroundColor = '#c82333';
+                    this.style.borderColor = '#bd2130';
+                });
+                
+                button.addEventListener('mouseleave', function() {
+                    this.style.backgroundColor = '#dc3545';
+                    this.style.borderColor = '#dc3545';
+                });
+            }
+            
+            // Active/touch effect untuk mobile
+            button.addEventListener('touchstart', function() {
+                this.style.transform = 'scale(0.95)';
                 this.style.backgroundColor = '#c82333';
-                this.style.borderColor = '#bd2130';
             });
             
-            button.addEventListener('mouseleave', function() {
+            button.addEventListener('touchend', function() {
+                this.style.transform = 'scale(1)';
                 this.style.backgroundColor = '#dc3545';
-                this.style.borderColor = '#dc3545';
             });
-            button.innerHTML = '<i class="bi bi-download me-2"></i>Install App';
+            
             button.addEventListener('click', installApp);
             
             document.body.appendChild(button);
@@ -138,9 +215,58 @@
             requestAnimationFrame(() => {
                 requestAnimationFrame(() => {
                     button.style.opacity = '1';
+                    console.log('[PWA] Install button displayed');
                 });
             });
         });
+    }
+    
+    // Debug: Log status PWA
+    console.log('[PWA] Current path:', window.location.pathname);
+    console.log('[PWA] Is standalone:', isStandalone());
+    console.log('[PWA] Service Worker support:', 'serviceWorker' in navigator);
+    
+    // Untuk testing di responsive simulator: Force show button setelah delay
+    // Hanya untuk dashboard dan jika belum ada button
+    if (window.location.pathname === '/dashboard') {
+        const isWelcome = window.location.pathname === '/' || window.location.pathname === '/welcome';
+        const isAdmin = window.location.pathname.startsWith('/admin');
+        
+        if (!isWelcome && !isAdmin) {
+            // Tunggu lebih lama untuk memastikan semua event sudah terpicu
+            setTimeout(function() {
+                const hasButton = document.getElementById('pwa-install-button');
+                const isStandaloneMode = isStandalone();
+                
+                console.log('[PWA] Debug check:', {
+                    hasButton: !!hasButton,
+                    hasDeferredPrompt: !!deferredPrompt,
+                    isStandalone: isStandaloneMode,
+                    path: window.location.pathname
+                });
+                
+                // Jika belum ada button dan belum standalone, coba tampilkan
+                // (untuk testing di responsive simulator yang mungkin tidak trigger beforeinstallprompt)
+                if (!hasButton && !isStandaloneMode) {
+                    // Cek apakah ini mobile view
+                    const isMobileView = window.innerWidth <= 768;
+                    
+                    if (isMobileView) {
+                        console.log('[PWA] Mobile view detected, attempting to show install button');
+                        // Jika deferredPrompt ada, gunakan itu
+                        // Jika tidak, tetap tampilkan button (untuk testing)
+                        if (deferredPrompt) {
+                            showInstallButton();
+                        } else {
+                            // Untuk testing: tampilkan button meskipun belum ada deferredPrompt
+                            // User bisa klik tapi akan error jika tidak ada deferredPrompt
+                            console.log('[PWA] No deferredPrompt, but showing button for testing');
+                            showInstallButton();
+                        }
+                    }
+                }
+            }, 4000); // Delay 4 detik untuk memastikan splash screen selesai
+        }
     }
 
     // Function untuk menunggu splash screen selesai

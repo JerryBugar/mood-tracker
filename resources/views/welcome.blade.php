@@ -8,18 +8,13 @@
 <style>
     /* Reset untuk welcome page - hapus padding bottom dari app.css */
     /* Padding bottom 80px dari app.css untuk bottom nav tidak diperlukan di welcome page */
-    html, body {
-        height: 100%;
-        margin: 0;
-        padding: 0;
-        overflow: hidden;
-    }
-
-    body {
+    /* Hanya berlaku untuk welcome page dengan selector yang lebih spesifik */
+    body.welcome-page {
         padding-bottom: 0 !important;
+        overflow-x: hidden;
     }
 
-    body .min-h-screen {
+    body.welcome-page .min-h-screen {
         padding: 0 !important;
         margin: 0 !important;
         height: 100vh;
@@ -443,6 +438,11 @@
 
 @push('scripts')
 <script>
+    // Tambahkan class ke body untuk styling khusus welcome page
+    (function() {
+        document.body.classList.add('welcome-page');
+    })();
+    
     // Smooth scroll untuk anchor links dengan offset
     document.addEventListener('DOMContentLoaded', function() {
         const links = document.querySelectorAll('a[href^="#"]');
@@ -477,6 +477,11 @@
                 }
             });
         });
+    });
+    
+    // Hapus class welcome-page saat navigasi keluar (untuk cleanup)
+    document.addEventListener('turbo:before-visit', function() {
+        document.body.classList.remove('welcome-page');
     });
 </script>
 @endpush
