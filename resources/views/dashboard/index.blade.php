@@ -36,19 +36,37 @@
     // Jika user sudah login, langsung redirect ke homepage
     // Ini sebagai fallback jika server-side redirect tidak bekerja karena Turbo atau cache
     (function() {
+        // Guard untuk mencegah redirect ganda yang bisa menyebabkan splash screen terload 2 kali
+        const redirectKey = 'dashboard-redirect-executed';
+        if (sessionStorage.getItem(redirectKey)) {
+            console.log('[Dashboard] Redirect sudah dieksekusi, skip');
+            return;
+        }
+        
+        // Tandai redirect sudah dieksekusi
+        sessionStorage.setItem(redirectKey, 'true');
+        
         // Pastikan redirect bekerja di PWA dengan menggunakan window.location.replace
         // Ini akan memastikan redirect bekerja bahkan jika service worker meng-cache halaman
         const homeUrl = '{{ route("home") }}';
         
         // Gunakan setTimeout untuk memastikan script dieksekusi setelah DOM ready
+        // Tapi jangan terlalu cepat agar tidak mengganggu splash screen
+        const redirect = function() {
+            // Hapus flag redirect setelah redirect selesai (untuk next visit)
+            sessionStorage.removeItem(redirectKey);
+            // Gunakan replace untuk mencegah back button kembali ke dashboard
+            window.location.replace(homeUrl);
+        };
+        
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', function() {
-                // Gunakan replace untuk mencegah back button kembali ke dashboard
-                window.location.replace(homeUrl);
+                // Tunggu sedikit untuk memastikan tidak mengganggu splash screen
+                setTimeout(redirect, 100);
             });
         } else {
-            // DOM sudah ready, langsung redirect
-            window.location.replace(homeUrl);
+            // DOM sudah ready, tunggu sedikit sebelum redirect
+            setTimeout(redirect, 100);
         }
     })();
 </script>
