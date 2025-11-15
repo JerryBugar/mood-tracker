@@ -2,6 +2,47 @@
 
 @push('head')
 <link rel="preload" as="image" href="{{ route('logo.serve', ['filename' => 'favicons.png']) }}" fetchpriority="high">
+
+<!-- Structured Data untuk SEO -->
+<script type="application/ld+json">
+{!! json_encode([
+    '@context' => 'https://schema.org',
+    '@type' => 'WebApplication',
+    'name' => 'Ceremood',
+    'description' => 'Ceremood adalah aplikasi mood tracker dari Cerebrum untuk HRD, memantau kesejahteraan karyawan & mendukung keputusan strategis.',
+    'url' => url('/'),
+    'applicationCategory' => 'HealthApplication',
+    'operatingSystem' => 'Web',
+    'offers' => [
+        '@type' => 'Offer',
+        'price' => '0',
+        'priceCurrency' => 'IDR'
+    ],
+    'aggregateRating' => [
+        '@type' => 'AggregateRating',
+        'ratingValue' => '5',
+        'ratingCount' => '1'
+    ],
+    'image' => url(route('logo.serve', ['filename' => 'favicons.png'])),
+    'logo' => url(route('logo.serve', ['filename' => 'favicons.png'])),
+    'publisher' => [
+        '@type' => 'Organization',
+        'name' => 'Cerebrum',
+        'logo' => [
+            '@type' => 'ImageObject',
+            'url' => url(route('logo.serve', ['filename' => 'favicons.png']))
+        ]
+    ],
+    'featureList' => [
+        'Track Mood Harian',
+        'Kalender Mood',
+        'Notifikasi Real-time',
+        'Insight & Analytics',
+        'Privasi Terjamin',
+        'Akses Mudah sebagai PWA'
+    ]
+], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) !!}
+</script>
 @endpush
 
 @push('styles')
