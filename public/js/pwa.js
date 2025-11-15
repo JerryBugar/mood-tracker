@@ -99,7 +99,7 @@
         const isAdmin = currentPath.startsWith('/admin');
         
         if (currentPath === '/dashboard' && !isWelcome && !isAdmin) {
-            // Tunggu DOM ready dan splash screen selesai
+            // Tunggu DOM ready dan splash screen selesai - timing yang sama dengan splash screen total (2.5s animasi + 0.2s buffer)
             setTimeout(function() {
                 // Jika deferredPrompt sudah ada tapi button belum muncul, panggil showInstallButton
                 if (deferredPrompt && !document.getElementById('pwa-install-button') && !isStandalone()) {
@@ -108,7 +108,7 @@
                 } else if (!deferredPrompt) {
                     console.log('[PWA] No deferredPrompt available yet');
                 }
-            }, 3000); // Delay lebih lama untuk memastikan splash screen selesai
+            }, 2700); // Timing yang sama dengan splash screen selesai (2.5s + 0.2s)
         }
     })();
 
@@ -251,7 +251,7 @@
         const isAdmin = window.location.pathname.startsWith('/admin');
         
         if (!isWelcome && !isAdmin) {
-            // Tunggu lebih lama untuk memastikan semua event sudah terpicu
+            // Tunggu sesuai dengan timing splash screen selesai
             setTimeout(function() {
                 const hasButton = document.getElementById('pwa-install-button');
                 const isStandaloneMode = isStandalone();
@@ -283,7 +283,7 @@
                         }
                     }
                 }
-            }, 4000); // Delay 4 detik untuk memastikan splash screen selesai
+            }, 2700); // Timing yang sama dengan splash screen selesai (2.5s animasi + 0.2s)
         }
     }
 
@@ -310,17 +310,46 @@
             return;
         }
 
-        // Listen untuk animationend - munculkan button saat mainContent muncul (50ms setelah animationend)
+        let hasTriggered = false;
+        
+        // Gunakan MutationObserver untuk mendeteksi kapan mainContent visible
+        const observer = new MutationObserver((mutations) => {
+            const currentMainContent = document.getElementById('main-content-wrapper');
+            if (currentMainContent && !currentMainContent.classList.contains('hidden') && !hasTriggered) {
+                hasTriggered = true;
+                observer.disconnect();
+                // Tampilkan button dengan delay minimal agar smooth
+                setTimeout(() => {
+                    callback();
+                }, 50);
+            }
+        });
+        
+        // Observasi perubahan class di mainContent
+        if (mainContent) {
+            observer.observe(mainContent, {
+                attributes: true,
+                attributeFilter: ['class']
+            });
+        }
+
+        // Listen untuk animationend sebagai backup
         splashLogo.addEventListener('animationend', () => {
-            // Tampilkan button bersamaan dengan mainContent muncul (50ms delay seperti di app.js)
-            setTimeout(() => {
-                callback();
-            }, 50);
+            if (!hasTriggered) {
+                hasTriggered = true;
+                observer.disconnect();
+                // Tunggu sampai mainContent benar-benar visible
+                setTimeout(() => {
+                    callback();
+                }, 150);
+            }
         }, { once: true });
 
         // Fallback: jika setelah 5 detik splash masih ada, tampilkan button anyway
         setTimeout(() => {
-            if (document.getElementById('splash-logo-container')) {
+            if (!hasTriggered) {
+                hasTriggered = true;
+                observer.disconnect();
                 callback();
             }
         }, 5000);

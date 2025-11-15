@@ -9,10 +9,36 @@
     <meta name="keywords" content="ceremood, mood tracker, cerebrum, employee wellness, mood tracking, kesehatan mental, productivity, mood calendar, real-time notification">
     <meta name="author" content="Cerebrum">
     <title>Ceremood – Mood Tracker untuk Memahami Perasaan Karyawanmu</title>
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ url('/') }}">
+    <meta property="og:title" content="Ceremood – Mood Tracker untuk Memahami Perasaan Karyawanmu">
+    <meta property="og:description" content="Ceremood adalah aplikasi mood tracker dari Cerebrum untuk HRD, memantau kesejahteraan karyawan & mendukung keputusan strategis.">
+    <meta property="og:image" content="{{ url(route('logo.serve', ['filename' => 'favicons.png'])) }}">
+    <meta property="og:image:width" content="512">
+    <meta property="og:image:height" content="512">
+    <meta property="og:image:type" content="image/png">
+    <meta property="og:site_name" content="Ceremood">
+    
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="{{ url('/') }}">
+    <meta name="twitter:title" content="Ceremood – Mood Tracker untuk Memahami Perasaan Karyawanmu">
+    <meta name="twitter:description" content="Ceremood adalah aplikasi mood tracker dari Cerebrum untuk HRD, memantau kesejahteraan karyawan & mendukung keputusan strategis.">
+    <meta name="twitter:image" content="{{ url(route('logo.serve', ['filename' => 'favicons.png'])) }}">
     @else
     <title>{{ config('app.name', 'Ceremood') }}</title>
     @endif
-    <link rel="icon" type="image/png" href="{{ route('logo.serve', ['filename' => 'favicons.png']) }}">
+    
+    <!-- Favicon dengan multiple sizes untuk SEO -->
+    <link rel="icon" type="image/png" sizes="512x512" href="{{ url(route('logo.serve', ['filename' => 'favicons.png'])) }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url(route('logo.serve', ['filename' => 'favicons.png'])) }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url(route('logo.serve', ['filename' => 'favicons.png'])) }}">
+    <link rel="shortcut icon" type="image/png" href="{{ url(route('logo.serve', ['filename' => 'favicons.png'])) }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ url(route('logo.serve', ['filename' => 'favicons.png'])) }}">
+    <!-- Fallback favicon.ico untuk browser yang memerlukan -->
+    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
 
     <!-- PWA Meta Tags - Disabled untuk welcome page -->
     @if(request()->path() !== '/' && request()->path() !== 'welcome')
@@ -21,7 +47,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="{{ config('app.name', 'Ceremood') }}">
-    <link rel="apple-touch-icon" href="{{ route('logo.serve', ['filename' => 'favicons.png']) }}">
+    <link rel="apple-touch-icon" href="{{ url(route('logo.serve', ['filename' => 'favicons.png'])) }}">
     <link rel="manifest" href="{{ asset('manifest.json') }}">
     @else
     <meta name="theme-color" content="#83282f">
