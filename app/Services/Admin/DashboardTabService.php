@@ -62,6 +62,7 @@ class DashboardTabService
         
         // Tambahkan informasi apakah karyawan mengisi mood hari ini
         // Highlight hanya muncul jika mood record hari ini belum direspons oleh admin
+        // Juga tambahkan informasi tentang mood record yang belum direspon (semua tanggal)
         $employees->each(function ($employee) use ($employeeIdsWithMoodToday, $today) {
             $hasMoodToday = in_array($employee->id, $employeeIdsWithMoodToday);
             
@@ -78,6 +79,17 @@ class DashboardTabService
             } else {
                 $employee->has_mood_today = false;
             }
+            
+            // Cek apakah karyawan memiliki mood record yang belum direspon (semua tanggal)
+            $unrespondedRecords = MoodRecord::where('user_id', $employee->id)
+                ->where(function($query) {
+                    $query->whereNull('admin_response')
+                          ->orWhere('admin_response', '');
+                })
+                ->get();
+            
+            $employee->has_unresponded_mood = $unrespondedRecords->count() > 0;
+            $employee->unresponded_count = $unrespondedRecords->count();
         });
         
         return $employees;

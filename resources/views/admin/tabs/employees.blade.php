@@ -1,13 +1,24 @@
 <turbo-frame id="dashboard_content">
 <div class="form-group mb-3">
-    <div class="input-group">
-        <input type="text" id="employee-search" class="form-control" placeholder="Cari karyawan berdasarkan nama atau divisi...">
-        <button class="btn btn-outline-secondary" type="button" id="search-button">Cari</button>
+    <div class="d-flex align-items-center gap-3 flex-wrap">
+        <div class="input-group flex-grow-1" style="min-width: 250px;">
+            <input type="text" id="employee-search" class="form-control" placeholder="Cari karyawan berdasarkan nama atau divisi...">
+            <button class="btn btn-outline-secondary" type="button" id="search-button">Cari</button>
+        </div>
+        <div class="form-check d-flex align-items-center">
+            <input class="form-check-input" type="checkbox" id="filter-unresponded" style="cursor: pointer;">
+            <label class="form-check-label ms-2" for="filter-unresponded" style="cursor: pointer; user-select: none;">
+                Tampilkan yang belum direspon
+            </label>
+        </div>
     </div>
 </div>
 <div class="employee-list">
     @forelse($employees as $employee)
-    <div class="employee-item {{ $employee->has_mood_today ?? false ? 'has-mood-today' : '' }}" data-employee-id="{{ $employee->id }}">
+    <div class="employee-item {{ $employee->has_mood_today ?? false ? 'has-mood-today' : '' }} {{ $employee->has_unresponded_mood ?? false ? 'has-unresponded-mood' : '' }}" 
+         data-employee-id="{{ $employee->id }}"
+         data-has-unresponded="{{ $employee->has_unresponded_mood ?? false ? 'true' : 'false' }}"
+         data-unresponded-count="{{ $employee->unresponded_count ?? 0 }}">
         <div class="employee-info">
             @if($employee->avatar)
                 <img src="{{ $employee->avatar }}" alt="Avatar" class="employee-avatar">

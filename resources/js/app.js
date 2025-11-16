@@ -76,41 +76,50 @@ document.addEventListener('turbo:load', () => {
                 styleSheet.id = 'dynamic-splash-animation';
                 const keyframes = `
                     @keyframes settleInPlace {
-                        0% { transform: translate(-50%, -50%); opacity: 1; }
-                        100% { transform: translate(calc(-50% + ${finalX}px), calc(-50% + ${finalY}px)); opacity: 1; }
+                        0% { 
+                            transform: translate(-50%, -50%) scale(0.9); 
+                            opacity: 0; 
+                        }
+                        15% {
+                            opacity: 1;
+                        }
+                        100% { 
+                            transform: translate(calc(-50% + ${finalX}px), calc(-50% + ${finalY}px)) scale(1.0); 
+                            opacity: 1; 
+                        }
                     }
                 `;
                 styleSheet.innerHTML = keyframes;
                 document.head.appendChild(styleSheet);
 
-                // Tampilkan splash logo
-                splashLogo.style.opacity = '1';
-                splashLogo.style.animation = 'settleInPlace 2.5s ease-in-out forwards';
+                // Tampilkan splash logo dengan fade-in halus
+                // Gunakan cubic-bezier yang lebih dinamis untuk efek yang lebih menarik
+                splashLogo.style.animation = 'settleInPlace 1.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards';
 
                 splashLogo.addEventListener('animationend', () => {
-                    // Pastikan splash logo sudah di posisi akhir sebelum menyembunyikan
-                    // Tunggu sedikit untuk memastikan animasi benar-benar selesai
-                    setTimeout(() => {
-                        // Sembunyikan logo final sementara
-                        finalLogo.style.visibility = 'hidden';
-                        finalLogo.style.opacity = '0';
+                    // Tampilkan konten utama dengan fade-in halus
+                    mainContent.classList.remove('hidden');
+                    
+                    // Sembunyikan logo final sementara (sudah hidden dari awal)
+                    finalLogo.style.visibility = 'hidden';
+                    finalLogo.style.opacity = '0';
 
-                        // Tampilkan konten utama
-                        mainContent.classList.remove('hidden');
-
-                        // Setelah konten muncul, sembunyikan splash logo dan tampilkan logo final
-                        setTimeout(() => {
+                    // Timing yang lebih seamless: langsung mulai fade-out splash logo
+                    // Gunakan requestAnimationFrame untuk timing yang lebih akurat
+                    requestAnimationFrame(() => {
+                        requestAnimationFrame(() => {
+                            // Fade-out splash logo dengan transisi yang halus
                             splashLogo.style.opacity = '0';
-                            splashLogo.style.transition = 'opacity 0.5s ease-out';
+                            splashLogo.style.transition = 'opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
                             
-                            // Setelah splash logo fade out, tampilkan logo final
+                            // Tampilkan logo final dengan timing yang overlap untuk transisi seamless
                             setTimeout(() => {
                                 finalLogo.style.visibility = 'visible';
                                 finalLogo.style.opacity = '1';
-                                finalLogo.style.transition = 'opacity 0.3s ease-in';
-                            }, 100);
-                        }, 50);
-                    }, 50);
+                                finalLogo.style.transition = 'opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+                            }, 150); // Overlap sedikit dengan fade-out untuk transisi yang lebih halus
+                        });
+                    });
 
                     // Setelah splash logo disembunyikan, hapus dari DOM
                     splashLogo.addEventListener('transitionend', () => {
@@ -169,75 +178,106 @@ document.addEventListener('turbo:load', () => {
         newActiveItem.classList.add('active');
     }
 
-    // Function to update nav background position
+    // Function to update nav background position dengan requestAnimationFrame untuk timing yang akurat
     function updateNavBackground() {
         const activeBackground = bottomNav.querySelector('.nav-active-background');
         const activeItem = bottomNav.querySelector('.nav-item.active');
 
         if (activeBackground && activeItem) {
-            // Use getBoundingClientRect for more accurate positioning
-            const navRect = bottomNav.getBoundingClientRect();
-            const itemRect = activeItem.getBoundingClientRect();
-            
-            const leftPosition = itemRect.left - navRect.left;
-            const itemWidth = itemRect.width;
-            
-            if (!isNavInitialized) {
-                // On first load, just snap to position without animation
-                activeBackground.style.transition = 'none';
-                activeBackground.style.left = `${leftPosition}px`;
-                activeBackground.style.width = `${itemWidth}px`;
-                activeBackground.style.opacity = 1;
+            // Gunakan requestAnimationFrame untuk timing yang lebih akurat
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    // Use getBoundingClientRect for more accurate positioning
+                    const navRect = bottomNav.getBoundingClientRect();
+                    const itemRect = activeItem.getBoundingClientRect();
+                    
+                    const leftPosition = itemRect.left - navRect.left;
+                    const itemWidth = itemRect.width;
+                    
+                    if (!isNavInitialized) {
+                        // On first load, just snap to position without animation
+                        activeBackground.style.transition = 'none';
+                        activeBackground.style.left = `${leftPosition}px`;
+                        activeBackground.style.width = `${itemWidth}px`;
+                        activeBackground.style.opacity = 1;
 
-                setTimeout(() => {
-                    activeBackground.style.transition = 'all 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55)';
-                    isNavInitialized = true;
-                }, 50);
-
-            } else {
-                // On subsequent loads, the transition is already enabled. Just move it.
-                activeBackground.style.left = `${leftPosition}px`;
-                activeBackground.style.width = `${itemWidth}px`;
-            }
+                        // Setelah posisi awal ditetapkan, aktifkan transisi
+                        requestAnimationFrame(() => {
+                            activeBackground.style.transition = 'left 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), width 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1)';
+                            isNavInitialized = true;
+                        });
+                    } else {
+                        // On subsequent loads, the transition is already enabled. Just move it.
+                        activeBackground.style.left = `${leftPosition}px`;
+                        activeBackground.style.width = `${itemWidth}px`;
+                    }
+                });
+            });
         }
     }
 
-    // Wait for the .nav-item's own CSS transition to finish before measuring its width.
-    setTimeout(() => {
-        updateNavBackground();
-    }, 200); // .nav-item transition is 0.3s, so we wait 200ms.
+    // Tunggu nav-item transition selesai sebelum update background
+    // Gunakan requestAnimationFrame untuk timing yang lebih akurat
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            // Tunggu sedikit untuk memastikan CSS transition nav-item sudah mulai
+            setTimeout(() => {
+                updateNavBackground();
+            }, 50);
+        });
+    });
     
-    // Update nav background on window resize
+    // Update nav background on window resize dengan debounce
     let resizeTimeout;
     window.addEventListener('resize', () => {
         clearTimeout(resizeTimeout);
         resizeTimeout = setTimeout(() => {
             updateNavBackground();
-        }, 100);
+        }, 150);
     });
 
-    // Add click event listeners to update active state and background
+    // Add click event listeners to update active state and background dengan efek visual
     navItems.forEach(item => {
         item.addEventListener('click', function(e) {
-            // Remove active class from all items
-            navItems.forEach(navItem => navItem.classList.remove('active'));
-
-            // Add active class to clicked item
-            this.classList.add('active');
-
-            // Update background position after a short delay to allow CSS changes to take effect
-            setTimeout(() => {
-                const activeBackground = bottomNav.querySelector('.nav-active-background');
-                const navRect = bottomNav.getBoundingClientRect();
-                const itemRect = this.getBoundingClientRect();
-                
-                if (activeBackground) {
-                    const leftPosition = itemRect.left - navRect.left;
-                    const itemWidth = itemRect.width;
-                    activeBackground.style.left = `${leftPosition}px`;
-                    activeBackground.style.width = `${itemWidth}px`;
+            // Hapus active class dari semua items dengan efek fade/scale
+            navItems.forEach(navItem => {
+                if (navItem.classList.contains('active')) {
+                    // Tambahkan efek fade-out ringan saat menghapus active
+                    navItem.style.opacity = '0.7';
+                    requestAnimationFrame(() => {
+                        navItem.classList.remove('active');
+                        navItem.style.opacity = '';
+                    });
+                } else {
+                    navItem.classList.remove('active');
                 }
-            }, 50);
+            });
+
+            // Tambahkan active class ke item yang diklik dengan efek fade/scale
+            this.style.opacity = '0.8';
+            this.style.transform = 'scale(0.95)';
+            
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    this.classList.add('active');
+                    this.style.opacity = '';
+                    this.style.transform = '';
+                    
+                    // Update background position setelah CSS transition dimulai
+                    requestAnimationFrame(() => {
+                        const activeBackground = bottomNav.querySelector('.nav-active-background');
+                        const navRect = bottomNav.getBoundingClientRect();
+                        const itemRect = this.getBoundingClientRect();
+                        
+                        if (activeBackground) {
+                            const leftPosition = itemRect.left - navRect.left;
+                            const itemWidth = itemRect.width;
+                            activeBackground.style.left = `${leftPosition}px`;
+                            activeBackground.style.width = `${itemWidth}px`;
+                        }
+                    });
+                });
+            });
         });
     });
 });

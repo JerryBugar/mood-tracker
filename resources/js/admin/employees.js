@@ -467,32 +467,72 @@ function saveAdminResponse(recordId) {
     });
 }
 
+// Fungsi untuk filter employees berdasarkan search dan filter checkbox
+function filterEmployees() {
+    const searchInput = document.getElementById('employee-search');
+    const filterCheckbox = document.getElementById('filter-unresponded');
+    const employeeItems = document.querySelectorAll('.employee-item');
+
+    const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
+    const filterUnresponded = filterCheckbox ? filterCheckbox.checked : false;
+
+    employeeItems.forEach(item => {
+        let shouldShow = true;
+
+        // Filter berdasarkan search term
+        if (searchTerm) {
+            const employeeName = item.querySelector('.employee-name')?.textContent.toLowerCase() || '';
+            const employeeDivision = item.querySelector('.text-muted')?.textContent.toLowerCase() || '';
+            
+            if (!employeeName.includes(searchTerm) && !employeeDivision.includes(searchTerm)) {
+                shouldShow = false;
+            }
+        }
+
+        // Filter berdasarkan checkbox "belum direspon"
+        if (filterUnresponded && shouldShow) {
+            const hasUnresponded = item.getAttribute('data-has-unresponded') === 'true';
+            if (!hasUnresponded) {
+                shouldShow = false;
+            }
+        }
+
+        // Tampilkan atau sembunyikan item
+        if (shouldShow) {
+            item.style.display = 'flex';
+        } else {
+            item.style.display = 'none';
+        }
+    });
+}
+
 // Event listener untuk search
 function initializeEmployeeSearch() {
     const searchButton = document.getElementById('search-button');
     const searchInput = document.getElementById('employee-search');
+    const filterCheckbox = document.getElementById('filter-unresponded');
 
     if (searchButton && searchInput) {
         searchButton.addEventListener('click', function() {
-            const searchTerm = searchInput.value.toLowerCase();
-            const employeeItems = document.querySelectorAll('.employee-item');
-
-            employeeItems.forEach(item => {
-                const employeeName = item.querySelector('.employee-name').textContent.toLowerCase();
-                const employeeDivision = item.querySelector('.text-muted').textContent.toLowerCase();
-                
-                if (employeeName.includes(searchTerm) || employeeDivision.includes(searchTerm)) {
-                    item.style.display = 'flex';
-                } else {
-                    item.style.display = 'none';
-                }
-            });
+            filterEmployees();
         });
 
         searchInput.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
-                document.getElementById('search-button').click();
+                filterEmployees();
             }
+        });
+
+        // Real-time search saat mengetik (opsional, bisa diaktifkan jika diinginkan)
+        searchInput.addEventListener('input', function() {
+            filterEmployees();
+        });
+    }
+
+    // Event listener untuk checkbox filter
+    if (filterCheckbox) {
+        filterCheckbox.addEventListener('change', function() {
+            filterEmployees();
         });
     }
 }
