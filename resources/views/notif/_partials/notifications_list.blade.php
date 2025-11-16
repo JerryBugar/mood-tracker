@@ -1,4 +1,3 @@
-<turbo-frame id="notifications_frame" data-turbo-action="replace">
 <div class="notifications-container {{ $notifications->count() == 0 ? 'empty-state' : '' }}">
     @if($notifications->count() > 0)
         @php
@@ -12,14 +11,17 @@
         @endphp
         @if($unreadCount > 1)
             <div class="mark-all-container">
-                <button class="btn-mark-all-read" onclick="markAllAsRead()">
-                    <i class="bi bi-check-all"></i> Tandai Semua Sudah Dibaca
-                </button>
+                <form action="{{ route('notif.read-all') }}" method="POST" data-turbo-frame="notifications_frame" data-turbo-stream>
+                    @csrf
+                    <button type="submit" class="btn-mark-all-read">
+                        <i class="bi bi-check-all"></i> Tandai Semua Sudah Dibaca
+                    </button>
+                </form>
             </div>
         @endif
         @if($unreadCount == 0 && $totalNotifications > 0)
             <div class="mark-all-container">
-                <button class="btn-delete-all" onclick="deleteAllNotifications()">
+                <button type="button" class="btn-delete-all" data-action="delete-all" data-turbo-frame="notifications_frame">
                     <i class="bi bi-trash-fill"></i> Hapus Semua Notif
                 </button>
             </div>
@@ -49,9 +51,12 @@
                         {{ $notification->message }}
                     </div>
                     @if(!$isRead)
-                        <button class="btn-mark-read" onclick="markAsRead({{ $notification->id }})">
-                            Tandai Sudah Dibaca
-                        </button>
+                        <form action="{{ route('notif.read', $notification->id) }}" method="POST" data-turbo-frame="notifications_frame" data-turbo-stream style="display: inline;">
+                            @csrf
+                            <button type="submit" class="btn-mark-read">
+                                Tandai Sudah Dibaca
+                            </button>
+                        </form>
                     @else
                         <span class="read-badge">
                             <i class="bi bi-check-circle-fill"></i> Sudah Dibaca
@@ -70,5 +75,4 @@
         </div>
     @endif
 </div>
-</turbo-frame>
 

@@ -15,7 +15,7 @@ class NotificationController extends Controller
     /**
      * Menampilkan halaman notifikasi
      */
-    public function index(NotificationService $service)
+    public function index(NotificationService $service, Request $request)
     {
         $user = Auth::user();
         
@@ -31,7 +31,15 @@ class NotificationController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return view('notif.index', compact('notifications'));
+        // Gunakan response() helper untuk wrap view menjadi Response object
+        $response = response()->view('notif.index', compact('notifications'));
+        
+        // Tambahkan cache control headers untuk memastikan data selalu fresh
+        $response->headers->set('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
+        $response->headers->set('Pragma', 'no-cache');
+        $response->headers->set('Expires', '0');
+        
+        return $response;
     }
 
     /**
@@ -75,7 +83,12 @@ class NotificationController extends Controller
             return response(
                 TurboStreamHelper::replace('notifications_frame', $notificationsContent),
                 200,
-                ['Content-Type' => 'text/vnd.turbo-stream.html']
+                [
+                    'Content-Type' => 'text/vnd.turbo-stream.html',
+                    'Cache-Control' => 'no-cache, no-store, must-revalidate, max-age=0',
+                    'Pragma' => 'no-cache',
+                    'Expires' => '0'
+                ]
             );
         }
 
@@ -119,7 +132,12 @@ class NotificationController extends Controller
             return response(
                 TurboStreamHelper::replace('notifications_frame', $notificationsContent),
                 200,
-                ['Content-Type' => 'text/vnd.turbo-stream.html']
+                [
+                    'Content-Type' => 'text/vnd.turbo-stream.html',
+                    'Cache-Control' => 'no-cache, no-store, must-revalidate, max-age=0',
+                    'Pragma' => 'no-cache',
+                    'Expires' => '0'
+                ]
             );
         }
 
