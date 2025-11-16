@@ -89,7 +89,6 @@
         document.addEventListener('turbo:submit-end', function(event) {
             if (event.detail.success) {
                 // Jika submit form berhasil, kita bisa mencegah reload pada kondisi tertentu
-                console.log('Form submission successful');
             }
         });
     </script>

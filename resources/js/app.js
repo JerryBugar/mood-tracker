@@ -10,8 +10,6 @@ let isNavInitialized = false;
 Turbo.config.drive.progressBarDelay = 500; // Tunda progress bar untuk pengalaman yang lebih mulus
 
 document.addEventListener('turbo:load', () => {
-    // Logging untuk mengetahui halaman mana yang dimuat
-    console.log('Turbo loaded on: ', window.location.pathname);
 
     // Splash screen logic from original file
     const splashLogo = document.getElementById('splash-logo-container');
@@ -27,7 +25,6 @@ document.addEventListener('turbo:load', () => {
         
         // Jika splash sudah dieksekusi untuk URL yang sama, skip
         if (executedUrl === currentUrl && splashLogo.classList.contains('js-has-run')) {
-            console.log('[Splash] Splash screen sudah dieksekusi untuk URL ini, skip');
             // Pastikan splash logo sudah dihapus jika sudah selesai
             if (splashLogo && splashLogo.parentNode) {
                 splashLogo.remove();

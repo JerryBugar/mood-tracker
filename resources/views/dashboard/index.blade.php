@@ -39,7 +39,6 @@
         // Guard untuk mencegah redirect ganda yang bisa menyebabkan splash screen terload 2 kali
         const redirectKey = 'dashboard-redirect-executed';
         if (sessionStorage.getItem(redirectKey)) {
-            console.log('[Dashboard] Redirect sudah dieksekusi, skip');
             return;
         }
         

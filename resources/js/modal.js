@@ -151,7 +151,6 @@ if (!moodModalScriptInitialized) {
                 frame.dispatchEvent(frameRenderEvent);
             }
         } catch (error) {
-            console.error('Error loading mood modal:', error);
             // Tampilkan pesan error ke pengguna
             const frame = document.getElementById('mood_modal_content');
             if (frame) {

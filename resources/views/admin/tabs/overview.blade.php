@@ -44,7 +44,6 @@
                 try {
                     window.divisionChartInstance.destroy();
                 } catch (e) {
-                    console.warn('Error destroying chart:', e);
                 }
                 window.divisionChartInstance = null;
             }
@@ -54,7 +53,6 @@
                 try {
                     existingChart.destroy();
                 } catch (e) {
-                    console.warn('Error destroying existing chart:', e);
                 }
             }
 
@@ -75,7 +73,6 @@
                     try {
                         existingChart.destroy();
                     } catch (e) {
-                        console.warn('Error destroying chart before create:', e);
                     }
                 }
 
@@ -103,7 +100,6 @@
                 window.divisionChartLoading = false;
             })
             .catch(error => {
-                console.error('Error loading division chart data:', error);
                 window.divisionChartLoading = false;
             });
         };
@@ -128,7 +124,6 @@
                         try {
                             window.divisionChartInstance.destroy();
                         } catch (e) {
-                            console.warn('Error destroying chart before render:', e);
                         }
                         window.divisionChartInstance = null;
                         window.divisionChartInitialized = false;
@@ -141,7 +136,6 @@
                             try {
                                 existingChart.destroy();
                             } catch (e) {
-                                console.warn('Error destroying chart from canvas:', e);
                             }
                         }
                     }

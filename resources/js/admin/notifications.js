@@ -12,7 +12,6 @@ if (typeof window.submitHandler === 'undefined') {
 window.showToast = function(message, type = 'success') {
     // Pastikan Bootstrap tersedia
     if (typeof bootstrap === 'undefined') {
-        console.error('Bootstrap tidak tersedia');
         alert(message); // Fallback ke alert jika Bootstrap tidak tersedia
         return;
     }
@@ -24,7 +23,6 @@ window.showToast = function(message, type = 'success') {
     const toastIcon = toastElement?.querySelector('.toast-icon');
 
     if (!toastElement || !toastMessage || !toastTitle) {
-        console.error('Toast element tidak ditemukan');
         alert(message); // Fallback ke alert
         return;
     }
@@ -337,7 +335,6 @@ function initializeNotificationForm() {
             }
         })
         .catch(error => {
-            console.error('Error:', error);
             showToast('Terjadi kesalahan saat mengirim notifikasi: ' + error.message, 'error');
         })
         .finally(() => {

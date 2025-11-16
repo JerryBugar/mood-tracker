@@ -7,7 +7,6 @@
     const isAdminPage = window.location.pathname.startsWith('/admin');
     
     if (isWelcomePage || isAdminPage) {
-        console.log('[PWA] PWA disabled for this page');
         return; // Exit early, jangan aktifkan PWA
     }
 
@@ -16,8 +15,6 @@
         window.addEventListener('load', function() {
             navigator.serviceWorker.register('/sw.js')
                 .then(function(registration) {
-                    console.log('[PWA] Service Worker registered successfully:', registration.scope);
-                    
                     // Check for updates
                     registration.addEventListener('updatefound', function() {
                         const newWorker = registration.installing;
@@ -30,13 +27,11 @@
                     });
                 })
                 .catch(function(error) {
-                    console.error('[PWA] Service Worker registration failed:', error);
                 });
 
             // Listen for controller change (new service worker activated)
             // Hanya reload jika benar-benar diperlukan untuk mencegah splash screen terload 2 kali
             navigator.serviceWorker.addEventListener('controllerchange', function() {
-                console.log('[PWA] New service worker activated');
                 // Hanya reload jika tidak sedang dalam proses redirect atau navigasi
                 // Cek apakah halaman sedang dalam proses redirect
                 const isRedirecting = sessionStorage.getItem('dashboard-redirect-executed');
@@ -44,7 +39,6 @@
                 
                 // Jangan reload jika sedang redirect atau navigate
                 if (isRedirecting || isNavigating) {
-                    console.log('[PWA] Skip reload: redirect or navigation in progress');
                     return;
                 }
                 
@@ -86,7 +80,6 @@
         e.preventDefault();
         // Stash the event so it can be triggered later
         deferredPrompt = e;
-        console.log('[PWA] beforeinstallprompt event received, showing install button');
         // Show install button (hanya di dashboard)
         showInstallButton();
     });
@@ -103,10 +96,7 @@
             setTimeout(function() {
                 // Jika deferredPrompt sudah ada tapi button belum muncul, panggil showInstallButton
                 if (deferredPrompt && !document.getElementById('pwa-install-button') && !isStandalone()) {
-                    console.log('[PWA] Fallback: Showing install button (deferredPrompt exists)');
                     showInstallButton();
-                } else if (!deferredPrompt) {
-                    console.log('[PWA] No deferredPrompt available yet');
                 }
             }, 2700); // Timing yang sama dengan splash screen selesai (2.5s + 0.2s)
         }
@@ -119,29 +109,23 @@
         const isAdminPage = window.location.pathname.startsWith('/admin');
         
         if (isAdminPage || isWelcomePage) {
-            console.log('[PWA] Install button skipped: welcome or admin page');
             return;
         }
         
         // Hanya tampilkan di halaman dashboard
         if (window.location.pathname !== '/dashboard') {
-            console.log('[PWA] Install button skipped: not dashboard page');
             return;
         }
 
         // Jangan tampilkan jika app sudah diinstall (standalone mode)
         if (isStandalone()) {
-            console.log('[PWA] Install button skipped: app already installed');
             return;
         }
 
         // Check if button already exists
         if (document.getElementById('pwa-install-button')) {
-            console.log('[PWA] Install button already exists');
             return;
         }
-        
-        console.log('[PWA] Creating install button...');
 
         // Tunggu splash screen selesai sebelum menampilkan button
         waitForSplashScreen(() => {
@@ -233,16 +217,10 @@
             requestAnimationFrame(() => {
                 requestAnimationFrame(() => {
                     button.style.opacity = '1';
-                    console.log('[PWA] Install button displayed');
                 });
             });
         });
     }
-    
-    // Debug: Log status PWA
-    console.log('[PWA] Current path:', window.location.pathname);
-    console.log('[PWA] Is standalone:', isStandalone());
-    console.log('[PWA] Service Worker support:', 'serviceWorker' in navigator);
     
     // Untuk testing di responsive simulator: Force show button setelah delay
     // Hanya untuk dashboard dan jika belum ada button
@@ -256,13 +234,6 @@
                 const hasButton = document.getElementById('pwa-install-button');
                 const isStandaloneMode = isStandalone();
                 
-                console.log('[PWA] Debug check:', {
-                    hasButton: !!hasButton,
-                    hasDeferredPrompt: !!deferredPrompt,
-                    isStandalone: isStandaloneMode,
-                    path: window.location.pathname
-                });
-                
                 // Jika belum ada button dan belum standalone, coba tampilkan
                 // (untuk testing di responsive simulator yang mungkin tidak trigger beforeinstallprompt)
                 if (!hasButton && !isStandaloneMode) {
@@ -270,7 +241,6 @@
                     const isMobileView = window.innerWidth <= 768;
                     
                     if (isMobileView) {
-                        console.log('[PWA] Mobile view detected, attempting to show install button');
                         // Jika deferredPrompt ada, gunakan itu
                         // Jika tidak, tetap tampilkan button (untuk testing)
                         if (deferredPrompt) {
@@ -278,7 +248,6 @@
                         } else {
                             // Untuk testing: tampilkan button meskipun belum ada deferredPrompt
                             // User bisa klik tapi akan error jika tidak ada deferredPrompt
-                            console.log('[PWA] No deferredPrompt, but showing button for testing');
                             showInstallButton();
                         }
                     }
@@ -366,12 +335,6 @@
         
         // Wait for the user to respond to the prompt
         const { outcome } = await deferredPrompt.userChoice;
-        
-        if (outcome === 'accepted') {
-            console.log('[PWA] User accepted the install prompt');
-        } else {
-            console.log('[PWA] User dismissed the install prompt');
-        }
 
         // Clear the deferredPrompt
         deferredPrompt = null;
@@ -385,7 +348,6 @@
 
     // Hide install button if app is already installed
     window.addEventListener('appinstalled', function() {
-        console.log('[PWA] App installed');
         deferredPrompt = null;
         const button = document.getElementById('pwa-install-button');
         if (button) {
@@ -415,11 +377,6 @@
                 notification.remove();
             }
         }, 10000);
-    }
-
-    // Log PWA status
-    if (isStandalone()) {
-        console.log('[PWA] App is running in standalone mode');
     }
 
     // Expose install function globally (optional)

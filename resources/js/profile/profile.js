@@ -246,7 +246,6 @@ document.addEventListener('submit', function(e) {
             }
         })
         .catch(error => {
-            console.error('Error:', error);
             alert('Terjadi kesalahan saat memperbarui profil. Silakan coba lagi.');
         })
         .finally(() => {
@@ -261,7 +260,6 @@ document.addEventListener('submit', function(e) {
 function showToast(message, type = 'success') {
     // Pastikan Bootstrap tersedia
     if (typeof bootstrap === 'undefined') {
-        console.error('Bootstrap tidak tersedia');
         alert(message); // Fallback ke alert jika Bootstrap tidak tersedia
         return;
     }
@@ -271,11 +269,6 @@ function showToast(message, type = 'success') {
     const toastTitle = document.getElementById('toast-title');
     
     if (!toastElement || !toastMessage || !toastTitle) {
-        console.error('Toast element tidak ditemukan', {
-            toastElement: !!toastElement,
-            toastMessage: !!toastMessage,
-            toastTitle: !!toastTitle
-        });
         alert(message); // Fallback ke alert
         return;
     }

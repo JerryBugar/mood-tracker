@@ -250,13 +250,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 return false;
             }
 
-            console.log('Verification form submitted');
             let code = '';
             inputs.forEach(input => {
                 code += input.value;
             });
             hiddenInput.value = code;
-            console.log('Final company code:', code);
         });
     }
 
