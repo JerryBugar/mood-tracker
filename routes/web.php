@@ -23,6 +23,19 @@ Route::get('/offline', function () {
 
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
+// Route untuk favicon.ico - Google Search memprioritaskan ini
+Route::get('/favicon.ico', function () {
+    $faviconPath = public_path('favicon.ico');
+    if (file_exists($faviconPath)) {
+        return response()->file($faviconPath, [
+            'Content-Type' => 'image/x-icon',
+            'Cache-Control' => 'public, max-age=31536000, immutable',
+        ]);
+    }
+    // Fallback ke favicons.png jika favicon.ico tidak ada
+    return redirect(route('logo.serve', ['filename' => 'favicons.png']), 301);
+});
+
 // Route untuk serve logo dengan cache headers optimal
 Route::get('/logo/{filename}', [LogoController::class, 'serve'])->where('filename', '[a-zA-Z0-9._-]+\.(png|jpeg|jpg)')->name('logo.serve');
 

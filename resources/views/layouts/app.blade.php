@@ -31,14 +31,15 @@
     <title>{{ config('app.name', 'Ceremood') }}</title>
     @endif
     
-    <!-- Favicon dengan multiple sizes untuk SEO -->
-    <link rel="icon" type="image/png" sizes="512x512" href="{{ url(route('logo.serve', ['filename' => 'favicons.png'])) }}">
+    <!-- Favicon untuk Google Search - harus di urutan pertama dan menggunakan URL sederhana -->
+    <link rel="icon" type="image/x-icon" href="{{ url('/favicon.ico') }}">
+    <link rel="icon" type="image/png" href="{{ url(route('logo.serve', ['filename' => 'favicons.png'])) }}">
+    <!-- Favicon dengan multiple sizes untuk browser modern -->
     <link rel="icon" type="image/png" sizes="32x32" href="{{ url(route('logo.serve', ['filename' => 'favicons.png'])) }}">
     <link rel="icon" type="image/png" sizes="16x16" href="{{ url(route('logo.serve', ['filename' => 'favicons.png'])) }}">
+    <link rel="icon" type="image/png" sizes="512x512" href="{{ url(route('logo.serve', ['filename' => 'favicons.png'])) }}">
     <link rel="shortcut icon" type="image/png" href="{{ url(route('logo.serve', ['filename' => 'favicons.png'])) }}">
     <link rel="apple-touch-icon" sizes="180x180" href="{{ url(route('logo.serve', ['filename' => 'favicons.png'])) }}">
-    <!-- Fallback favicon.ico untuk browser yang memerlukan -->
-    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
 
     <!-- PWA Meta Tags - Disabled untuk welcome page -->
     @if(request()->path() !== '/' && request()->path() !== 'welcome')
