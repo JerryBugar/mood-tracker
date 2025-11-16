@@ -8,8 +8,10 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use App\Models\MoodRecord;
 use App\Models\Notification;
+use NotificationChannels\WebPush\PushSubscription;
 
 /**
  * User adalah model yang merepresentasikan pengguna aplikasi.
@@ -81,6 +83,34 @@ class User extends Authenticatable
                     ->withPivot('is_read', 'read_at')
                     ->withTimestamps()
                     ->orderBy('created_at', 'desc');
+    }
+
+    /**
+     * Relasi: Satu User bisa memiliki banyak PushSubscription (polymorphic)
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\MorphMany
+     */
+    public function pushSubscriptions(): MorphMany
+    {
+        return $this->morphMany(PushSubscription::class, 'subscribable');
+    }
+
+    /**
+     * Get the notification routing information for the WebPush channel.
+     * 
+     * @param  mixed  $notification
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public function routeNotificationForWebPush($notification = null)
+    {
+        try {
+            $subscriptions = $this->pushSubscriptions()->get();
+            // Pastikan selalu return collection, bukan null
+            return $subscriptions ?: collect();
+        } catch (\Exception $e) {
+            // Jika error, return empty collection
+            return collect();
+        }
     }
 
     /**

@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use App\Models\Notification;
 use App\Services\NotificationService;
 use App\Helpers\TurboStreamHelper;
+use NotificationChannels\WebPush\PushSubscription;
 
 class NotificationController extends Controller
 {
@@ -222,5 +223,104 @@ class NotificationController extends Controller
                 'message' => 'Gagal menghapus notifikasi: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Subscribe push notification
+     */
+    public function subscribePush(Request $request)
+    {
+        $user = Auth::user();
+
+        $request->validate([
+            'endpoint' => 'required|url',
+            'keys' => 'required|array',
+            'keys.p256dh' => 'required|string',
+            'keys.auth' => 'required|string',
+        ]);
+
+        try {
+            // Gunakan firstOrNew untuk memastikan semua field terisi saat insert
+            $subscription = PushSubscription::firstOrNew(
+                [
+                    'endpoint' => $request->endpoint,
+                    'subscribable_type' => get_class($user),
+                    'subscribable_id' => $user->id,
+                ]
+            );
+            
+            // Set values
+            $subscription->public_key = $request->keys['p256dh'];
+            $subscription->auth_token = $request->keys['auth'];
+            $subscription->subscribable_type = get_class($user);
+            $subscription->subscribable_id = $user->id;
+            
+            $subscription->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Push notification berhasil diaktifkan',
+                'subscription' => $subscription
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal subscribe push notification: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Unsubscribe push notification
+     */
+    public function unsubscribePush(Request $request)
+    {
+        $user = Auth::user();
+
+        $request->validate([
+            'endpoint' => 'required|url',
+        ]);
+
+        try {
+            $deleted = PushSubscription::where('endpoint', $request->endpoint)
+                ->where('subscribable_type', get_class($user))
+                ->where('subscribable_id', $user->id)
+                ->delete();
+
+            if ($deleted) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Push notification berhasil dinonaktifkan'
+                ]);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Subscription tidak ditemukan'
+            ], 404);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal unsubscribe push notification: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Cek status push subscription
+     */
+    public function checkPushStatus()
+    {
+        $user = Auth::user();
+        
+        $subscriptions = PushSubscription::where('subscribable_type', get_class($user))
+            ->where('subscribable_id', $user->id)
+            ->get();
+        
+        return response()->json([
+            'success' => true,
+            'subscribed' => $subscriptions->isNotEmpty(),
+            'count' => $subscriptions->count()
+        ]);
     }
 }

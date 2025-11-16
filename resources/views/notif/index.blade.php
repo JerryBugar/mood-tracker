@@ -11,6 +11,27 @@
             Notification
         </h1>
 
+        <!-- Push Notification Settings -->
+        <div class="push-notification-settings" style="max-width: 600px; margin: 20px auto; padding: 15px; background: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div style="flex: 1;">
+                    <label for="push-notification-toggle" style="font-weight: 600; color: #82272c; margin-bottom: 5px; display: block;">
+                        <i class="bi bi-bell-slash-fill" style="margin-right: 8px;"></i>
+                        Push Notification
+                    </label>
+                    <p id="push-notification-status" style="margin: 0; color: #6c757d; font-size: 0.9em;">
+                        Memuat status...
+                    </p>
+                </div>
+                <div class="form-check form-switch" style="margin-left: 15px;">
+                    <input class="form-check-input" type="checkbox" id="push-notification-toggle" style="width: 3rem; height: 1.5rem; cursor: pointer;">
+                </div>
+            </div>
+            <p style="margin-top: 10px; margin-bottom: 0; font-size: 0.85em; color: #6c757d;">
+                <i class="bi bi-info-circle"></i> Aktifkan untuk menerima notifikasi langsung di browser/device Anda
+            </p>
+        </div>
+
         <turbo-frame id="notifications_frame" data-turbo-action="replace">
         <div class="notifications-container {{ $notifications->count() == 0 ? 'empty-state' : '' }}">
             @if($notifications->count() > 0)

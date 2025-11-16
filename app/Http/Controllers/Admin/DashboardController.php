@@ -13,6 +13,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+use App\Services\NotificationService;
 
 class DashboardController extends Controller
 {
@@ -257,10 +258,14 @@ class DashboardController extends Controller
 
             // Attach users ke notification hanya jika tidak dijadwalkan (langsung kirim)
             // Jika dijadwalkan, tidak perlu attach sekarang - akan diproses oleh middleware
-            if ($users->isNotEmpty() && !$isScheduled) {
+            if ($users && $users instanceof \Illuminate\Support\Collection && $users->isNotEmpty() && !$isScheduled) {
                 $notification->users()->attach($users->pluck('id')->toArray());
+                
+                // Kirim push notification untuk notifikasi langsung
+                $notificationService = app(NotificationService::class);
+                $notificationService->sendPushNotifications($notification, $users);
             }
-            // Untuk scheduled notifications, biarkan middleware yang memproses saat waktunya tiba
+            // Untuk scheduled notifications, push notification akan dikirim saat diproses oleh middleware
 
             DB::commit();
 
