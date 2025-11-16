@@ -18,11 +18,44 @@
 
     let currentSubscription = null;
     let isSubscribed = false;
+    
+    // Storage key untuk sessionStorage
+    const STORAGE_KEY = 'push_notification_state';
+    let updateUITimeout = null;
 
     // Get CSRF token
     function getCsrfToken() {
         const metaTag = document.querySelector('meta[name="csrf-token"]');
         return metaTag ? metaTag.getAttribute('content') : '';
+    }
+    
+    // Simpan state ke sessionStorage
+    function saveStateToStorage() {
+        try {
+            sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
+                isSubscribed: isSubscribed,
+                timestamp: Date.now()
+            }));
+        } catch (e) {
+            console.warn('Tidak bisa menyimpan state ke sessionStorage:', e);
+        }
+    }
+    
+    // Load state dari sessionStorage
+    function loadStateFromStorage() {
+        try {
+            const stored = sessionStorage.getItem(STORAGE_KEY);
+            if (stored) {
+                const state = JSON.parse(stored);
+                // State valid selama 5 menit
+                if (Date.now() - state.timestamp < 300000) {
+                    return state.isSubscribed;
+                }
+            }
+        } catch (e) {
+            console.warn('Tidak bisa load state dari sessionStorage:', e);
+        }
+        return null;
     }
 
     // Cek status subscription dari server
@@ -44,17 +77,65 @@
         }
     }
 
+    // Cek status permission notifikasi
+    function getNotificationPermission() {
+        if (!('Notification' in window)) {
+            return 'denied';
+        }
+        return Notification.permission;
+    }
+
+    // Show user-friendly permission message
+    function showPermissionMessage() {
+        const permission = getNotificationPermission();
+        
+        if (permission === 'denied') {
+            // Jika permission sudah ditolak sebelumnya, berikan instruksi cara mengaktifkan
+            if (confirm('Push notification dinonaktifkan. Untuk mengaktifkan, buka pengaturan browser Anda dan izinkan notifikasi untuk situs ini. Buka pengaturan sekarang?')) {
+                // Buka halaman bantuan atau settings
+                window.open('/help/notifications', '_blank');
+            }
+        } else if (permission === 'default') {
+            // Jika belum ada keputusan, berikan penjelasan sebelum meminta permission
+            if (confirm('Aktifkan push notification untuk mendapatkan pembaruan real-time? Anda dapat mengubah ini nanti di pengaturan.')) {
+                return true; // Lanjutkan ke permission request
+            }
+        }
+        return false;
+    }
+
     // Subscribe ke push notification
     async function subscribeToPush() {
         try {
+            // Cek permission status terlebih dahulu
+            const permission = getNotificationPermission();
+            
+            if (permission === 'denied') {
+                showPermissionMessage();
+                throw new Error('Permission untuk push notification telah ditolak. Harap aktifkan manual di pengaturan browser.');
+            }
+
             // Cek apakah service worker sudah terdaftar
             const registration = await navigator.serviceWorker.ready;
 
-            // Request permission
-            const permission = await Notification.requestPermission();
-            
-            if (permission !== 'granted') {
-                throw new Error('Permission untuk push notification ditolak');
+            // Request permission hanya jika belum ada keputusan
+            let finalPermission = permission;
+            if (permission === 'default') {
+                // Tampilkan pesan konfirmasi sebelum meminta permission
+                if (!showPermissionMessage()) {
+                    throw new Error('Permintaan permission dibatalkan oleh pengguna');
+                }
+                
+                finalPermission = await Notification.requestPermission();
+            }
+
+            if (finalPermission !== 'granted') {
+                if (finalPermission === 'denied') {
+                    showPermissionMessage();
+                    throw new Error('Permission untuk push notification ditolak. Harap aktifkan manual di pengaturan browser.');
+                } else {
+                    throw new Error('Permission untuk push notification tidak diberikan');
+                }
             }
 
             // Subscribe ke push service
@@ -85,14 +166,21 @@
             if (data.success) {
                 currentSubscription = subscription;
                 isSubscribed = true;
-                updateUI();
+                saveStateToStorage();
+                updateUI(true);
+                showSuccessMessage('Push notification berhasil diaktifkan!');
                 return true;
             } else {
                 throw new Error(data.message || 'Gagal subscribe');
             }
         } catch (error) {
             console.error('Error subscribing to push:', error);
-            alert('Gagal mengaktifkan push notification: ' + error.message);
+            
+            // Jangan tampilkan alert untuk error permission yang sudah jelas
+            if (!error.message.includes('Permission') && !error.message.includes('dibatalkan')) {
+                alert('Gagal mengaktifkan push notification: ' + error.message);
+            }
+            
             return false;
         }
     }
@@ -106,7 +194,10 @@
                 const subscription = await registration.pushManager.getSubscription();
                 
                 if (!subscription) {
-                    throw new Error('Tidak ada subscription yang aktif');
+                    // Tidak ada subscription yang aktif
+                    isSubscribed = false;
+                    updateUI();
+                    return true;
                 }
                 
                 currentSubscription = subscription;
@@ -132,7 +223,9 @@
                 await currentSubscription.unsubscribe();
                 currentSubscription = null;
                 isSubscribed = false;
-                updateUI();
+                saveStateToStorage();
+                updateUI(true);
+                showSuccessMessage('Push notification berhasil dinonaktifkan');
                 return true;
             } else {
                 throw new Error(data.message || 'Gagal unsubscribe');
@@ -144,21 +237,68 @@
         }
     }
 
-    // Update UI berdasarkan status subscription
-    function updateUI() {
-        const toggleBtn = document.getElementById('push-notification-toggle');
-        const statusText = document.getElementById('push-notification-status');
+    // Show success message
+    function showSuccessMessage(message) {
+        // Buat toast notification sederhana
+        const toast = document.createElement('div');
+        toast.className = 'position-fixed alert alert-success alert-dismissible fade show';
+        toast.style.cssText = 'top: 20px; right: 20px; z-index: 1060; min-width: 300px;';
+        toast.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
         
-        if (toggleBtn) {
-            toggleBtn.checked = isSubscribed;
-            toggleBtn.disabled = false;
+        document.body.appendChild(toast);
+        
+        // Auto remove setelah 3 detik
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.remove();
+            }
+        }, 3000);
+    }
+
+    // Update UI berdasarkan status subscription dengan debounce dan state comparison
+    function updateUI(force = false) {
+        // Debounce untuk menghindari update berulang
+        if (updateUITimeout) {
+            clearTimeout(updateUITimeout);
         }
         
-        if (statusText) {
-            statusText.textContent = isSubscribed 
-                ? 'Push notification aktif' 
-                : 'Push notification tidak aktif';
-        }
+        updateUITimeout = setTimeout(() => {
+            const toggleBtn = document.getElementById('push-notification-toggle');
+            const statusText = document.getElementById('push-notification-status');
+            
+            if (!toggleBtn || !statusText) return;
+            
+            const permission = getNotificationPermission();
+            const shouldBeChecked = isSubscribed && permission === 'granted';
+            
+            // Hanya update jika state berbeda atau force
+            if (force || toggleBtn.checked !== shouldBeChecked) {
+                toggleBtn.checked = shouldBeChecked;
+                toggleBtn.disabled = permission === 'denied';
+                
+                // Tambahkan tooltip jika disabled
+                if (permission === 'denied') {
+                    toggleBtn.title = 'Permission notifikasi ditolak. Buka pengaturan browser untuk mengaktifkan.';
+                } else {
+                    toggleBtn.title = '';
+                }
+            }
+            
+            // Update status text
+            if (permission === 'denied') {
+                statusText.textContent = 'Permission notifikasi ditolak';
+                statusText.className = 'text-danger';
+            } else if (isSubscribed) {
+                statusText.textContent = 'Push notification aktif';
+                statusText.className = 'text-success';
+            } else {
+                statusText.textContent = 'Push notification tidak aktif';
+                statusText.className = 'text-muted';
+            }
+        }, 50);
     }
 
     // Get VAPID public key dari meta tag atau config
@@ -201,7 +341,28 @@
     }
 
     // Initialize push notification
-    async function initializePushNotification() {
+    async function initializePushNotification(forceCheck = false) {
+        const settingsElement = document.getElementById('push-notification-settings');
+        if (!settingsElement) return;
+        
+        // Untuk elemen permanent, check sessionStorage dulu
+        if (settingsElement.hasAttribute('data-turbo-permanent') && 
+            settingsElement.dataset.initialized === 'true' && 
+            !forceCheck) {
+            const storedState = loadStateFromStorage();
+            if (storedState !== null) {
+                // Gunakan stored state jika ada
+                const previousState = isSubscribed;
+                isSubscribed = storedState;
+                
+                // Hanya update UI jika state berbeda
+                if (previousState !== isSubscribed) {
+                    updateUI(true);
+                }
+                return;
+            }
+        }
+        
         try {
             // Tunggu service worker ready
             const registration = await navigator.serviceWorker.ready;
@@ -217,37 +378,59 @@
                 isSubscribed = false;
             }
             
-            updateUI();
+            // Simpan state ke storage
+            saveStateToStorage();
+            updateUI(true);
+            
+            // Tandai sebagai initialized untuk elemen permanent
+            if (settingsElement.hasAttribute('data-turbo-permanent')) {
+                settingsElement.dataset.initialized = 'true';
+            }
         } catch (error) {
             console.error('Error initializing push notification:', error);
             isSubscribed = false;
-            updateUI();
+            saveStateToStorage();
+            updateUI(true);
+            
+            if (settingsElement.hasAttribute('data-turbo-permanent')) {
+                settingsElement.dataset.initialized = 'true';
+            }
         }
     }
 
-    // Setup event listener untuk toggle button
+    // Setup event listener untuk toggle button dengan event delegation
     function setupToggleButton() {
-        const toggleBtn = document.getElementById('push-notification-toggle');
+        const settingsElement = document.getElementById('push-notification-settings');
+        if (!settingsElement) return;
         
-        if (toggleBtn) {
-            toggleBtn.addEventListener('change', async function() {
-                toggleBtn.disabled = true;
-                
-                if (this.checked) {
+        // Gunakan event delegation untuk menghindari duplicate listeners
+        if (settingsElement.dataset.listenerSetup === 'true') return;
+        
+        settingsElement.addEventListener('change', async function(event) {
+            const toggleBtn = event.target;
+            if (toggleBtn.id !== 'push-notification-toggle') return;
+            
+            toggleBtn.disabled = true;
+            
+            try {
+                if (toggleBtn.checked) {
                     const success = await subscribeToPush();
                     if (!success) {
-                        this.checked = false;
+                        toggleBtn.checked = false;
                     }
                 } else {
                     const success = await unsubscribeFromPush();
                     if (!success) {
-                        this.checked = true;
+                        toggleBtn.checked = true;
                     }
                 }
-                
+            } finally {
                 toggleBtn.disabled = false;
-            });
-        }
+                updateUI();
+            }
+        }, true); // Use capture phase
+        
+        settingsElement.dataset.listenerSetup = 'true';
     }
 
     // Initialize saat DOM ready
@@ -262,7 +445,31 @@
     }
 
     // Re-initialize saat Turbo load (untuk SPA behavior)
+    // Skip jika elemen permanent sudah di-initialize dan state sama
     document.addEventListener('turbo:load', function() {
+        const settingsElement = document.getElementById('push-notification-settings');
+        if (!settingsElement) return;
+        
+        // Untuk elemen permanent, check state dulu
+        if (settingsElement.hasAttribute('data-turbo-permanent') && 
+            settingsElement.dataset.initialized === 'true') {
+            const storedState = loadStateFromStorage();
+            const toggleBtn = document.getElementById('push-notification-toggle');
+            
+            // Jika stored state ada dan sama dengan current state, skip
+            if (storedState !== null && storedState === isSubscribed && toggleBtn) {
+                const permission = getNotificationPermission();
+                const shouldBeChecked = isSubscribed && permission === 'granted';
+                
+                // Hanya update UI jika toggle state berbeda
+                if (toggleBtn.checked !== shouldBeChecked) {
+                    updateUI(true);
+                }
+                return;
+            }
+        }
+        
+        // Initialize jika belum atau state berbeda
         initializePushNotification();
         setupToggleButton();
     });
@@ -271,5 +478,5 @@
     window.subscribeToPush = subscribeToPush;
     window.unsubscribeFromPush = unsubscribeFromPush;
     window.checkPushSubscriptionStatus = checkSubscriptionStatus;
+    window.getNotificationPermission = getNotificationPermission;
 })();
-

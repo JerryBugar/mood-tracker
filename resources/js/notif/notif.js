@@ -1,6 +1,6 @@
-// Notifications page JavaScript
+// Notifications page JavaScript - Optimized dengan Turbo Hotwired
 
-// Get CSRF token from meta tag
+// Get CSRF token dari meta tag
 function getCsrfToken() {
     const metaTag = document.querySelector('meta[name="csrf-token"]');
     return metaTag ? metaTag.getAttribute('content') : '';
@@ -8,9 +8,8 @@ function getCsrfToken() {
 
 // Fungsi untuk menampilkan toast notification
 function showToast(message, type = 'success') {
-    // Pastikan Bootstrap tersedia
     if (typeof bootstrap === 'undefined') {
-        alert(message); // Fallback ke alert jika Bootstrap tidak tersedia
+        alert(message);
         return;
     }
 
@@ -19,82 +18,57 @@ function showToast(message, type = 'success') {
     const toastTitle = document.getElementById('toast-title');
     
     if (!toastElement || !toastMessage || !toastTitle) {
-        alert(message); // Fallback ke alert
+        alert(message);
         return;
     }
 
     const toastIconWrapper = toastElement.querySelector('.toast-icon-wrapper');
     const toastIcon = toastElement.querySelector('.toast-icon');
 
-    // Update message dan title
     toastMessage.textContent = message;
     
-    // Update styling berdasarkan type
     if (type === 'success') {
         toastTitle.textContent = 'Berhasil';
         toastTitle.classList.remove('error');
         toastElement.classList.remove('error');
         toastElement.classList.add('success');
         
-        if (toastIconWrapper) {
-            toastIconWrapper.classList.remove('error');
-        }
-        
-        if (toastIcon) {
-            toastIcon.className = 'toast-icon bi bi-check-circle-fill';
-        }
+        if (toastIconWrapper) toastIconWrapper.classList.remove('error');
+        if (toastIcon) toastIcon.className = 'toast-icon bi bi-check-circle-fill';
     } else {
         toastTitle.textContent = 'Error';
         toastTitle.classList.add('error');
         toastElement.classList.remove('success');
         toastElement.classList.add('error');
         
-        if (toastIconWrapper) {
-            toastIconWrapper.classList.add('error');
-        }
-        
-        if (toastIcon) {
-            toastIcon.className = 'toast-icon bi bi-exclamation-circle-fill';
-        }
+        if (toastIconWrapper) toastIconWrapper.classList.add('error');
+        if (toastIcon) toastIcon.className = 'toast-icon bi bi-exclamation-circle-fill';
     }
 
-    // Hide toast yang sedang ditampilkan sebelumnya jika ada
     const existingToast = bootstrap.Toast.getInstance(toastElement);
     if (existingToast) {
         existingToast.hide();
-        // Tunggu animasi hide selesai
-        setTimeout(() => {
-            showToastNow(toastElement);
-        }, 200);
+        setTimeout(() => showToastNow(toastElement), 200);
     } else {
         showToastNow(toastElement);
     }
 }
 
 function showToastNow(toastElement) {
-    // Reset class untuk animasi
     toastElement.classList.remove('hiding', 'show');
     
-    // Hapus event listener lama jika ada
     const hideHandler = toastElement._hideHandler;
     if (hideHandler) {
         toastElement.removeEventListener('hide.bs.toast', hideHandler);
     }
     
-    // Buat handler baru untuk animasi hide
-    const newHideHandler = function() {
-        toastElement.classList.add('hiding');
-    };
+    const newHideHandler = () => toastElement.classList.add('hiding');
     toastElement._hideHandler = newHideHandler;
     toastElement.addEventListener('hide.bs.toast', newHideHandler);
     
-    // Pastikan toast container visible
     const toastContainer = toastElement.closest('.toast-container');
-    if (toastContainer) {
-        toastContainer.style.display = 'block';
-    }
+    if (toastContainer) toastContainer.style.display = 'block';
     
-    // Show toast
     const toast = new bootstrap.Toast(toastElement, {
         autohide: true,
         delay: 4000
@@ -103,117 +77,184 @@ function showToastNow(toastElement) {
     toast.show();
 }
 
-function markAsRead(notificationId) {
-    fetch(`/notif/${notificationId}/read`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': getCsrfToken(),
-            'Accept': 'text/vnd.turbo-stream.html, application/json'
+// Event delegation untuk tombol mark as read (menggunakan Turbo form)
+document.addEventListener('submit', async function(event) {
+    const form = event.target;
+    
+    // Track Turbo Stream update saat form submit untuk notifications_frame
+    if (form && form.hasAttribute('data-turbo-frame') && 
+        form.getAttribute('data-turbo-frame') === 'notifications_frame') {
+        // Track timestamp saat form submit untuk prevent double refresh
+        lastTurboStreamUpdate = Date.now();
+    }
+    
+    // Handle mark as read form
+    if (form.action && form.action.includes('/notif/') && form.action.includes('/read')) {
+        const button = form.querySelector('button[type="submit"]');
+        if (button) {
+            button.disabled = true;
+            button.textContent = 'Memproses...';
         }
-    })
-    .then(response => {
-        const contentType = response.headers.get('content-type');
-        if (contentType && contentType.includes('text/vnd.turbo-stream.html')) {
-            // Turbo Stream response - Turbo akan otomatis memproses
-            return response.text().then(text => {
-                // Inject stream ke Turbo untuk diproses
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(text, 'text/html');
-                const streams = doc.querySelectorAll('turbo-stream');
-                streams.forEach(stream => {
-                    if (window.Turbo) {
-                        window.Turbo.renderStreamMessage(stream.outerHTML);
-                    }
-                });
-                showToast('Notifikasi ditandai sebagai sudah dibaca', 'success');
-                return { success: true };
-            });
-        } else {
-            // JSON response (fallback)
-            return response.json();
+    }
+    
+    // Handle mark all as read form
+    if (form.action && form.action.includes('/notif/read-all')) {
+        const button = form.querySelector('button[type="submit"]');
+        if (button) {
+            button.disabled = true;
+            button.innerHTML = '<i class="bi bi-hourglass-split"></i> Memproses...';
         }
-    })
-    .then(data => {
-        if (data && !data.success) {
-            showToast('Gagal menandai notifikasi sebagai sudah dibaca', 'error');
-        }
-    })
-    .catch(error => {
-        showToast('Terjadi kesalahan', 'error');
-    });
-}
+    }
+});
 
-function markAllAsRead() {
-    const button = document.querySelector('.btn-mark-all-read');
+// Track saat Turbo Stream message diterima
+document.addEventListener('turbo:before-stream-render', function(event) {
+    // Cek apakah target adalah notifications_frame
+    // event.detail.render adalah function, kita perlu cek event.target
+    const streamElement = event.target;
+    if (streamElement && streamElement.tagName === 'TURBO-STREAM') {
+        const target = streamElement.getAttribute('target');
+        if (target === 'notifications_frame') {
+            lastTurboStreamUpdate = Date.now();
+        }
+    }
+});
+
+// Track previous unread count untuk detect perubahan
+let previousUnreadCount = -1;
+
+// Handle Turbo Stream render untuk update langsung
+document.addEventListener('turbo:frame-render', function(event) {
+    // Cek apakah ini render dari notifications_frame
+    if (event.target && event.target.id === 'notifications_frame') {
+        // Update timestamp
+        lastTurboStreamUpdate = Date.now();
+        
+        // Update unread count langsung tanpa delay
+        const currentUnreadCount = document.querySelectorAll('.notification-item.unread').length;
+        const currentTotalCount = document.querySelectorAll('.notification-item').length;
+        updateUnreadCount();
+        
+        // Show toast untuk delete all (jika semua notifikasi dihapus)
+        if (currentTotalCount === 0 && previousUnreadCount >= 0) {
+            showToast('Semua notifikasi berhasil dihapus', 'success');
+            previousUnreadCount = 0;
+        }
+        // Show toast hanya jika ada perubahan dari unread ke read
+        // (previousUnreadCount > 0 dan currentUnreadCount < previousUnreadCount)
+        else if (previousUnreadCount > 0 && currentUnreadCount < previousUnreadCount) {
+            if (currentUnreadCount === 0) {
+                showToast('Semua notifikasi ditandai sebagai sudah dibaca', 'success');
+            } else {
+                showToast('Notifikasi ditandai sebagai sudah dibaca', 'success');
+            }
+            // Update previous count
+            previousUnreadCount = currentUnreadCount;
+        } else {
+            // Update previous count meskipun tidak ada toast
+            previousUnreadCount = currentUnreadCount;
+        }
+    }
+});
+
+// Handle delete all dengan Turbo
+document.addEventListener('click', async function(event) {
+    const target = event.target.closest('[data-action="delete-all"]');
+    if (!target) return;
+    
+    event.preventDefault();
+    
+    const modalElement = document.getElementById('deleteConfirmModal');
+    if (!modalElement) {
+        showToast('Modal tidak ditemukan', 'error');
+        return;
+    }
+    
+    const confirmBtn = document.getElementById('confirmDeleteBtn');
+    if (!confirmBtn) {
+        showToast('Tombol konfirmasi tidak ditemukan', 'error');
+        return;
+    }
+    
+    // Clone button untuk reset event listener
+    const newConfirmBtn = confirmBtn.cloneNode(true);
+    confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+    
+    newConfirmBtn.addEventListener('click', async function() {
+        if (document.activeElement === newConfirmBtn) {
+            newConfirmBtn.blur();
+        }
+        
+        const button = document.querySelector('.btn-delete-all');
     if (button) {
         button.disabled = true;
-        button.innerHTML = '<i class="bi bi-hourglass-split"></i> Memproses...';
+            button.innerHTML = '<i class="bi bi-hourglass-split"></i> Menghapus...';
     }
 
-    fetch('/notif/read-all', {
-        method: 'POST',
+        try {
+            const response = await fetch('/notif/delete-all', {
+                method: 'DELETE',
         headers: {
             'Content-Type': 'application/json',
             'X-CSRF-TOKEN': getCsrfToken(),
-            'Accept': 'text/vnd.turbo-stream.html, application/json'
+                    'Accept': 'text/vnd.turbo-stream.html, application/json',
+                    'Turbo-Frame': 'notifications_frame'
         }
-    })
-    .then(response => {
-        const contentType = response.headers.get('content-type');
-        if (contentType && contentType.includes('text/vnd.turbo-stream.html')) {
-            // Turbo Stream response - Turbo akan otomatis memproses
-            return response.text().then(text => {
-                // Inject stream ke Turbo untuk diproses
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(text, 'text/html');
-                const streams = doc.querySelectorAll('turbo-stream');
-                streams.forEach(stream => {
-                    if (window.Turbo) {
-                        window.Turbo.renderStreamMessage(stream.outerHTML);
-                    }
-                });
-                showToast('Semua notifikasi ditandai sebagai sudah dibaca', 'success');
-                return { success: true };
             });
-        } else {
-            // JSON response (fallback)
-            return response.json();
-        }
-    })
-    .then(data => {
-        if (data && !data.success) {
-            showToast('Gagal menandai semua notifikasi sebagai sudah dibaca', 'error');
+            
+            if (response.ok) {
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('text/vnd.turbo-stream.html')) {
+                    const text = await response.text();
+                    // Track Turbo Stream update
+                    lastTurboStreamUpdate = Date.now();
+                    // Reset previousUnreadCount karena semua akan dihapus
+                    previousUnreadCount = 0;
+                    if (window.Turbo) {
+                        window.Turbo.renderStreamMessage(text);
+                    }
+                    // Toast akan muncul setelah frame render
+                } else {
+                    const data = await response.json();
+                    if (data.success) {
+                        // Reload frame dengan Turbo
+                        const frame = document.getElementById('notifications_frame');
+                        if (frame) {
+                            lastTurboStreamUpdate = Date.now();
+                            previousUnreadCount = 0;
+                            frame.src = frame.src;
+                        }
+                    }
+                }
+            }
+        } catch (error) {
+            showToast('Terjadi kesalahan saat menghapus notifikasi', 'error');
             if (button) {
                 button.disabled = false;
-                button.innerHTML = '<i class="bi bi-check-all"></i> Tandai Semua Sudah Dibaca';
+                button.innerHTML = '<i class="bi bi-trash-fill"></i> Hapus Semua Notif';
             }
         }
-    })
-    .catch(error => {
-        showToast('Terjadi kesalahan', 'error');
-        if (button) {
-            button.disabled = false;
-            button.innerHTML = '<i class="bi bi-check-all"></i> Tandai Semua Sudah Dibaca';
-        }
     });
-}
+    
+    const modal = new bootstrap.Modal(modalElement);
+    modal.show();
+});
 
-function checkUnreadCount() {
+// Update unread count setelah frame load
+function updateUnreadCount() {
     const unreadItems = document.querySelectorAll('.notification-item.unread');
     const allItems = document.querySelectorAll('.notification-item');
     const markAllContainer = document.querySelector('.mark-all-container');
     
-    if (markAllContainer) {
+    if (!markAllContainer) return;
+    
         const markAllButton = markAllContainer.querySelector('.btn-mark-all-read');
         const deleteAllButton = markAllContainer.querySelector('.btn-delete-all');
         
-        // Sembunyikan tombol mark all jika tidak ada unread atau jumlah unread <= 1
         if (markAllButton && (unreadItems.length === 0 || unreadItems.length <= 1)) {
-            markAllButton.style.display = 'none';
+        markAllButton.closest('.mark-all-container').style.display = 'none';
         }
         
-        // Tampilkan tombol delete all jika semua sudah dibaca dan ada notifikasi
         if (unreadItems.length === 0 && allItems.length > 0) {
             if (deleteAllButton) {
                 markAllContainer.style.display = 'flex';
@@ -222,39 +263,27 @@ function checkUnreadCount() {
         } else {
             if (deleteAllButton) {
                 deleteAllButton.style.display = 'none';
-            }
         }
     }
 }
 
-// Setup aria-hidden handlers untuk modal delete confirmation (setup sekali)
-if (typeof window.deleteModalAriaHandlersSetup === 'undefined') {
-    window.deleteModalAriaHandlersSetup = false;
-}
-
-function setupDeleteModalAriaHandlers() {
-    // Hanya setup sekali untuk menghindari duplikasi
-    if (window.deleteModalAriaHandlersSetup) {
-        return;
-    }
-
+// Setup modal handlers (hanya sekali)
+if (!window.deleteModalHandlersSetup) {
+    window.deleteModalHandlersSetup = true;
+    
+    document.addEventListener('turbo:load', function() {
     const modalElement = document.getElementById('deleteConfirmModal');
-    if (!modalElement) {
-        return;
-    }
+        if (!modalElement) return;
 
-    // Hapus focus dari elemen aktif sebelum modal ditutup
     modalElement.addEventListener('hide.bs.modal', function() {
         const activeElement = document.activeElement;
         if (modalElement.contains(activeElement) && 
             activeElement !== document.body && 
-            activeElement !== document.documentElement &&
             typeof activeElement.blur === 'function') {
             activeElement.blur();
         }
     });
 
-    // Pastikan aria-hidden dihapus saat modal terbuka
     modalElement.addEventListener('show.bs.modal', function() {
         modalElement.removeAttribute('aria-hidden');
     });
@@ -263,156 +292,121 @@ function setupDeleteModalAriaHandlers() {
         modalElement.removeAttribute('aria-hidden');
     });
 
-    // Pastikan tidak ada elemen focused setelah modal tersembunyi
     modalElement.addEventListener('hidden.bs.modal', function() {
         modalElement.setAttribute('aria-hidden', 'true');
-        const activeElement = document.activeElement;
-        if (activeElement && 
-            modalElement.contains(activeElement) && 
-            activeElement !== document.body && 
-            activeElement !== document.documentElement &&
-            typeof activeElement.blur === 'function') {
-            activeElement.blur();
-        }
+        });
     });
-
-    window.deleteModalAriaHandlersSetup = true;
 }
 
-function deleteAllNotifications() {
-    // Pastikan aria handlers sudah di-setup
-    setupDeleteModalAriaHandlers();
-    
-    // Tampilkan modal konfirmasi
-    const modalElement = document.getElementById('deleteConfirmModal');
-    if (!modalElement) {
-        showToast('Modal tidak ditemukan', 'error');
-        return;
-    }
-    
-    // Setup event listener untuk tombol konfirmasi
-    const confirmBtn = document.getElementById('confirmDeleteBtn');
-    if (!confirmBtn) {
-        showToast('Tombol konfirmasi tidak ditemukan', 'error');
-        return;
-    }
-    
-    // Hapus event listener lama jika ada dengan clone node
-    const newConfirmBtn = confirmBtn.cloneNode(true);
-    confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
-    
-    // Setup event listener baru untuk tombol konfirmasi
-    newConfirmBtn.addEventListener('click', function() {
-        // Hapus focus sebelum modal ditutup untuk mencegah aria-hidden error
-        if (document.activeElement === newConfirmBtn) {
-            newConfirmBtn.blur();
-        }
-        // Modal akan ditutup otomatis karena data-bs-dismiss="modal"
-        performDeleteAll();
-    });
-    
-    // Buat instance modal dan tampilkan
-    const modal = new bootstrap.Modal(modalElement);
-    modal.show();
-}
+// Track URL terakhir untuk detect navigation
+let lastNotifUrl = null;
 
-function performDeleteAll() {
-    const button = document.querySelector('.btn-delete-all');
-    if (button) {
-        button.disabled = true;
-        button.innerHTML = '<i class="bi bi-hourglass-split"></i> Menghapus...';
-    }
+// Track timestamp terakhir Turbo Stream update untuk prevent double refresh
+let lastTurboStreamUpdate = 0;
+const TURBO_STREAM_UPDATE_WINDOW = 2000; // 2 detik
 
-    fetch('/notif/delete-all', {
-        method: 'DELETE',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': getCsrfToken(),
-            'Accept': 'text/vnd.turbo-stream.html, application/json'
-        }
-    })
-    .then(response => {
-        const contentType = response.headers.get('content-type');
-        if (contentType && contentType.includes('text/vnd.turbo-stream.html')) {
-            // Turbo Stream response - Turbo akan otomatis memproses
-            return response.text().then(text => {
-                // Inject stream ke Turbo untuk diproses
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(text, 'text/html');
-                const streams = doc.querySelectorAll('turbo-stream');
-                streams.forEach(stream => {
-                    if (window.Turbo) {
-                        window.Turbo.renderStreamMessage(stream.outerHTML);
-                    }
-                });
-                showToast('Semua notifikasi berhasil dihapus', 'success');
-                return { success: true };
-            });
-        } else {
-            // JSON response (fallback)
-            return response.json();
-        }
-    })
-    .then(data => {
-        if (data && !data.success) {
-            showToast(data.message || 'Gagal menghapus notifikasi', 'error');
-            if (button) {
-                button.disabled = false;
-                button.innerHTML = '<i class="bi bi-trash-fill"></i> Hapus Semua Notif';
+// Refresh notifications frame dengan fetch langsung
+async function refreshNotificationsFrame() {
+    // Skip refresh jika Turbo Stream baru saja update
+    const timeSinceLastUpdate = Date.now() - lastTurboStreamUpdate;
+    if (timeSinceLastUpdate < TURBO_STREAM_UPDATE_WINDOW) {
+        return; // Skip refresh, Turbo Stream sudah update
+    }
+    const frame = document.getElementById('notifications_frame');
+    if (!frame) return;
+    
+    try {
+        // Fetch fresh data dari server dengan cache busting
+        const url = new URL('/notif', window.location.origin);
+        url.searchParams.set('_t', Date.now());
+        
+        const response = await fetch(url.toString(), {
+            method: 'GET',
+            headers: {
+                'Accept': 'text/html',
+                'Turbo-Frame': 'notifications_frame',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            cache: 'no-store'
+        });
+        
+        if (response.ok) {
+            const html = await response.text();
+            // Extract content dari turbo-frame
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            
+            // Ambil content dari turbo-frame
+            const turboFrame = doc.querySelector('turbo-frame#notifications_frame');
+            const notificationsContainer = doc.querySelector('.notifications-container');
+            
+            // Gunakan content dari turbo-frame jika ada, atau langsung dari container
+            const content = turboFrame ? turboFrame.innerHTML : 
+                          (notificationsContainer ? notificationsContainer.outerHTML : null);
+            
+            if (content && frame) {
+                // Replace content frame dengan data fresh
+                frame.innerHTML = content;
+                // Update previousUnreadCount setelah refresh manual
+                previousUnreadCount = document.querySelectorAll('.notification-item.unread').length;
+                updateUnreadCount();
             }
         }
-    })
-    .catch(error => {
-        showToast('Terjadi kesalahan saat menghapus notifikasi', 'error');
-        if (button) {
-            button.disabled = false;
-            button.innerHTML = '<i class="bi bi-trash-fill"></i> Hapus Semua Notif';
-        }
-    });
-}
-
-// Export functions untuk digunakan di global scope
-window.showToast = showToast;
-window.markAsRead = markAsRead;
-window.markAllAsRead = markAllAsRead;
-window.deleteAllNotifications = deleteAllNotifications;
-window.checkUnreadCount = checkUnreadCount;
-
-// Inisialisasi saat halaman dimuat
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function() {
-        checkUnreadCount();
-    });
-} else {
-    checkUnreadCount();
-}
-
-// Setup ulang saat Turbo load
-document.addEventListener('turbo:load', function() {
-    checkUnreadCount();
-    
-    // Setup aria handlers untuk modal
-    setupDeleteModalAriaHandlers();
-    
-    // Pastikan turbo frame selalu memuat data fresh saat halaman dimuat
-    const notificationsFrame = document.getElementById('notifications_frame');
-    if (notificationsFrame && window.location.pathname === '/notif') {
-        // Refresh frame untuk memastikan data selalu terbaru
-        notificationsFrame.src = notificationsFrame.src || window.location.href;
+    } catch (error) {
+        console.warn('Error refreshing notifications frame:', error);
     }
-});
-
-// Setup aria handlers saat DOM ready
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', setupDeleteModalAriaHandlers);
-} else {
-    setupDeleteModalAriaHandlers();
 }
 
-// Pastikan frame refresh saat frame dimuat (untuk menghindari cache)
+// Turbo events
 document.addEventListener('turbo:frame-load', function(event) {
     if (event.target && event.target.id === 'notifications_frame') {
-        checkUnreadCount();
+        // Inisialisasi previousUnreadCount saat frame load
+        previousUnreadCount = document.querySelectorAll('.notification-item.unread').length;
+        updateUnreadCount();
+        // Reset Turbo Stream update tracking setelah frame load
+        // Ini memastikan refresh manual bisa dilakukan setelah frame selesai load
+        setTimeout(() => {
+            lastTurboStreamUpdate = 0;
+        }, TURBO_STREAM_UPDATE_WINDOW);
     }
 });
 
+// Refresh frame saat kembali ke halaman notif
+document.addEventListener('turbo:load', function() {
+    const currentUrl = window.location.href;
+    const isNotifPage = window.location.pathname === '/notif';
+    
+    // Cek apakah ini navigasi baru ke halaman notif
+    if (isNotifPage && currentUrl !== lastNotifUrl) {
+        lastNotifUrl = currentUrl;
+        
+        // Inisialisasi previousUnreadCount saat navigasi baru
+        previousUnreadCount = -1;
+        
+        // Check apakah Turbo Stream baru saja update
+        const timeSinceLastUpdate = Date.now() - lastTurboStreamUpdate;
+        
+        // Hanya refresh jika tidak ada Turbo Stream update dalam 2 detik terakhir
+        if (timeSinceLastUpdate >= TURBO_STREAM_UPDATE_WINDOW) {
+            const frame = document.getElementById('notifications_frame');
+            if (frame) {
+                // Refresh frame dengan data fresh saat navigasi baru
+                // Gunakan setTimeout kecil untuk memastikan Turbo sudah selesai
+                setTimeout(() => {
+                    refreshNotificationsFrame();
+                }, 100);
+            }
+        }
+    } else if (!isNotifPage) {
+        // Reset tracking jika bukan di halaman notif
+        lastNotifUrl = null;
+        lastTurboStreamUpdate = 0;
+        previousUnreadCount = -1;
+    }
+    
+    updateUnreadCount();
+});
+
+// Export untuk global scope
+window.showToast = showToast;
+window.updateUnreadCount = updateUnreadCount;
