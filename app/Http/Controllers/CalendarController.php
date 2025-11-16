@@ -94,7 +94,7 @@ class CalendarController extends Controller
             
             $streamContent = '<turbo-stream action="replace" target="calendar_frame">'.PHP_EOL.
                             '<template>'.PHP_EOL.
-                            '<div><h1 style="color: #82272c; margin-top: 20px;">Kalender Mood</h1>' . $calendarContent . '</div>'.PHP_EOL.
+                            '<div><h1 style="color: #82272c; margin-top: 20px;">Calendar Mood</h1>' . $calendarContent . '</div>'.PHP_EOL.
                             '</template>'.PHP_EOL.
                             '</turbo-stream>'.PHP_EOL;
             
