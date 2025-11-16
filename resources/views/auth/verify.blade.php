@@ -71,10 +71,17 @@
                             @error('company_code')
                                 <div class="invalid-feedback d-block">{{ $message }}</div>
                             @enderror
+                            <div id="rate-limit-error" class="invalid-feedback d-block" style="display: none;"></div>
+                            @if(isset($rateLimitBlocked) && $rateLimitBlocked)
+                                <div class="alert alert-danger mt-2" id="rate-limit-alert">
+                                    <strong>Akun Terblokir!</strong><br>
+                                    Terlalu banyak percobaan. Silakan coba lagi dalam <span id="countdown-timer">{{ ceil($rateLimitSeconds / 60) }}</span> menit.
+                                </div>
+                            @endif
                         </div>
 
                         <div class="d-grid">
-                            <button type="submit" class="btn tracking-btn btn-lg">
+                            <button type="submit" class="btn tracking-btn btn-lg" id="submit-btn">
                                 Verifikasi & Masuk
                             </button>
                         </div>
@@ -90,8 +97,74 @@ document.addEventListener('DOMContentLoaded', function () {
     const form = document.querySelector('form[action="{{ route('verification.verify') }}"]');
     const inputs = document.querySelectorAll('.code-input');
     const hiddenInput = document.getElementById('company_code');
+    const submitBtn = document.getElementById('submit-btn');
+    const rateLimitError = document.getElementById('rate-limit-error');
+    const rateLimitAlert = document.getElementById('rate-limit-alert');
+    let countdownTimer = document.getElementById('countdown-timer');
     const jenisKelaminSelect = document.getElementById('jenis_kelamin');
     const emoticonPreview = document.getElementById('emoticon-preview');
+
+    // Rate limit status dari server
+    let rateLimitBlocked = {{ isset($rateLimitBlocked) && $rateLimitBlocked ? 'true' : 'false' }};
+    let rateLimitSeconds = {{ isset($rateLimitSeconds) ? $rateLimitSeconds : 0 }};
+    const rateLimitRemaining = {{ isset($rateLimitRemaining) ? $rateLimitRemaining : 3 }};
+
+    // Fungsi untuk disable form saat rate limit
+    function disableForm() {
+        if (rateLimitBlocked || rateLimitSeconds > 0) {
+            form.querySelectorAll('input, select, button').forEach(el => {
+                el.disabled = true;
+                el.style.opacity = '0.6';
+                el.style.cursor = 'not-allowed';
+            });
+            if (submitBtn) {
+                submitBtn.textContent = 'Form Terblokir - Silakan Tunggu';
+            }
+        }
+    }
+
+    // Fungsi untuk update countdown timer
+    function updateCountdown() {
+        if (rateLimitSeconds > 0 && countdownTimer) {
+            const minutes = Math.ceil(rateLimitSeconds / 60);
+            countdownTimer.textContent = minutes;
+            rateLimitSeconds--;
+            
+            if (rateLimitSeconds <= 0) {
+                // Reload halaman setelah countdown selesai
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            }
+        }
+    }
+
+    // Check error message dari server untuk rate limit
+    const errorMessage = document.querySelector('.invalid-feedback.d-block');
+    if (errorMessage && errorMessage.textContent.includes('Terlalu banyak percobaan')) {
+        rateLimitBlocked = true;
+        // Extract minutes from error message
+        const match = errorMessage.textContent.match(/(\d+)\s*menit/);
+        if (match) {
+            rateLimitSeconds = parseInt(match[1]) * 60;
+        }
+    }
+
+    // Initialize
+    disableForm();
+    if (rateLimitBlocked && rateLimitSeconds > 0) {
+        // Show alert jika belum ada
+        if (!rateLimitAlert && rateLimitSeconds > 0) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-danger mt-2';
+            alertDiv.id = 'rate-limit-alert';
+            alertDiv.innerHTML = '<strong>Akun Terblokir!</strong><br>Terlalu banyak percobaan. Silakan coba lagi dalam <span id="countdown-timer">' + Math.ceil(rateLimitSeconds / 60) + '</span> menit.';
+            const companyCodeDiv = document.querySelector('#company_code').parentElement;
+            companyCodeDiv.appendChild(alertDiv);
+            countdownTimer = document.getElementById('countdown-timer');
+        }
+        setInterval(updateCountdown, 1000);
+    }
 
     // Mapping emoticon untuk laki-laki (tanpa angka) dan perempuan (dengan angka 1)
     const emoticonMap = {
@@ -166,6 +239,17 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         form.addEventListener('submit', (e) => {
+            // Prevent submission jika rate limit blocked
+            if (rateLimitBlocked || rateLimitSeconds > 0) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (rateLimitError) {
+                    rateLimitError.textContent = 'Form terblokir. Silakan tunggu beberapa saat.';
+                    rateLimitError.style.display = 'block';
+                }
+                return false;
+            }
+
             console.log('Verification form submitted');
             let code = '';
             inputs.forEach(input => {

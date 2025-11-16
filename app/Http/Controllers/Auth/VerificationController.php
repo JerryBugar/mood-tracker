@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\RateLimiter;
 
 class VerificationController extends \App\Http\Controllers\Controller
 {
@@ -15,7 +16,19 @@ class VerificationController extends \App\Http\Controllers\Controller
         if (!Session::has('google_user_data')) {
             return redirect('/');
         }
-        return view('auth.verify');
+        
+        // Pass rate limit status ke view
+        $key = 'verification:' . request()->ip();
+        $isBlocked = RateLimiter::tooManyAttempts($key, 3);
+        $secondsRemaining = $isBlocked ? RateLimiter::availableIn($key) : 0;
+        $attempts = RateLimiter::attempts($key);
+        
+        return view('auth.verify', [
+            'rateLimitBlocked' => $isBlocked,
+            'rateLimitSeconds' => $secondsRemaining,
+            'rateLimitAttempts' => $attempts,
+            'rateLimitRemaining' => max(0, 3 - $attempts)
+        ]);
     }
 
     public function verify(Request $request)
@@ -23,6 +36,20 @@ class VerificationController extends \App\Http\Controllers\Controller
         if (!Session::has('google_user_data')) {
             \Log::info('No google_user_data in session, redirecting to home');
             return redirect('/');
+        }
+
+        // Cek rate limit DI AWAL sebelum validasi apapun
+        $key = 'verification:' . $request->ip();
+        if (RateLimiter::tooManyAttempts($key, 3)) {
+            $seconds = RateLimiter::availableIn($key);
+            $minutes = max(1, ceil($seconds / 60));
+            \Log::warning('Verification rate limit exceeded - request blocked', [
+                'ip' => $request->ip(),
+                'seconds_remaining' => $seconds
+            ]);
+            return back()->withErrors([
+                'company_code' => "Terlalu banyak percobaan. Silakan coba lagi dalam {$minutes} menit."
+            ])->withInput();
         }
 
         $request->validate([
@@ -45,14 +72,34 @@ class VerificationController extends \App\Http\Controllers\Controller
         $expectedCode = strtoupper(trim(env('COMPANY_VERIFICATION_CODE', '')));
         
         if ($inputCode !== $expectedCode) {
+            // Hitung attempt (increment counter) - 15 menit = 900 detik
+            RateLimiter::hit($key, 900);
+            $attempts = RateLimiter::attempts($key);
+            $remaining = 3 - $attempts;
+
             \Log::info('Company code mismatch', [
                 'input_raw' => $request->company_code, 
                 'input_processed' => $inputCode, 
                 'expected_raw' => env('COMPANY_VERIFICATION_CODE'), 
-                'expected_processed' => $expectedCode
+                'expected_processed' => $expectedCode,
+                'attempts' => $attempts,
+                'remaining_attempts' => $remaining
             ]);
-            return back()->withErrors(['company_code' => 'Kode perusahaan tidak valid.'])->withInput();
+
+            $errorMessage = 'Kode perusahaan tidak valid.';
+            if ($remaining > 0) {
+                $errorMessage .= " Sisa percobaan: {$remaining}.";
+            } else {
+                $seconds = RateLimiter::availableIn($key);
+                $minutes = max(1, ceil($seconds / 60));
+                $errorMessage = "Terlalu banyak percobaan. Silakan coba lagi dalam {$minutes} menit.";
+            }
+
+            return back()->withErrors(['company_code' => $errorMessage])->withInput();
         }
+
+        // Jika kode benar, reset rate limiter untuk IP ini
+        RateLimiter::clear('verification:' . $request->ip());
 
         $googleUserData = Session::get('google_user_data');
         \Log::info('Processing verification for user', ['email' => $googleUserData['email']]);

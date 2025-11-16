@@ -147,6 +147,18 @@
     background-color: #c8e6c9;
 }
 
+.employee-item.has-unresponded-mood {
+    border-left: 4px solid #ff9800;
+}
+
+.employee-item.has-unresponded-mood:not(.has-mood-today) {
+    background-color: #fff3e0;
+}
+
+.employee-item.has-unresponded-mood:hover {
+    background-color: #ffe0b2;
+}
+
 .employee-info {
     display: flex;
     align-items: center;

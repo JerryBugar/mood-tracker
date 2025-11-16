@@ -101,7 +101,14 @@
                 </div>
             @endif
 
-            <button type="submit" class="btn-login">Login</button>
+            @if(isset($rateLimitBlocked) && $rateLimitBlocked)
+                <div class="alert alert-danger mt-2" id="rate-limit-alert">
+                    <strong>Akun Terblokir!</strong><br>
+                    Terlalu banyak percobaan. Silakan coba lagi dalam <span id="countdown-timer">{{ ceil($rateLimitSeconds / 60) }}</span> menit.
+                </div>
+            @endif
+
+            <button type="submit" class="btn-login" id="submit-btn">Login</button>
         </form>
     </div>
 </div>
@@ -110,17 +117,88 @@
     // Nonaktifkan Turbo untuk form ini secara eksplisit
     document.addEventListener('DOMContentLoaded', function() {
         const loginForm = document.getElementById('adminLoginForm');
+        const submitBtn = document.getElementById('submit-btn');
+        const rateLimitAlert = document.getElementById('rate-limit-alert');
+        let countdownTimer = document.getElementById('countdown-timer');
+        const formInputs = loginForm ? loginForm.querySelectorAll('input, button') : [];
+
+        // Rate limit status dari server
+        let rateLimitBlocked = {{ isset($rateLimitBlocked) && $rateLimitBlocked ? 'true' : 'false' }};
+        let rateLimitSeconds = {{ isset($rateLimitSeconds) ? $rateLimitSeconds : 0 }};
+        const rateLimitRemaining = {{ isset($rateLimitRemaining) ? $rateLimitRemaining : 3 }};
+
+        // Check error message dari server untuk rate limit
+        const errorMessage = document.querySelector('.error-message');
+        if (errorMessage && errorMessage.textContent.includes('Terlalu banyak percobaan')) {
+            rateLimitBlocked = true;
+            // Extract minutes from error message
+            const match = errorMessage.textContent.match(/(\d+)\s*menit/);
+            if (match) {
+                rateLimitSeconds = parseInt(match[1]) * 60;
+            }
+        }
+
+        // Fungsi untuk disable form saat rate limit
+        function disableForm() {
+            if (rateLimitBlocked || rateLimitSeconds > 0) {
+                formInputs.forEach(el => {
+                    el.disabled = true;
+                    el.style.opacity = '0.6';
+                    el.style.cursor = 'not-allowed';
+                });
+                if (submitBtn) {
+                    submitBtn.textContent = 'Form Terblokir - Silakan Tunggu';
+                }
+            }
+        }
+
+        // Fungsi untuk update countdown timer
+        function updateCountdown() {
+            if (rateLimitSeconds > 0 && countdownTimer) {
+                const minutes = Math.ceil(rateLimitSeconds / 60);
+                countdownTimer.textContent = minutes;
+                rateLimitSeconds--;
+                
+                if (rateLimitSeconds <= 0) {
+                    // Reload halaman setelah countdown selesai
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                }
+            }
+        }
+
+        // Initialize
+        disableForm();
+        if (rateLimitBlocked && rateLimitSeconds > 0) {
+            // Show alert jika belum ada
+            if (!rateLimitAlert && rateLimitSeconds > 0) {
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'alert alert-danger mt-2';
+                alertDiv.id = 'rate-limit-alert';
+                alertDiv.innerHTML = '<strong>Akun Terblokir!</strong><br>Terlalu banyak percobaan. Silakan coba lagi dalam <span id="countdown-timer">' + Math.ceil(rateLimitSeconds / 60) + '</span> menit.';
+                const submitBtnParent = submitBtn.parentElement;
+                submitBtnParent.insertBefore(alertDiv, submitBtn);
+                countdownTimer = document.getElementById('countdown-timer');
+            }
+            setInterval(updateCountdown, 1000);
+        }
         
         if (loginForm) {
             // Cegah Turbo dari mengambil alih form ini
             loginForm.setAttribute('data-turbo', 'false');
             
-            // Tambahkan event listener tambahan untuk memastikan form dikirim
+            // Tambahkan event listener untuk prevent submission jika blocked
             loginForm.addEventListener('submit', function(e) {
-                console.log('Form login sedang diproses');
+                // Prevent submission jika rate limit blocked
+                if (rateLimitBlocked || rateLimitSeconds > 0) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    alert('Form terblokir. Silakan tunggu beberapa saat.');
+                    return false;
+                }
                 
-                // Pastikan tidak ada event lain yang menghentikan form
-                e.stopPropagation();
+                console.log('Form login sedang diproses');
             });
         }
     });

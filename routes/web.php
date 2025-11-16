@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\RateLimiter;
 use App\Http\Controllers\Auth\GoogleLoginController;
 use App\Http\Controllers\Auth\VerificationController;
 use App\Http\Controllers\MoodController;
@@ -23,6 +24,19 @@ Route::get('/offline', function () {
 
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
+// Route untuk favicon.ico - Google Search memprioritaskan ini
+Route::get('/favicon.ico', function () {
+    $faviconPath = public_path('favicon.ico');
+    if (file_exists($faviconPath)) {
+        return response()->file($faviconPath, [
+            'Content-Type' => 'image/x-icon',
+            'Cache-Control' => 'public, max-age=31536000, immutable',
+        ]);
+    }
+    // Fallback ke favicons.png jika favicon.ico tidak ada
+    return redirect(route('logo.serve', ['filename' => 'favicons.png']), 301);
+});
+
 // Route untuk serve logo dengan cache headers optimal
 Route::get('/logo/{filename}', [LogoController::class, 'serve'])->where('filename', '[a-zA-Z0-9._-]+\.(png|jpeg|jpg)')->name('logo.serve');
 
@@ -36,7 +50,7 @@ Route::post('/logout', function () {
     auth()->logout();
     request()->session()->invalidate();
     request()->session()->regenerateToken();
-    return redirect('/');
+    return redirect('/dashboard');
 })->middleware(['auth'])->name('logout');
 
 Route::get('/home', [HomeController::class, 'index'])->middleware(['auth', 'verified'])->name('home');
@@ -72,21 +86,64 @@ Route::middleware(['auth', 'verified'])->group(function () {
 // Routes untuk admin panel
 Route::prefix('admin')->middleware(['admin.desktop'])->group(function () {
     Route::get('/login', function () {
-        return view('admin.login');
+        // Pass rate limit status ke view
+        $key = 'admin-login:' . request()->ip();
+        $isBlocked = RateLimiter::tooManyAttempts($key, 3);
+        $secondsRemaining = $isBlocked ? RateLimiter::availableIn($key) : 0;
+        $attempts = RateLimiter::attempts($key);
+        
+        return view('admin.login', [
+            'rateLimitBlocked' => $isBlocked,
+            'rateLimitSeconds' => $secondsRemaining,
+            'rateLimitAttempts' => $attempts,
+            'rateLimitRemaining' => max(0, 3 - $attempts)
+        ]);
     })->name('admin.login');
 
     Route::post('/login', function (\Illuminate\Http\Request $request) {
+        // Cek rate limit DI AWAL sebelum validasi apapun
+        $key = 'admin-login:' . $request->ip();
+        if (RateLimiter::tooManyAttempts($key, 3)) {
+            $seconds = RateLimiter::availableIn($key);
+            $minutes = max(1, ceil($seconds / 60));
+            \Log::warning('Admin login rate limit exceeded - request blocked', [
+                'ip' => $request->ip(),
+                'username' => $request->username,
+                'seconds_remaining' => $seconds
+            ]);
+            return redirect()->back()->withErrors([
+                'credentials' => "Terlalu banyak percobaan login. Silakan coba lagi dalam {$minutes} menit."
+            ]);
+        }
+
         $adminUsername = env('ADMIN_USERNAME');
         $adminPassword = env('ADMIN_PASSWORD');
 
         if ($request->username === $adminUsername && $request->password === $adminPassword) {
+            // Jika login berhasil, reset rate limiter untuk IP ini
+            RateLimiter::clear('admin-login:' . $request->ip());
+            
             // Clear intended URL untuk menghindari redirect ke URL yang tidak diinginkan
             $request->session()->forget('url.intended');
             $request->session()->put('is_admin_authenticated', true);
             return redirect('/admin/dashboard');
         }
 
-        return redirect()->back()->withErrors(['credentials' => 'Username atau password salah']);
+        // Jika login gagal, hitung attempt (increment counter) - 15 menit = 900 detik
+        RateLimiter::hit($key, 900);
+        $attempts = RateLimiter::attempts($key);
+        $remaining = 3 - $attempts;
+
+        $errorMessage = 'Username atau password salah.';
+        if ($remaining > 0) {
+            $errorMessage .= " Sisa percobaan: {$remaining}.";
+        } else {
+            $seconds = RateLimiter::availableIn($key);
+            $minutes = max(1, ceil($seconds / 60));
+            $errorMessage = "Terlalu banyak percobaan login. Silakan coba lagi dalam {$minutes} menit.";
+        }
+
+        return redirect()->back()->withErrors(['credentials' => $errorMessage]);
     })->name('admin.authenticate');
 
     Route::middleware(['admin.auth'])->group(function () {

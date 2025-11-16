@@ -3,6 +3,9 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -19,6 +22,16 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Rate limiter untuk verifikasi kode perusahaan
+        // 3 attempts per 15 menit berdasarkan IP address
+        RateLimiter::for('verification', function (Request $request) {
+            return Limit::perMinutes(15, 3)->by($request->ip());
+        });
+
+        // Rate limiter untuk admin login
+        // 3 attempts per 15 menit berdasarkan IP address
+        RateLimiter::for('admin-login', function (Request $request) {
+            return Limit::perMinutes(15, 3)->by($request->ip());
+        });
     }
 }
