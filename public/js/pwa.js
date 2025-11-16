@@ -76,12 +76,18 @@
             return;
         }
         
-        // Prevent the mini-infobar from appearing on mobile
-        e.preventDefault();
-        // Stash the event so it can be triggered later
-        deferredPrompt = e;
-        // Show install button (hanya di dashboard)
-        showInstallButton();
+        // Hanya prevent default dan stash event jika di halaman dashboard
+        // Karena button hanya muncul di dashboard, dan kita harus memanggil prompt() nanti
+        // Jika bukan dashboard, biarkan browser menampilkan banner default
+        if (window.location.pathname === '/dashboard') {
+            // Prevent the mini-infobar from appearing on mobile
+            e.preventDefault();
+            // Stash the event so it can be triggered later
+            deferredPrompt = e;
+            // Show install button (hanya di dashboard)
+            showInstallButton();
+        }
+        // Jika bukan dashboard, jangan prevent default - biarkan browser handle banner default
     });
     
     // Fallback: Cek apakah sudah ada deferredPrompt yang tersimpan (untuk testing)
