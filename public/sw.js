@@ -236,28 +236,90 @@ async function syncMoodData() {
     // Implementasi sync data mood jika diperlukan
 }
 
-// Push notification (optional - untuk notifikasi)
+// Push notification handler untuk Laravel WebPush
 self.addEventListener('push', (event) => {
-    const data = event.data ? event.data.json() : {};
-    const title = data.title || 'Ceremood';
-    const options = {
-        body: data.body || 'Anda memiliki notifikasi baru',
+    let notificationData = {
+        title: 'Ceremood',
+        body: 'Anda memiliki notifikasi baru',
         icon: '/logo/favicons.png',
         badge: '/logo/favicons.png',
+        data: {
+            url: '/notif'
+        }
+    };
+
+    // Handle payload dari Laravel WebPush
+    if (event.data) {
+        try {
+            const payload = event.data.json();
+            
+            // Laravel WebPush mengirim data dalam format:
+            // { title, body, icon, badge, data: { url, notification_id } }
+            if (payload.title) {
+                notificationData.title = payload.title;
+            }
+            if (payload.body) {
+                notificationData.body = payload.body;
+            }
+            if (payload.icon) {
+                notificationData.icon = payload.icon;
+            }
+            if (payload.badge) {
+                notificationData.badge = payload.badge;
+            }
+            if (payload.data) {
+                notificationData.data = payload.data;
+                // Pastikan URL ada
+                if (!notificationData.data.url) {
+                    notificationData.data.url = '/notif';
+                }
+            }
+        } catch (e) {
+            // Jika payload bukan JSON, gunakan default
+            console.error('Error parsing push payload:', e);
+        }
+    }
+
+    const options = {
+        body: notificationData.body,
+        icon: notificationData.icon,
+        badge: notificationData.badge,
         vibrate: [200, 100, 200],
-        data: data.url || '/'
+        data: notificationData.data,
+        tag: 'ceremood-notification',
+        requireInteraction: false,
+        silent: false
     };
 
     event.waitUntil(
-        self.registration.showNotification(title, options)
+        self.registration.showNotification(notificationData.title, options)
     );
 });
 
 // Notification click handler
 self.addEventListener('notificationclick', (event) => {
     event.notification.close();
+
+    const urlToOpen = event.notification.data?.url || '/notif';
+    
     event.waitUntil(
-        clients.openWindow(event.notification.data || '/')
+        clients.matchAll({
+            type: 'window',
+            includeUncontrolled: true
+        }).then(function(clientList) {
+            // Cek apakah ada window yang sudah terbuka
+            for (let i = 0; i < clientList.length; i++) {
+                const client = clientList[i];
+                if (client.url === urlToOpen && 'focus' in client) {
+                    return client.focus();
+                }
+            }
+            
+            // Jika tidak ada window yang terbuka, buka window baru
+            if (clients.openWindow) {
+                return clients.openWindow(urlToOpen);
+            }
+        })
     );
 });
 

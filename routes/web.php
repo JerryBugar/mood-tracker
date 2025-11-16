@@ -65,6 +65,9 @@ Route::get('/notif', [App\Http\Controllers\NotificationController::class, 'index
 Route::post('/notif/{id}/read', [App\Http\Controllers\NotificationController::class, 'markAsRead'])->middleware(['auth', 'verified'])->name('notif.read');
 Route::post('/notif/read-all', [App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->middleware(['auth', 'verified'])->name('notif.read-all');
 Route::delete('/notif/delete-all', [App\Http\Controllers\NotificationController::class, 'deleteAll'])->middleware(['auth', 'verified'])->name('notif.delete-all');
+Route::post('/notif/push/subscribe', [App\Http\Controllers\NotificationController::class, 'subscribePush'])->middleware(['auth', 'verified'])->name('notif.push.subscribe');
+Route::post('/notif/push/unsubscribe', [App\Http\Controllers\NotificationController::class, 'unsubscribePush'])->middleware(['auth', 'verified'])->name('notif.push.unsubscribe');
+Route::get('/notif/push/status', [App\Http\Controllers\NotificationController::class, 'checkPushStatus'])->middleware(['auth', 'verified'])->name('notif.push.status');
 
 Route::get('/profile', [ProfileController::class, 'index'])->middleware(['auth', 'verified'])->name('profile.index');
 Route::put('/profile', [ProfileController::class, 'update'])->middleware(['auth', 'verified'])->name('profile.update');

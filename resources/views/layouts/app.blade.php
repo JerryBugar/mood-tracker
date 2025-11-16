@@ -57,6 +57,12 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- VAPID Public Key untuk Push Notification -->
+    @if(config('webpush.vapid.public_key'))
+    <meta name="vapid-public-key" content="{{ config('webpush.vapid.public_key') }}">
+    @endif
+    
     @stack('styles')
     @stack('head')
 </head>
@@ -93,6 +99,13 @@
     
     <!-- PWA Service Worker Registration -->
     <script src="{{ asset('js/pwa.js') }}"></script>
+    
+    <!-- Push Notification Handler - Hanya untuk user yang sudah login dan verified -->
+    @auth
+    @if(auth()->user()->is_verified)
+    <script src="{{ asset('js/push-notification.js') }}"></script>
+    @endif
+    @endauth
     
     @stack('scripts')
 </body>
