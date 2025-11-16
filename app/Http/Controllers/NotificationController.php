@@ -22,10 +22,13 @@ class NotificationController extends Controller
         // Ini memastikan notifikasi tetap muncul meski queue worker tidak berjalan
         $service->processScheduledNotifications();
         
-        // Ambil notifikasi user yang sudah di-attach
+        // Ambil notifikasi user yang sudah di-attach (tanpa pagination)
+        // Gunakan fresh() untuk memastikan data selalu terbaru dari database
+        // Reload user untuk memastikan relasi fresh
+        $user->load('notifications');
         $notifications = $user->notifications()
             ->orderBy('created_at', 'desc')
-            ->paginate(10);
+            ->get();
 
         return view('notif.index', compact('notifications'));
     }
@@ -59,10 +62,12 @@ class NotificationController extends Controller
         // Jika request Turbo Stream, return Turbo Stream response
         $acceptHeader = $request->header('Accept', '');
         if (strpos($acceptHeader, 'text/vnd.turbo-stream.html') !== false) {
-            // Reload notifications frame
+            // Reload notifications frame dengan data fresh (tanpa pagination)
+            // Reload user untuk memastikan relasi fresh
+            $user->load('notifications');
             $notifications = $user->notifications()
                 ->orderBy('created_at', 'desc')
-                ->paginate(10);
+                ->get();
             
             $notificationsContent = view('notif._partials.notifications_list', compact('notifications'))->render();
             
@@ -101,10 +106,12 @@ class NotificationController extends Controller
         // Jika request Turbo Stream, return Turbo Stream response
         $acceptHeader = $request->header('Accept', '');
         if (strpos($acceptHeader, 'text/vnd.turbo-stream.html') !== false) {
-            // Reload notifications frame
+            // Reload notifications frame dengan data fresh (tanpa pagination)
+            // Reload user untuk memastikan relasi fresh
+            $user->load('notifications');
             $notifications = $user->notifications()
                 ->orderBy('created_at', 'desc')
-                ->paginate(10);
+                ->get();
             
             $notificationsContent = view('notif._partials.notifications_list', compact('notifications'))->render();
             
@@ -181,10 +188,12 @@ class NotificationController extends Controller
             // Jika request Turbo Stream, return Turbo Stream response
             $acceptHeader = $request->header('Accept', '');
             if (strpos($acceptHeader, 'text/vnd.turbo-stream.html') !== false) {
-                // Reload notifications frame
+                // Reload notifications frame dengan data fresh (tanpa pagination)
+                // Reload user untuk memastikan relasi fresh
+                $user->load('notifications');
                 $notifications = $user->notifications()
                     ->orderBy('created_at', 'desc')
-                    ->paginate(10);
+                    ->get();
                 
                 $notificationsContent = view('notif._partials.notifications_list', compact('notifications'))->render();
                 

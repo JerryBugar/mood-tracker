@@ -10,7 +10,6 @@ function getCsrfToken() {
 function showToast(message, type = 'success') {
     // Pastikan Bootstrap tersedia
     if (typeof bootstrap === 'undefined') {
-        console.error('Bootstrap tidak tersedia');
         alert(message); // Fallback ke alert jika Bootstrap tidak tersedia
         return;
     }
@@ -20,11 +19,6 @@ function showToast(message, type = 'success') {
     const toastTitle = document.getElementById('toast-title');
     
     if (!toastElement || !toastMessage || !toastTitle) {
-        console.error('Toast element tidak ditemukan', {
-            toastElement: !!toastElement,
-            toastMessage: !!toastMessage,
-            toastTitle: !!toastTitle
-        });
         alert(message); // Fallback ke alert
         return;
     }
@@ -146,7 +140,6 @@ function markAsRead(notificationId) {
         }
     })
     .catch(error => {
-        console.error('Error:', error);
         showToast('Terjadi kesalahan', 'error');
     });
 }
@@ -198,7 +191,6 @@ function markAllAsRead() {
         }
     })
     .catch(error => {
-        console.error('Error:', error);
         showToast('Terjadi kesalahan', 'error');
         if (button) {
             button.disabled = false;
@@ -235,42 +227,92 @@ function checkUnreadCount() {
     }
 }
 
+// Setup aria-hidden handlers untuk modal delete confirmation (setup sekali)
+if (typeof window.deleteModalAriaHandlersSetup === 'undefined') {
+    window.deleteModalAriaHandlersSetup = false;
+}
+
+function setupDeleteModalAriaHandlers() {
+    // Hanya setup sekali untuk menghindari duplikasi
+    if (window.deleteModalAriaHandlersSetup) {
+        return;
+    }
+
+    const modalElement = document.getElementById('deleteConfirmModal');
+    if (!modalElement) {
+        return;
+    }
+
+    // Hapus focus dari elemen aktif sebelum modal ditutup
+    modalElement.addEventListener('hide.bs.modal', function() {
+        const activeElement = document.activeElement;
+        if (modalElement.contains(activeElement) && 
+            activeElement !== document.body && 
+            activeElement !== document.documentElement &&
+            typeof activeElement.blur === 'function') {
+            activeElement.blur();
+        }
+    });
+
+    // Pastikan aria-hidden dihapus saat modal terbuka
+    modalElement.addEventListener('show.bs.modal', function() {
+        modalElement.removeAttribute('aria-hidden');
+    });
+
+    modalElement.addEventListener('shown.bs.modal', function() {
+        modalElement.removeAttribute('aria-hidden');
+    });
+
+    // Pastikan tidak ada elemen focused setelah modal tersembunyi
+    modalElement.addEventListener('hidden.bs.modal', function() {
+        modalElement.setAttribute('aria-hidden', 'true');
+        const activeElement = document.activeElement;
+        if (activeElement && 
+            modalElement.contains(activeElement) && 
+            activeElement !== document.body && 
+            activeElement !== document.documentElement &&
+            typeof activeElement.blur === 'function') {
+            activeElement.blur();
+        }
+    });
+
+    window.deleteModalAriaHandlersSetup = true;
+}
+
 function deleteAllNotifications() {
+    // Pastikan aria handlers sudah di-setup
+    setupDeleteModalAriaHandlers();
+    
     // Tampilkan modal konfirmasi
     const modalElement = document.getElementById('deleteConfirmModal');
-    const modal = new bootstrap.Modal(modalElement);
+    if (!modalElement) {
+        showToast('Modal tidak ditemukan', 'error');
+        return;
+    }
     
     // Setup event listener untuk tombol konfirmasi
     const confirmBtn = document.getElementById('confirmDeleteBtn');
+    if (!confirmBtn) {
+        showToast('Tombol konfirmasi tidak ditemukan', 'error');
+        return;
+    }
     
-    // Hapus event listener lama jika ada
+    // Hapus event listener lama jika ada dengan clone node
     const newConfirmBtn = confirmBtn.cloneNode(true);
     confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
     
     // Setup event listener baru untuk tombol konfirmasi
     newConfirmBtn.addEventListener('click', function() {
+        // Hapus focus sebelum modal ditutup untuk mencegah aria-hidden error
+        if (document.activeElement === newConfirmBtn) {
+            newConfirmBtn.blur();
+        }
         // Modal akan ditutup otomatis karena data-bs-dismiss="modal"
         performDeleteAll();
     });
     
-    // Pastikan modal tidak menggunakan aria-hidden saat focus
-    modalElement.addEventListener('shown.bs.modal', function() {
-        modalElement.removeAttribute('aria-hidden');
-        // Hapus inert saat modal terbuka
-        const modalContent = modalElement.querySelector('.modal-content');
-        if (modalContent) {
-            modalContent.removeAttribute('inert');
-        }
-    });
-    
-    modalElement.addEventListener('hidden.bs.modal', function() {
-        // Set inert saat modal tertutup untuk mencegah focus
-        const modalContent = modalElement.querySelector('.modal-content');
-        if (modalContent) {
-            modalContent.setAttribute('inert', 'true');
-        }
-    });
-    
+    // Buat instance modal dan tampilkan
+    const modal = new bootstrap.Modal(modalElement);
     modal.show();
 }
 
@@ -321,7 +363,6 @@ function performDeleteAll() {
         }
     })
     .catch(error => {
-        console.error('Error:', error);
         showToast('Terjadi kesalahan saat menghapus notifikasi', 'error');
         if (button) {
             button.disabled = false;
@@ -349,5 +390,29 @@ if (document.readyState === 'loading') {
 // Setup ulang saat Turbo load
 document.addEventListener('turbo:load', function() {
     checkUnreadCount();
+    
+    // Setup aria handlers untuk modal
+    setupDeleteModalAriaHandlers();
+    
+    // Pastikan turbo frame selalu memuat data fresh saat halaman dimuat
+    const notificationsFrame = document.getElementById('notifications_frame');
+    if (notificationsFrame && window.location.pathname === '/notif') {
+        // Refresh frame untuk memastikan data selalu terbaru
+        notificationsFrame.src = notificationsFrame.src || window.location.href;
+    }
+});
+
+// Setup aria handlers saat DOM ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupDeleteModalAriaHandlers);
+} else {
+    setupDeleteModalAriaHandlers();
+}
+
+// Pastikan frame refresh saat frame dimuat (untuk menghindari cache)
+document.addEventListener('turbo:frame-load', function(event) {
+    if (event.target && event.target.id === 'notifications_frame') {
+        checkUnreadCount();
+    }
 });
 

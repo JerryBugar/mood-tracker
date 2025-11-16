@@ -27,15 +27,12 @@ const PAGES_TO_CACHE = [
 
 // Install event - cache static assets
 self.addEventListener('install', (event) => {
-    console.log('[Service Worker] Installing...');
     event.waitUntil(
         caches.open(CACHE_NAME)
             .then((cache) => {
-                console.log('[Service Worker] Caching static assets');
                 return cache.addAll(STATIC_ASSETS);
             })
             .catch((error) => {
-                console.error('[Service Worker] Error caching static assets:', error);
             })
     );
     self.skipWaiting();
@@ -43,13 +40,11 @@ self.addEventListener('install', (event) => {
 
 // Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
-    console.log('[Service Worker] Activating...');
     event.waitUntil(
         caches.keys().then((cacheNames) => {
             return Promise.all(
                 cacheNames.map((cacheName) => {
                     if (cacheName !== CACHE_NAME && cacheName !== RUNTIME_CACHE) {
-                        console.log('[Service Worker] Deleting old cache:', cacheName);
                         return caches.delete(cacheName);
                     }
                 })
@@ -239,7 +234,6 @@ self.addEventListener('sync', (event) => {
 
 async function syncMoodData() {
     // Implementasi sync data mood jika diperlukan
-    console.log('[Service Worker] Syncing mood data...');
 }
 
 // Push notification (optional - untuk notifikasi)

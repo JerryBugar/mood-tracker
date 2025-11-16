@@ -60,11 +60,6 @@
                 </div>
             @endforeach
         </div>
-
-        <!-- Pagination -->
-        <div class="pagination-container" style="margin-top: 30px; display: flex; justify-content: center;">
-            {{ $notifications->links() }}
-        </div>
     @else
         <div class="no-notifications">
             <div class="no-notifications-icon">

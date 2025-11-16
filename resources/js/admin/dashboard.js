@@ -144,7 +144,6 @@ function loadChart() {
         try {
             window.moodChartInstance.destroy();
         } catch (e) {
-            console.warn('Error destroying mood chart instance:', e);
         }
         window.moodChartInstance = null;
     }
@@ -155,7 +154,6 @@ function loadChart() {
         try {
             existingChart.destroy();
         } catch (e) {
-            console.warn('Error destroying existing mood chart:', e);
         }
     }
 
@@ -198,7 +196,6 @@ function loadChart() {
         });
     })
     .catch(error => {
-        console.error('Error loading chart data:', error);
     });
 }
 

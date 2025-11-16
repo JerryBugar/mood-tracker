@@ -31,15 +31,13 @@
     <title>{{ config('app.name', 'Ceremood') }}</title>
     @endif
     
-    <!-- Favicon untuk Google Search - harus di urutan pertama dan menggunakan URL sederhana -->
-    <link rel="icon" type="image/x-icon" href="{{ url('/favicon.ico') }}">
-    <link rel="icon" type="image/png" href="{{ url(route('logo.serve', ['filename' => 'favicons.png'])) }}">
-    <!-- Favicon dengan multiple sizes untuk browser modern -->
-    <link rel="icon" type="image/png" sizes="32x32" href="{{ url(route('logo.serve', ['filename' => 'favicons.png'])) }}">
-    <link rel="icon" type="image/png" sizes="16x16" href="{{ url(route('logo.serve', ['filename' => 'favicons.png'])) }}">
-    <link rel="icon" type="image/png" sizes="512x512" href="{{ url(route('logo.serve', ['filename' => 'favicons.png'])) }}">
-    <link rel="shortcut icon" type="image/png" href="{{ url(route('logo.serve', ['filename' => 'favicons.png'])) }}">
-    <link rel="apple-touch-icon" sizes="180x180" href="{{ url(route('logo.serve', ['filename' => 'favicons.png'])) }}">
+    <!-- Favicon PNG untuk semua browser dan Google Search -->
+    <!-- Route /favicon.ico akan serve PNG untuk kompatibilitas dengan Google Search -->
+    <link rel="icon" type="image/png" href="{{ asset('logo/favicons.png') }}">
+    <link rel="icon" type="image/png" sizes="512x512" href="{{ asset('logo/favicons.png') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('logo/favicons.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('logo/favicons.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('logo/favicons.png') }}">
 
     <!-- PWA Meta Tags - Disabled untuk welcome page -->
     @if(request()->path() !== '/' && request()->path() !== 'welcome')
@@ -89,7 +87,6 @@
         document.addEventListener('turbo:submit-end', function(event) {
             if (event.detail.success) {
                 // Jika submit form berhasil, kita bisa mencegah reload pada kondisi tertentu
-                console.log('Form submission successful');
             }
         });
     </script>

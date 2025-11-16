@@ -197,8 +197,6 @@
                     alert('Form terblokir. Silakan tunggu beberapa saat.');
                     return false;
                 }
-                
-                console.log('Form login sedang diproses');
             });
         }
     });

@@ -61,9 +61,9 @@
             ]
         },
         {
-            "name": "Notifikasi",
+            "name": "Notification",
             "short_name": "Notif",
-            "description": "Lihat notifikasi",
+            "description": "View notifications",
             "url": "/notif",
             "icons": [
                 {

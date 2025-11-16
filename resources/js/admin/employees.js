@@ -10,7 +10,6 @@ if (typeof window.currentUserData === 'undefined') {
 // Fungsi untuk menampilkan toast notification
 function showEmployeeToast(message, type = 'success') {
     if (typeof bootstrap === 'undefined') {
-        console.error('Bootstrap tidak tersedia');
         return;
     }
 
@@ -21,7 +20,6 @@ function showEmployeeToast(message, type = 'success') {
     const toastIcon = toastElement?.querySelector('.toast-icon');
 
     if (!toastElement || !toastMessage || !toastTitle) {
-        console.error('Toast element tidak ditemukan');
         return;
     }
 
@@ -214,12 +212,9 @@ function loadMoodRecordsWithFilter(userId, filterType, filterValue) {
         if(data.success) {
             window.currentUserData = data;
             renderMoodRecords(data);
-        } else {
-            console.error('Error loading mood records:', data.message);
         }
     })
     .catch(error => {
-        console.error('Error:', error);
     });
 }
 
@@ -274,7 +269,6 @@ function viewEmployeeDetail(userId) {
         }
     })
     .catch(error => {
-        console.error('Error:', error);
         showEmployeeToast('Terjadi kesalahan saat mengambil data karyawan', 'error');
     });
 }
@@ -454,7 +448,6 @@ function saveAdminResponse(recordId) {
         }
     })
     .catch(error => {
-        console.error('Error:', error);
         // Tampilkan error dengan toast
         setTimeout(() => {
             showEmployeeToast('Terjadi kesalahan saat menyimpan respons', 'error');

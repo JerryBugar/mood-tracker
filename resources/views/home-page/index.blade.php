@@ -96,15 +96,12 @@
                     }
                 })
                 .then(response => {
-                    console.log('Response status:', response.status);
                     if (!response.ok) {
                         throw new Error(`HTTP error! status: ${response.status}`);
                     }
                     return response.json();
                 })
                 .then(data => {
-                    console.log('Received quote data:', data);
-                    
                     // Simpan data ke localStorage dengan timestamp
                     localStorage.setItem('moodQuote', data.quote);
                     localStorage.setItem('moodAuthor', '- ' + data.author);
@@ -120,7 +117,6 @@
                     }
                 })
                 .catch(error => {
-                    console.error('Error fetching quote:', error);
                     // Jika gagal ambil dari server, tetap gunakan data dari localStorage
                     // atau gunakan fallback jika tidak ada di localStorage
                     if (!(cachedQuote && cachedAuthor)) {
