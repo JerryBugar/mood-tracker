@@ -20,7 +20,7 @@
         <h1 class="hero-title mt-5 text-center">
             Selamat datang, <br> Tim Hebat Cerebrum!
         </h1>
-        <a href="{{ url('/auth/google/redirect') }}" class="btn btn-lg tracking-btn mt-5 d-inline-flex align-items-center justify-content-center" role="button">
+        <a href="{{ url('/auth/google/redirect') }}" class="btn btn-lg tracking-btn mt-5 d-inline-flex align-items-center justify-content-center" role="button" data-turbo="false">
             <img src="{{ asset('logo/google.png') }}" alt="Google logo" class="me-2" style="height: 1.5em; width: auto;">
             <span>Login With Google</span>
         </a>

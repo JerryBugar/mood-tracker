@@ -116,12 +116,23 @@ body.dashboard-page {
     z-index: 10000;
     opacity: 0; /* Start invisible - akan diatur oleh animasi */
     /* Transisi opacity diatur secara dinamis di JavaScript */
+    will-change: transform, opacity; /* Optimasi performa animasi */
+    pointer-events: none; /* Mencegah interaksi dengan splash logo */
 }
 
 .splash-logo-animated {
     width: clamp(180px, 45vw, 260px);
     height: auto;
     /* Transisi opacity diatur secara dinamis di JavaScript untuk timing yang lebih akurat */
+}
+
+/* Mencegah scroll saat splash aktif untuk semua ukuran layar */
+body.dashboard-page:has(#splash-logo-container),
+html:has(body.dashboard-page #splash-logo-container) {
+    overflow: hidden !important;
+    height: 100vh !important;
+    position: relative !important;
+    touch-action: none !important; /* Mencegah touch gestures yang bisa trigger scroll */
 }
 
 #main-content-wrapper.hidden {
@@ -358,17 +369,24 @@ body.dashboard-page {
     }
 }
 
-/* Mobile dashboard splash screen - disable scrolling */
+/* Mobile dashboard splash screen - disable scrolling saat splash aktif */
 @media (max-width: 576px) {
-    body.dashboard-page {
-        position: fixed;
-        overflow: hidden;
-        height: 100vh;
-        width: 100vw;
+    /* Mencegah scroll saat splash aktif */
+    body.dashboard-page:has(#splash-logo-container) {
+        position: fixed !important;
+        overflow: hidden !important;
+        height: 100vh !important;
+        width: 100vw !important;
+        touch-action: none !important;
     }
     
-    /* Ensure main content wrapper can scroll internally if needed */
-    body.dashboard-page #main-content-wrapper {
+    html:has(body.dashboard-page #splash-logo-container) {
+        overflow: hidden !important;
+        height: 100vh !important;
+    }
+    
+    /* Ensure main content wrapper can scroll internally if needed setelah splash selesai */
+    body.dashboard-page:not(:has(#splash-logo-container)) #main-content-wrapper {
         position: absolute;
         top: 0;
         left: 0;
