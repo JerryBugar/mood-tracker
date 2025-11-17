@@ -367,15 +367,9 @@
 
     // Show success message menggunakan toast container yang sama seperti profile
     function showSuccessMessage(message) {
-        // Cek apakah window.showToast tersedia (dari notif.js)
-        if (typeof window.showToast === 'function') {
-            window.showToast(message, 'success');
-            return;
-        }
-        
-        // Fallback: gunakan toast container notificationToast jika tersedia
+        // Pastikan Bootstrap tersedia
         if (typeof bootstrap === 'undefined') {
-            alert(message);
+            console.log('Bootstrap tidak tersedia:', message);
             return;
         }
         
@@ -384,10 +378,12 @@
         const toastTitle = document.getElementById('toast-title');
         
         if (!toastElement || !toastMessage || !toastTitle) {
-            alert(message);
+            console.log('Toast element tidak ditemukan:', message);
             return;
         }
         
+        // Langsung gunakan toast container tanpa bergantung pada window.showToast
+        // Ini memastikan tidak ada alert yang muncul
         const toastIconWrapper = toastElement.querySelector('.toast-icon-wrapper');
         const toastIcon = toastElement.querySelector('.toast-icon');
         
@@ -446,15 +442,9 @@
 
     // Show error message menggunakan toast container yang sama
     function showErrorMessage(message) {
-        // Cek apakah window.showToast tersedia (dari notif.js)
-        if (typeof window.showToast === 'function') {
-            window.showToast(message, 'error');
-            return;
-        }
-        
-        // Fallback: gunakan toast container notificationToast jika tersedia
+        // Pastikan Bootstrap tersedia
         if (typeof bootstrap === 'undefined') {
-            alert(message);
+            console.error('Bootstrap tidak tersedia:', message);
             return;
         }
         
@@ -463,9 +453,12 @@
         const toastTitle = document.getElementById('toast-title');
         
         if (!toastElement || !toastMessage || !toastTitle) {
-            alert(message);
+            console.error('Toast element tidak ditemukan:', message);
             return;
         }
+        
+        // Langsung gunakan toast container tanpa bergantung pada window.showToast
+        // Ini memastikan tidak ada alert yang muncul
         
         const toastIconWrapper = toastElement.querySelector('.toast-icon-wrapper');
         const toastIcon = toastElement.querySelector('.toast-icon');

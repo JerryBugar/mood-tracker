@@ -9,7 +9,7 @@ function getCsrfToken() {
 // Fungsi untuk menampilkan toast notification
 function showToast(message, type = 'success') {
     if (typeof bootstrap === 'undefined') {
-        alert(message);
+        console.log('Toast tidak tersedia:', message);
         return;
     }
 
@@ -18,7 +18,7 @@ function showToast(message, type = 'success') {
     const toastTitle = document.getElementById('toast-title');
     
     if (!toastElement || !toastMessage || !toastTitle) {
-        alert(message);
+        console.log('Toast element tidak ditemukan:', message);
         return;
     }
 
