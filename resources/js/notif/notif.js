@@ -123,6 +123,10 @@ document.addEventListener('turbo:before-stream-render', function(event) {
 // Track previous unread count untuk detect perubahan
 let previousUnreadCount = -1;
 
+// Track waktu terakhir frame dimuat untuk mencegah reload berulang
+let lastFrameLoadTime = 0;
+const FRAME_RELOAD_INTERVAL = 60000; // 60 detik - hanya reload frame setiap 60 detik
+
 // Handle Turbo Stream render untuk update langsung
 document.addEventListener('turbo:frame-render', function(event) {
     // Cek apakah ini render dari notifications_frame
@@ -360,6 +364,9 @@ async function refreshNotificationsFrame() {
 // Turbo events
 document.addEventListener('turbo:frame-load', function(event) {
     if (event.target && event.target.id === 'notifications_frame') {
+        // Update waktu terakhir frame dimuat
+        lastFrameLoadTime = Date.now();
+        
         // Inisialisasi previousUnreadCount saat frame load
         previousUnreadCount = document.querySelectorAll('.notification-item.unread').length;
         updateUnreadCount();
@@ -386,21 +393,22 @@ document.addEventListener('turbo:load', function() {
         // Inisialisasi previousUnreadCount saat navigasi baru
         previousUnreadCount = -1;
         
-        // Selalu refresh saat navigasi baru ke halaman notif untuk mendapatkan data terbaru dari database
-        // Ini memastikan status "sudah dibaca" tetap persisten
+        // Hanya reload frame jika sudah lebih dari 60 detik sejak load terakhir
+        // Ini mencegah request berulang setiap kali navigasi
         if (frame) {
-            // Check apakah Turbo Stream baru saja update untuk mencegah double refresh
-            const timeSinceLastUpdate = Date.now() - lastTurboStreamUpdate;
+            const timeSinceLastLoad = Date.now() - lastFrameLoadTime;
+            const hasContent = frame.querySelector('.notifications-container:not(.empty-state)');
             
-            // Hanya refresh jika tidak ada Turbo Stream update dalam 2 detik terakhir
-            if (timeSinceLastUpdate >= TURBO_STREAM_UPDATE_WINDOW) {
-                // Refresh frame dengan data fresh saat navigasi baru
-                // Gunakan setTimeout kecil untuk memastikan Turbo sudah selesai
-                // refreshNotificationsFrame() melakukan partial update (fetch + innerHTML), bukan full reload
-                setTimeout(() => {
-                    refreshNotificationsFrame();
-                }, 100);
+            // Jika frame sudah punya konten dan belum 60 detik, jangan reload
+            if (hasContent && timeSinceLastLoad < FRAME_RELOAD_INTERVAL) {
+                // Frame masih fresh, hanya update UI
+                updateUnreadCount();
+                return;
             }
+            
+            // Reload frame hanya jika diperlukan (belum ada konten atau sudah lebih dari 60 detik)
+            // Turbo Frame dengan src akan otomatis memuat konten fresh
+            lastFrameLoadTime = Date.now();
         }
     } else if (!isNotifPage) {
         // Reset tracking jika bukan di halaman notif

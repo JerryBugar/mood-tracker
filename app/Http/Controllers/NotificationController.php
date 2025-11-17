@@ -13,33 +13,42 @@ use NotificationChannels\WebPush\PushSubscription;
 class NotificationController extends Controller
 {
     /**
-     * Menampilkan halaman notifikasi
+     * Menampilkan HALAMAN KERANGKA notifikasi
      */
-    public function index(NotificationService $service, Request $request)
+    public function index()
     {
-        $user = Auth::user();
+        // JANGAN ambil data notifikasi di sini
+        // Cukup tampilkan view kerangka (skeleton)
+        $response = response()->view('notif.index');
         
-        // Polling fallback: Proses notifikasi yang sudah waktunya (jika queue worker tidak jalan)
-        // Ini memastikan notifikasi tetap muncul meski queue worker tidak berjalan
-        $service->processScheduledNotifications();
-        
-        // Ambil notifikasi user yang sudah di-attach (tanpa pagination)
-        // Gunakan fresh() untuk memastikan data selalu terbaru dari database
-        // Reload user untuk memastikan relasi fresh
-        $user->load('notifications');
-        $notifications = $user->notifications()
-            ->orderBy('created_at', 'desc')
-            ->get();
-
-        // Gunakan response() helper untuk wrap view menjadi Response object
-        $response = response()->view('notif.index', compact('notifications'));
-        
-        // Tambahkan cache control headers untuk memastikan data selalu fresh
+        // Cache control tetap penting agar browser tahu
+        // untuk tidak men-cache halaman kerangka ini
         $response->headers->set('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
         $response->headers->set('Pragma', 'no-cache');
         $response->headers->set('Expires', '0');
         
         return $response;
+    }
+
+    /**
+     * Method BARU: Mengambil dan menampilkan DAFTAR notifikasi
+     * Ini akan dipanggil oleh Turbo Frame
+     */
+    public function list(NotificationService $service, Request $request)
+    {
+        $user = Auth::user();
+        
+        // Logika yang sebelumnya ada di index() dipindah ke sini
+        $service->processScheduledNotifications();
+        
+        $user->load('notifications');
+        $notifications = $user->notifications()
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Kembalikan view yang dibungkus dalam turbo-frame
+        // Turbo Frame membutuhkan response yang mengandung <turbo-frame id="notifications_frame">
+        return view('notif._partials.notifications_frame', compact('notifications'));
     }
 
     /**

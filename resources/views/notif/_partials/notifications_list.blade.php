@@ -11,7 +11,7 @@
         @endphp
         @if($unreadCount > 1)
             <div class="mark-all-container">
-                <form action="{{ route('notif.read-all') }}" method="POST" data-turbo-frame="notifications_frame" data-turbo-stream>
+                <form action="{{ url(route('notif.read-all')) }}" method="POST" data-turbo-frame="notifications_frame" data-turbo-stream>
                     @csrf
                     <button type="submit" class="btn-mark-all-read">
                         <i class="bi bi-check-all"></i> Tandai Semua Sudah Dibaca
@@ -51,7 +51,7 @@
                         {{ $notification->message }}
                     </div>
                     @if(!$isRead)
-                        <form action="{{ route('notif.read', $notification->id) }}" method="POST" data-turbo-frame="notifications_frame" data-turbo-stream style="display: inline;">
+                        <form action="{{ url(route('notif.read', $notification->id)) }}" method="POST" data-turbo-frame="notifications_frame" data-turbo-stream style="display: inline;">
                             @csrf
                             <button type="submit" class="btn-mark-read">
                                 Tandai Sudah Dibaca

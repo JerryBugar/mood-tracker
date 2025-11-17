@@ -61,9 +61,19 @@ Route::post('/auth/verify', [VerificationController::class, 'verify'])->name('ve
 Route::get('/calendar', [CalendarController::class, 'index'])->middleware(['auth', 'verified'])->name('calendar.index');
 Route::get('/calendar/day/{date}', [CalendarController::class, 'showDay'])->middleware(['auth', 'verified'])->name('calendar.day');
 
+// Route ini sekarang menampilkan kerangka
 Route::get('/notif', [App\Http\Controllers\NotificationController::class, 'index'])->middleware(['auth', 'verified'])->name('notif.index');
-Route::post('/notif/{id}/read', [App\Http\Controllers\NotificationController::class, 'markAsRead'])->middleware(['auth', 'verified'])->name('notif.read');
+
+// Route BARU ini mengembalikan konten daftar notifikasi
+// HARUS ditempatkan SEBELUM route dengan parameter untuk menghindari konflik
+Route::get('/notif/list', [App\Http\Controllers\NotificationController::class, 'list'])->middleware(['auth', 'verified'])->name('notif.list');
+
+// Route literal lainnya (harus sebelum route dengan parameter)
 Route::post('/notif/read-all', [App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->middleware(['auth', 'verified'])->name('notif.read-all');
+
+// Route dengan parameter harus ditempatkan SETELAH semua route literal
+// Tambahkan constraint untuk memastikan {id} adalah angka
+Route::post('/notif/{id}/read', [App\Http\Controllers\NotificationController::class, 'markAsRead'])->where('id', '[0-9]+')->middleware(['auth', 'verified'])->name('notif.read');
 Route::delete('/notif/delete-all', [App\Http\Controllers\NotificationController::class, 'deleteAll'])->middleware(['auth', 'verified'])->name('notif.delete-all');
 Route::post('/notif/push/subscribe', [App\Http\Controllers\NotificationController::class, 'subscribePush'])->middleware(['auth', 'verified'])->name('notif.push.subscribe');
 Route::post('/notif/push/unsubscribe', [App\Http\Controllers\NotificationController::class, 'unsubscribePush'])->middleware(['auth', 'verified'])->name('notif.push.unsubscribe');
