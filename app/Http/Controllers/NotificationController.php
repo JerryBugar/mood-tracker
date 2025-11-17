@@ -13,33 +13,116 @@ use NotificationChannels\WebPush\PushSubscription;
 class NotificationController extends Controller
 {
     /**
-     * Menampilkan halaman notifikasi
+     * Menampilkan HALAMAN KERANGKA notifikasi
      */
-    public function index(NotificationService $service, Request $request)
+    public function index()
     {
-        $user = Auth::user();
+        // JANGAN ambil data notifikasi di sini
+        // Cukup tampilkan view kerangka (skeleton)
+        $response = response()->view('notif.index');
         
-        // Polling fallback: Proses notifikasi yang sudah waktunya (jika queue worker tidak jalan)
-        // Ini memastikan notifikasi tetap muncul meski queue worker tidak berjalan
-        $service->processScheduledNotifications();
-        
-        // Ambil notifikasi user yang sudah di-attach (tanpa pagination)
-        // Gunakan fresh() untuk memastikan data selalu terbaru dari database
-        // Reload user untuk memastikan relasi fresh
-        $user->load('notifications');
-        $notifications = $user->notifications()
-            ->orderBy('created_at', 'desc')
-            ->get();
-
-        // Gunakan response() helper untuk wrap view menjadi Response object
-        $response = response()->view('notif.index', compact('notifications'));
-        
-        // Tambahkan cache control headers untuk memastikan data selalu fresh
+        // Cache control tetap penting agar browser tahu
+        // untuk tidak men-cache halaman kerangka ini
         $response->headers->set('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
         $response->headers->set('Pragma', 'no-cache');
         $response->headers->set('Expires', '0');
         
         return $response;
+    }
+
+    /**
+     * Method BARU: Mengambil dan menampilkan DAFTAR notifikasi
+     * Ini akan dipanggil oleh Turbo Frame
+     */
+    public function list(NotificationService $service, Request $request)
+    {
+        $user = Auth::user();
+        
+        // Logika yang sebelumnya ada di index() dipindah ke sini
+        $service->processScheduledNotifications();
+        
+        $user->load('notifications');
+        $notifications = $user->notifications()
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Kembalikan view yang dibungkus dalam turbo-frame
+        // Turbo Frame membutuhkan response yang mengandung <turbo-frame id="notifications_frame">
+        return view('notif._partials.notifications_frame', compact('notifications'));
+    }
+
+    /**
+     * Method untuk mengecek notifikasi baru (non-scheduled)
+     * Digunakan untuk polling real-time update
+     */
+    public function checkNew(Request $request)
+    {
+        $user = Auth::user();
+        
+        // Ambil timestamp terakhir dari request (jika ada)
+        $lastCheck = $request->get('last_check');
+        
+        if (!$lastCheck) {
+            // Jika tidak ada lastCheck, kembalikan semua notifikasi non-scheduled
+            $user->load('notifications');
+            $notifications = $user->notifications()
+                ->whereNull('scheduled_at') // Hanya notifikasi non-scheduled
+                ->orderBy('created_at', 'desc')
+                ->get();
+            
+            if ($notifications->isNotEmpty()) {
+                $notificationsContent = view('notif._partials.notifications_list', compact('notifications'))->render();
+                
+                return response(
+                    TurboStreamHelper::replace('notifications_frame', $notificationsContent),
+                    200,
+                    [
+                        'Content-Type' => 'text/vnd.turbo-stream.html',
+                        'Cache-Control' => 'no-cache, no-store, must-revalidate, max-age=0',
+                        'Pragma' => 'no-cache',
+                        'Expires' => '0'
+                    ]
+                );
+            }
+            
+            return response('', 204);
+        }
+        
+        // Convert timestamp dari seconds ke Carbon
+        $lastCheckTime = \Carbon\Carbon::createFromTimestamp($lastCheck);
+        
+        // Query notifikasi baru yang non-scheduled dan di-attach setelah lastCheck
+        // Gunakan wherePivot untuk mengecek created_at di pivot table
+        $newNotifications = $user->notifications()
+            ->whereNull('scheduled_at') // Hanya notifikasi non-scheduled
+            ->wherePivot('created_at', '>', $lastCheckTime) // Cek waktu attachment di pivot table
+            ->orderBy('created_at', 'desc')
+            ->get();
+        
+        // Jika ada notifikasi baru, kembalikan Turbo Stream untuk update frame
+        if ($newNotifications->isNotEmpty()) {
+            // Reload semua notifikasi untuk frame
+            $user->load('notifications');
+            $allNotifications = $user->notifications()
+                ->orderBy('created_at', 'desc')
+                ->get();
+            
+            $notificationsContent = view('notif._partials.notifications_list', compact('allNotifications'))->render();
+            
+            return response(
+                TurboStreamHelper::replace('notifications_frame', $notificationsContent),
+                200,
+                [
+                    'Content-Type' => 'text/vnd.turbo-stream.html',
+                    'Cache-Control' => 'no-cache, no-store, must-revalidate, max-age=0',
+                    'Pragma' => 'no-cache',
+                    'Expires' => '0'
+                ]
+            );
+        }
+        
+        // Tidak ada notifikasi baru, kembalikan response kosong
+        return response('', 204); // No Content
     }
 
     /**

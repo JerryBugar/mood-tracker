@@ -608,8 +608,17 @@
             // Cek subscription yang ada di browser
             const subscription = await registration.pushManager.getSubscription();
             
-            // Cek status dari server untuk sinkronisasi
-            const serverStatus = await checkSubscriptionStatus();
+            // Cek status dari server HANYA jika forceCheck = true
+            // Ini mencegah request berulang setiap kali turbo:load
+            let serverStatus = false;
+            if (forceCheck) {
+                serverStatus = await checkSubscriptionStatus();
+                lastStatusCheckTime = Date.now();
+            } else {
+                // Gunakan stored state jika ada, atau false sebagai default
+                const storedState = loadStateFromStorage();
+                serverStatus = storedState !== null ? storedState : false;
+            }
             
             if (subscription) {
                 // Ada subscription di browser
@@ -777,6 +786,10 @@
         setupToggleButton();
     }
 
+    // Track waktu terakhir check status untuk mencegah request berulang
+    let lastStatusCheckTime = 0;
+    const STATUS_CHECK_INTERVAL = 30000; // 30 detik - hanya check server setiap 30 detik
+
     // Re-initialize saat Turbo load (untuk SPA behavior)
     // Skip jika elemen permanent sudah di-initialize dan state sama
     document.addEventListener('turbo:load', function() {
@@ -798,7 +811,7 @@
             const storedState = loadStateFromStorage();
             const toggleBtn = document.getElementById('push-notification-toggle');
             
-            // Jika stored state ada dan sama dengan current state, verifikasi dengan server
+            // Jika stored state ada dan sama dengan current state, hanya update UI tanpa check server
             if (storedState !== null && storedState === isSubscribed && toggleBtn) {
                 const permission = getNotificationPermission();
                 const shouldBeChecked = isSubscribed && permission === 'granted';
@@ -806,10 +819,14 @@
                 // Hanya update UI jika toggle state berbeda
                 if (toggleBtn.checked !== shouldBeChecked) {
                     updateUI(true);
-                } else {
-                    // Meskipun toggle state sudah benar, verifikasi dengan server untuk memastikan sinkronisasi
+                }
+                
+                // Verifikasi dengan server HANYA jika sudah lebih dari 30 detik sejak check terakhir
+                const timeSinceLastCheck = Date.now() - lastStatusCheckTime;
+                if (timeSinceLastCheck >= STATUS_CHECK_INTERVAL) {
                     // Lakukan verifikasi secara async tanpa blocking
                     checkSubscriptionStatus().then(serverStatus => {
+                        lastStatusCheckTime = Date.now();
                         if (serverStatus !== isSubscribed) {
                             // Ada ketidaksesuaian, re-initialize untuk sinkronisasi
                             initializePushNotification(true);
@@ -826,8 +843,14 @@
         }
         
         // Initialize jika belum atau state berbeda
-        // Gunakan forceCheck untuk memastikan sinkronisasi dengan server
-        initializePushNotification(true);
+        // HANYA gunakan forceCheck jika sudah lebih dari 30 detik sejak check terakhir
+        const timeSinceLastCheck = Date.now() - lastStatusCheckTime;
+        const shouldForceCheck = timeSinceLastCheck >= STATUS_CHECK_INTERVAL;
+        
+        initializePushNotification(shouldForceCheck);
+        if (shouldForceCheck) {
+            lastStatusCheckTime = Date.now();
+        }
         
         // Selalu setup toggle button saat turbo:load untuk memastikan listener ter-attach
         setupToggleButton();

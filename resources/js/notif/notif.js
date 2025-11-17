@@ -123,6 +123,10 @@ document.addEventListener('turbo:before-stream-render', function(event) {
 // Track previous unread count untuk detect perubahan
 let previousUnreadCount = -1;
 
+// Track waktu terakhir frame dimuat untuk mencegah reload berulang
+let lastFrameLoadTime = 0;
+const FRAME_RELOAD_INTERVAL = 60000; // 60 detik - hanya reload frame setiap 60 detik
+
 // Handle Turbo Stream render untuk update langsung
 document.addEventListener('turbo:frame-render', function(event) {
     // Cek apakah ini render dari notifications_frame
@@ -360,6 +364,9 @@ async function refreshNotificationsFrame() {
 // Turbo events
 document.addEventListener('turbo:frame-load', function(event) {
     if (event.target && event.target.id === 'notifications_frame') {
+        // Update waktu terakhir frame dimuat
+        lastFrameLoadTime = Date.now();
+        
         // Inisialisasi previousUnreadCount saat frame load
         previousUnreadCount = document.querySelectorAll('.notification-item.unread').length;
         updateUnreadCount();
@@ -386,21 +393,22 @@ document.addEventListener('turbo:load', function() {
         // Inisialisasi previousUnreadCount saat navigasi baru
         previousUnreadCount = -1;
         
-        // Selalu refresh saat navigasi baru ke halaman notif untuk mendapatkan data terbaru dari database
-        // Ini memastikan status "sudah dibaca" tetap persisten
+        // Hanya reload frame jika sudah lebih dari 60 detik sejak load terakhir
+        // Ini mencegah request berulang setiap kali navigasi
         if (frame) {
-            // Check apakah Turbo Stream baru saja update untuk mencegah double refresh
-            const timeSinceLastUpdate = Date.now() - lastTurboStreamUpdate;
+            const timeSinceLastLoad = Date.now() - lastFrameLoadTime;
+            const hasContent = frame.querySelector('.notifications-container:not(.empty-state)');
             
-            // Hanya refresh jika tidak ada Turbo Stream update dalam 2 detik terakhir
-            if (timeSinceLastUpdate >= TURBO_STREAM_UPDATE_WINDOW) {
-                // Refresh frame dengan data fresh saat navigasi baru
-                // Gunakan setTimeout kecil untuk memastikan Turbo sudah selesai
-                // refreshNotificationsFrame() melakukan partial update (fetch + innerHTML), bukan full reload
-                setTimeout(() => {
-                    refreshNotificationsFrame();
-                }, 100);
+            // Jika frame sudah punya konten dan belum 60 detik, jangan reload
+            if (hasContent && timeSinceLastLoad < FRAME_RELOAD_INTERVAL) {
+                // Frame masih fresh, hanya update UI
+                updateUnreadCount();
+                return;
             }
+            
+            // Reload frame hanya jika diperlukan (belum ada konten atau sudah lebih dari 60 detik)
+            // Turbo Frame dengan src akan otomatis memuat konten fresh
+            lastFrameLoadTime = Date.now();
         }
     } else if (!isNotifPage) {
         // Reset tracking jika bukan di halaman notif
@@ -418,6 +426,104 @@ document.addEventListener('turbo:load', function() {
     }
 });
 
+// Polling untuk notifikasi baru (non-scheduled) secara real-time
+let newNotificationPollInterval = null;
+let lastNotificationCheckTime = Date.now();
+const NEW_NOTIFICATION_POLL_INTERVAL = 3000; // 3 detik - check setiap 3 detik untuk real-time
+
+// Fungsi untuk check notifikasi baru
+async function checkNewNotifications() {
+    // Hanya check jika user sedang di halaman notif
+    if (window.location.pathname !== '/notif') {
+        return;
+    }
+    
+    const frame = document.getElementById('notifications_frame');
+    if (!frame) {
+        return;
+    }
+    
+    try {
+        const url = new URL('/notif/check-new', window.location.origin);
+        url.searchParams.set('last_check', Math.floor(lastNotificationCheckTime / 1000)); // Convert ke seconds
+        
+        const response = await fetch(url.toString(), {
+            method: 'GET',
+            headers: {
+                'Accept': 'text/vnd.turbo-stream.html',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            cache: 'no-store'
+        });
+        
+        if (response.ok) {
+            const contentType = response.headers.get('content-type');
+            
+            // Jika ada Turbo Stream response, render untuk update frame
+            if (contentType && contentType.includes('text/vnd.turbo-stream.html')) {
+                const text = await response.text();
+                if (text && window.Turbo) {
+                    // Update timestamp setelah berhasil check
+                    lastNotificationCheckTime = Date.now();
+                    window.Turbo.renderStreamMessage(text);
+                }
+            } else if (response.status === 204) {
+                // No Content - tidak ada notifikasi baru
+                // Update timestamp meskipun tidak ada update
+                lastNotificationCheckTime = Date.now();
+            }
+        }
+    } catch (error) {
+        // Silent fail - jangan ganggu user dengan error logging
+        console.warn('Error checking new notifications:', error);
+    }
+}
+
+// Start polling saat halaman notif dimuat
+function startNewNotificationPolling() {
+    // Stop polling sebelumnya jika ada
+    if (newNotificationPollInterval) {
+        clearInterval(newNotificationPollInterval);
+    }
+    
+    // Hanya start jika di halaman notif
+    if (window.location.pathname === '/notif') {
+        // Set initial timestamp saat pertama kali load
+        lastNotificationCheckTime = Date.now();
+        
+        // Start polling setiap 3 detik
+        newNotificationPollInterval = setInterval(() => {
+            checkNewNotifications();
+        }, NEW_NOTIFICATION_POLL_INTERVAL);
+    }
+}
+
+// Stop polling saat keluar dari halaman notif
+function stopNewNotificationPolling() {
+    if (newNotificationPollInterval) {
+        clearInterval(newNotificationPollInterval);
+        newNotificationPollInterval = null;
+    }
+}
+
+// Start polling saat turbo:load di halaman notif
+document.addEventListener('turbo:load', function() {
+    const isNotifPage = window.location.pathname === '/notif';
+    
+    if (isNotifPage) {
+        // Start polling untuk notifikasi baru
+        startNewNotificationPolling();
+    } else {
+        // Stop polling jika bukan di halaman notif
+        stopNewNotificationPolling();
+    }
+});
+
+// Stop polling saat sebelum navigate away
+document.addEventListener('turbo:before-visit', function() {
+    stopNewNotificationPolling();
+});
+
 // Listen untuk message dari service worker untuk refresh frame saat notifikasi baru diterima
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.addEventListener('message', function(event) {
@@ -427,6 +533,9 @@ if ('serviceWorker' in navigator) {
             const isNotifPage = window.location.pathname === '/notif';
             
             if (isNotifPage) {
+                // Update timestamp karena sudah menerima notifikasi baru dari push
+                lastNotificationCheckTime = Date.now();
+                
                 // Cek apakah frame sudah ada
                 const frame = document.getElementById('notifications_frame');
                 if (frame) {
