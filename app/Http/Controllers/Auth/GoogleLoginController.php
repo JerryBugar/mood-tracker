@@ -15,7 +15,15 @@ class GoogleLoginController extends \App\Http\Controllers\Controller
     {
         \Log::info('Google OAuth redirect initiated');
         Session::forget('google_user_data');
-        return Socialite::driver('google')->redirect();
+        
+        $redirectResponse = Socialite::driver('google')->redirect();
+        
+        // Tambahkan header Turbo-Location untuk mencegah Turbo intercept
+        // Header ini memberitahu Turbo untuk melakukan full page reload, bukan fetch request
+        // Ini penting untuk mencegah CORS error karena Google OAuth tidak mengizinkan CORS
+        $redirectResponse->headers->set('Turbo-Location', $redirectResponse->getTargetUrl());
+        
+        return $redirectResponse;
     }
 
     public function callback()
