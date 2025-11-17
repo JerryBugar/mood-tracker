@@ -341,4 +341,29 @@ class NotificationController extends Controller
             'count' => $subscriptions->count()
         ]);
     }
+
+    /**
+     * Cleanup semua push subscription user (untuk sinkronisasi ketika terjadi ketidaksesuaian)
+     */
+    public function cleanupPushSubscriptions()
+    {
+        $user = Auth::user();
+
+        try {
+            $deleted = PushSubscription::where('subscribable_type', get_class($user))
+                ->where('subscribable_id', $user->id)
+                ->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Semua subscription berhasil dibersihkan',
+                'deleted_count' => $deleted
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal membersihkan subscription: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }
