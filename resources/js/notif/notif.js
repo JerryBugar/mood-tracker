@@ -376,22 +376,27 @@ document.addEventListener('turbo:load', function() {
     const currentUrl = window.location.href;
     const isNotifPage = window.location.pathname === '/notif';
     
-    // Cek apakah ini navigasi baru ke halaman notif
+    // Cek apakah frame sudah ada
+    const frame = document.getElementById('notifications_frame');
+    
+    // Cek apakah ini navigasi baru ke halaman notif (bukan kembali dari navbar lain)
     if (isNotifPage && currentUrl !== lastNotifUrl) {
         lastNotifUrl = currentUrl;
         
         // Inisialisasi previousUnreadCount saat navigasi baru
         previousUnreadCount = -1;
         
-        // Check apakah Turbo Stream baru saja update
-        const timeSinceLastUpdate = Date.now() - lastTurboStreamUpdate;
-        
-        // Hanya refresh jika tidak ada Turbo Stream update dalam 2 detik terakhir
-        if (timeSinceLastUpdate >= TURBO_STREAM_UPDATE_WINDOW) {
-            const frame = document.getElementById('notifications_frame');
-            if (frame) {
+        // Selalu refresh saat navigasi baru ke halaman notif untuk mendapatkan data terbaru dari database
+        // Ini memastikan status "sudah dibaca" tetap persisten
+        if (frame) {
+            // Check apakah Turbo Stream baru saja update untuk mencegah double refresh
+            const timeSinceLastUpdate = Date.now() - lastTurboStreamUpdate;
+            
+            // Hanya refresh jika tidak ada Turbo Stream update dalam 2 detik terakhir
+            if (timeSinceLastUpdate >= TURBO_STREAM_UPDATE_WINDOW) {
                 // Refresh frame dengan data fresh saat navigasi baru
                 // Gunakan setTimeout kecil untuk memastikan Turbo sudah selesai
+                // refreshNotificationsFrame() melakukan partial update (fetch + innerHTML), bukan full reload
                 setTimeout(() => {
                     refreshNotificationsFrame();
                 }, 100);
@@ -404,8 +409,37 @@ document.addEventListener('turbo:load', function() {
         previousUnreadCount = -1;
     }
     
-    updateUnreadCount();
+    // Update unread count jika frame ada
+    if (frame) {
+        const hasFrameContent = frame.querySelector('.notifications-container');
+        if (hasFrameContent) {
+            updateUnreadCount();
+        }
+    }
 });
+
+// Listen untuk message dari service worker untuk refresh frame saat notifikasi baru diterima
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.addEventListener('message', function(event) {
+        // Cek apakah message adalah notifikasi baru
+        if (event.data && event.data.type === 'new-notification') {
+            // Cek apakah user sedang di halaman notif
+            const isNotifPage = window.location.pathname === '/notif';
+            
+            if (isNotifPage) {
+                // Cek apakah frame sudah ada
+                const frame = document.getElementById('notifications_frame');
+                if (frame) {
+                    // Trigger refresh frame (partial update, bukan full reload)
+                    // Gunakan setTimeout kecil untuk memastikan tidak conflict dengan update lain
+                    setTimeout(() => {
+                        refreshNotificationsFrame();
+                    }, 100);
+                }
+            }
+        }
+    });
+}
 
 // Export untuk global scope
 window.showToast = showToast;

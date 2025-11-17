@@ -293,6 +293,21 @@ self.addEventListener('push', (event) => {
 
     event.waitUntil(
         self.registration.showNotification(notificationData.title, options)
+            .then(() => {
+                // Post message ke semua client windows yang terbuka untuk trigger refresh frame
+                return clients.matchAll({
+                    type: 'window',
+                    includeUncontrolled: true
+                }).then(function(clientList) {
+                    // Kirim message ke semua client untuk trigger refresh notifikasi
+                    clientList.forEach(function(client) {
+                        client.postMessage({
+                            type: 'new-notification',
+                            data: notificationData.data
+                        });
+                    });
+                });
+            })
     );
 });
 
@@ -307,16 +322,28 @@ self.addEventListener('notificationclick', (event) => {
             type: 'window',
             includeUncontrolled: true
         }).then(function(clientList) {
-            // Cek apakah ada window yang sudah terbuka
+            let foundClient = false;
+            
+            // Cek apakah ada window yang sudah terbuka di halaman notif
             for (let i = 0; i < clientList.length; i++) {
                 const client = clientList[i];
-                if (client.url === urlToOpen && 'focus' in client) {
-                    return client.focus();
+                const clientUrl = new URL(client.url);
+                
+                // Jika client sudah di halaman notif, focus dan kirim message untuk refresh
+                if (clientUrl.pathname === '/notif' && 'focus' in client) {
+                    client.focus();
+                    // Post message untuk trigger refresh frame
+                    client.postMessage({
+                        type: 'new-notification',
+                        data: event.notification.data
+                    });
+                    foundClient = true;
+                    return;
                 }
             }
             
-            // Jika tidak ada window yang terbuka, buka window baru
-            if (clients.openWindow) {
+            // Jika tidak ada window yang terbuka di halaman notif, buka window baru
+            if (!foundClient && clients.openWindow) {
                 return clients.openWindow(urlToOpen);
             }
         })
