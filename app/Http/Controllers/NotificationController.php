@@ -52,6 +52,80 @@ class NotificationController extends Controller
     }
 
     /**
+     * Method untuk mengecek notifikasi baru (non-scheduled)
+     * Digunakan untuk polling real-time update
+     */
+    public function checkNew(Request $request)
+    {
+        $user = Auth::user();
+        
+        // Ambil timestamp terakhir dari request (jika ada)
+        $lastCheck = $request->get('last_check');
+        
+        if (!$lastCheck) {
+            // Jika tidak ada lastCheck, kembalikan semua notifikasi non-scheduled
+            $user->load('notifications');
+            $notifications = $user->notifications()
+                ->whereNull('scheduled_at') // Hanya notifikasi non-scheduled
+                ->orderBy('created_at', 'desc')
+                ->get();
+            
+            if ($notifications->isNotEmpty()) {
+                $notificationsContent = view('notif._partials.notifications_list', compact('notifications'))->render();
+                
+                return response(
+                    TurboStreamHelper::replace('notifications_frame', $notificationsContent),
+                    200,
+                    [
+                        'Content-Type' => 'text/vnd.turbo-stream.html',
+                        'Cache-Control' => 'no-cache, no-store, must-revalidate, max-age=0',
+                        'Pragma' => 'no-cache',
+                        'Expires' => '0'
+                    ]
+                );
+            }
+            
+            return response('', 204);
+        }
+        
+        // Convert timestamp dari seconds ke Carbon
+        $lastCheckTime = \Carbon\Carbon::createFromTimestamp($lastCheck);
+        
+        // Query notifikasi baru yang non-scheduled dan di-attach setelah lastCheck
+        // Gunakan wherePivot untuk mengecek created_at di pivot table
+        $newNotifications = $user->notifications()
+            ->whereNull('scheduled_at') // Hanya notifikasi non-scheduled
+            ->wherePivot('created_at', '>', $lastCheckTime) // Cek waktu attachment di pivot table
+            ->orderBy('created_at', 'desc')
+            ->get();
+        
+        // Jika ada notifikasi baru, kembalikan Turbo Stream untuk update frame
+        if ($newNotifications->isNotEmpty()) {
+            // Reload semua notifikasi untuk frame
+            $user->load('notifications');
+            $allNotifications = $user->notifications()
+                ->orderBy('created_at', 'desc')
+                ->get();
+            
+            $notificationsContent = view('notif._partials.notifications_list', compact('allNotifications'))->render();
+            
+            return response(
+                TurboStreamHelper::replace('notifications_frame', $notificationsContent),
+                200,
+                [
+                    'Content-Type' => 'text/vnd.turbo-stream.html',
+                    'Cache-Control' => 'no-cache, no-store, must-revalidate, max-age=0',
+                    'Pragma' => 'no-cache',
+                    'Expires' => '0'
+                ]
+            );
+        }
+        
+        // Tidak ada notifikasi baru, kembalikan response kosong
+        return response('', 204); // No Content
+    }
+
+    /**
      * Tandai notifikasi sebagai sudah dibaca
      */
     public function markAsRead($id, Request $request)

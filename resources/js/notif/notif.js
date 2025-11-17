@@ -426,6 +426,104 @@ document.addEventListener('turbo:load', function() {
     }
 });
 
+// Polling untuk notifikasi baru (non-scheduled) secara real-time
+let newNotificationPollInterval = null;
+let lastNotificationCheckTime = Date.now();
+const NEW_NOTIFICATION_POLL_INTERVAL = 3000; // 3 detik - check setiap 3 detik untuk real-time
+
+// Fungsi untuk check notifikasi baru
+async function checkNewNotifications() {
+    // Hanya check jika user sedang di halaman notif
+    if (window.location.pathname !== '/notif') {
+        return;
+    }
+    
+    const frame = document.getElementById('notifications_frame');
+    if (!frame) {
+        return;
+    }
+    
+    try {
+        const url = new URL('/notif/check-new', window.location.origin);
+        url.searchParams.set('last_check', Math.floor(lastNotificationCheckTime / 1000)); // Convert ke seconds
+        
+        const response = await fetch(url.toString(), {
+            method: 'GET',
+            headers: {
+                'Accept': 'text/vnd.turbo-stream.html',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            cache: 'no-store'
+        });
+        
+        if (response.ok) {
+            const contentType = response.headers.get('content-type');
+            
+            // Jika ada Turbo Stream response, render untuk update frame
+            if (contentType && contentType.includes('text/vnd.turbo-stream.html')) {
+                const text = await response.text();
+                if (text && window.Turbo) {
+                    // Update timestamp setelah berhasil check
+                    lastNotificationCheckTime = Date.now();
+                    window.Turbo.renderStreamMessage(text);
+                }
+            } else if (response.status === 204) {
+                // No Content - tidak ada notifikasi baru
+                // Update timestamp meskipun tidak ada update
+                lastNotificationCheckTime = Date.now();
+            }
+        }
+    } catch (error) {
+        // Silent fail - jangan ganggu user dengan error logging
+        console.warn('Error checking new notifications:', error);
+    }
+}
+
+// Start polling saat halaman notif dimuat
+function startNewNotificationPolling() {
+    // Stop polling sebelumnya jika ada
+    if (newNotificationPollInterval) {
+        clearInterval(newNotificationPollInterval);
+    }
+    
+    // Hanya start jika di halaman notif
+    if (window.location.pathname === '/notif') {
+        // Set initial timestamp saat pertama kali load
+        lastNotificationCheckTime = Date.now();
+        
+        // Start polling setiap 3 detik
+        newNotificationPollInterval = setInterval(() => {
+            checkNewNotifications();
+        }, NEW_NOTIFICATION_POLL_INTERVAL);
+    }
+}
+
+// Stop polling saat keluar dari halaman notif
+function stopNewNotificationPolling() {
+    if (newNotificationPollInterval) {
+        clearInterval(newNotificationPollInterval);
+        newNotificationPollInterval = null;
+    }
+}
+
+// Start polling saat turbo:load di halaman notif
+document.addEventListener('turbo:load', function() {
+    const isNotifPage = window.location.pathname === '/notif';
+    
+    if (isNotifPage) {
+        // Start polling untuk notifikasi baru
+        startNewNotificationPolling();
+    } else {
+        // Stop polling jika bukan di halaman notif
+        stopNewNotificationPolling();
+    }
+});
+
+// Stop polling saat sebelum navigate away
+document.addEventListener('turbo:before-visit', function() {
+    stopNewNotificationPolling();
+});
+
 // Listen untuk message dari service worker untuk refresh frame saat notifikasi baru diterima
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.addEventListener('message', function(event) {
@@ -435,6 +533,9 @@ if ('serviceWorker' in navigator) {
             const isNotifPage = window.location.pathname === '/notif';
             
             if (isNotifPage) {
+                // Update timestamp karena sudah menerima notifikasi baru dari push
+                lastNotificationCheckTime = Date.now();
+                
                 // Cek apakah frame sudah ada
                 const frame = document.getElementById('notifications_frame');
                 if (frame) {

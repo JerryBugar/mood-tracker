@@ -68,6 +68,9 @@ Route::get('/notif', [App\Http\Controllers\NotificationController::class, 'index
 // HARUS ditempatkan SEBELUM route dengan parameter untuk menghindari konflik
 Route::get('/notif/list', [App\Http\Controllers\NotificationController::class, 'list'])->middleware(['auth', 'verified'])->name('notif.list');
 
+// Route untuk check notifikasi baru (real-time polling untuk non-scheduled)
+Route::get('/notif/check-new', [App\Http\Controllers\NotificationController::class, 'checkNew'])->middleware(['auth', 'verified'])->name('notif.check-new');
+
 // Route literal lainnya (harus sebelum route dengan parameter)
 Route::post('/notif/read-all', [App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->middleware(['auth', 'verified'])->name('notif.read-all');
 
