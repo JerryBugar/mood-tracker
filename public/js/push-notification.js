@@ -2,11 +2,13 @@
 (function() {
     'use strict';
 
-    // Jangan aktifkan di halaman welcome atau admin
+    // Hanya aktifkan di halaman notif
     const isWelcomePage = window.location.pathname === '/' || window.location.pathname === '/welcome';
     const isAdminPage = window.location.pathname.startsWith('/admin');
+    const isNotifPage = window.location.pathname === '/notif';
     
-    if (isWelcomePage || isAdminPage) {
+    // Hanya aktifkan di halaman notif, jangan mengganggu navbar lain
+    if (isWelcomePage || isAdminPage || !isNotifPage) {
         return; // Exit early
     }
 
@@ -169,6 +171,11 @@
                 saveStateToStorage();
                 updateUI(true);
                 showSuccessMessage('Push notification berhasil diaktifkan!');
+                
+                // Re-initialize untuk memastikan state sinkron dengan server
+                // Ini penting untuk Turbo agar state ter-update tanpa perlu refresh manual
+                await initializePushNotification(true);
+                
                 return true;
             } else {
                 throw new Error(data.message || 'Gagal subscribe');
@@ -178,7 +185,7 @@
             
             // Jangan tampilkan alert untuk error permission yang sudah jelas
             if (!error.message.includes('Permission') && !error.message.includes('dibatalkan')) {
-                alert('Gagal mengaktifkan push notification: ' + error.message);
+                showErrorMessage('Gagal mengaktifkan push notification: ' + error.message);
             }
             
             return false;
@@ -198,21 +205,44 @@
                 
                 if (!subscriptionToUnsubscribe) {
                     // Tidak ada subscription yang aktif di browser
-                    // Tapi mungkin masih ada di server, jadi coba hapus dari server juga
+                    // Tapi mungkin masih ada di server, jadi hapus dari server menggunakan cleanup
+                    const serverStatus = await checkSubscriptionStatus();
+                    if (serverStatus) {
+                        // Masih ada di server, gunakan endpoint cleanup untuk menghapus semua
+                        console.log('Tidak ada subscription di browser, membersihkan subscription di server...');
+                        try {
+                            const cleanupResponse = await fetch('/notif/push/cleanup', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': getCsrfToken(),
+                                    'Accept': 'application/json'
+                                }
+                            });
+                            
+                            const cleanupData = await cleanupResponse.json();
+                            if (cleanupData.success) {
+                                console.log('Subscription di server berhasil dibersihkan. Jumlah yang dihapus:', cleanupData.deleted_count || 0);
+                            } else {
+                                console.error('Gagal membersihkan subscription di server:', cleanupData.message);
+                            }
+                        } catch (cleanupError) {
+                            console.error('Error cleaning up server subscription:', cleanupError);
+                        }
+                    }
+                    
                     // Update state menjadi false
                     isSubscribed = false;
                     currentSubscription = null;
                     saveStateToStorage();
                     updateUI(true);
                     
-                    // Verifikasi dengan server untuk memastikan tidak ada subscription tersisa
-                    const serverStatus = await checkSubscriptionStatus();
-                    if (serverStatus) {
-                        // Masih ada di server, coba hapus dengan endpoint terakhir yang diketahui
-                        // Atau biarkan user tahu bahwa perlu refresh
-                        console.warn('Subscription tidak ada di browser tapi mungkin masih ada di server');
-                    }
+                    // Re-initialize untuk memastikan state sinkron dengan server
+                    // Ini penting untuk Turbo agar state ter-update tanpa perlu refresh manual
+                    await initializePushNotification(true);
                     
+                    // Tampilkan success message
+                    showSuccessMessage('Push notification berhasil dinonaktifkan');
                     return true;
                 }
                 
@@ -254,14 +284,35 @@
                 // Verifikasi status dari server untuk memastikan unsubscribe berhasil
                 const verifiedStatus = await checkSubscriptionStatus();
                 if (verifiedStatus) {
-                    // Masih terdeteksi sebagai subscribed, coba sekali lagi
-                    console.warn('Subscription masih terdeteksi setelah unsubscribe, mencoba refresh...');
-                    // Force check untuk memastikan state benar
-                    await initializePushNotification(true);
+                    // Masih terdeteksi sebagai subscribed, gunakan cleanup
+                    console.warn('Subscription masih terdeteksi setelah unsubscribe, menggunakan cleanup...');
+                    try {
+                        const cleanupResponse = await fetch('/notif/push/cleanup', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': getCsrfToken(),
+                                'Accept': 'application/json'
+                            }
+                        });
+                        
+                        const cleanupData = await cleanupResponse.json();
+                        if (cleanupData.success) {
+                            console.log('Subscription di server berhasil dibersihkan. Jumlah yang dihapus:', cleanupData.deleted_count || 0);
+                        } else {
+                            console.error('Gagal membersihkan subscription di server:', cleanupData.message);
+                        }
+                    } catch (cleanupError) {
+                        console.error('Error cleaning up server subscription:', cleanupError);
+                    }
                 }
                 
                 // Update UI dengan force untuk memastikan UI refresh
                 updateUI(true);
+                
+                // Re-initialize untuk memastikan state sinkron dengan server
+                // Ini penting untuk Turbo agar state ter-update tanpa perlu refresh manual
+                await initializePushNotification(true);
                 
                 // Tampilkan success message
                 showSuccessMessage('Push notification berhasil dinonaktifkan');
@@ -277,7 +328,29 @@
                 const registration = await navigator.serviceWorker.ready;
                 const subscription = await registration.pushManager.getSubscription();
                 if (!subscription) {
-                    // Tidak ada subscription di browser, update state menjadi false
+                    // Tidak ada subscription di browser, coba cleanup di server juga
+                    const serverStatus = await checkSubscriptionStatus();
+                    if (serverStatus) {
+                        try {
+                            const cleanupResponse = await fetch('/notif/push/cleanup', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': getCsrfToken(),
+                                    'Accept': 'application/json'
+                                }
+                            });
+                            
+                            const cleanupData = await cleanupResponse.json();
+                            if (cleanupData.success) {
+                                console.log('Subscription di server berhasil dibersihkan setelah error');
+                            }
+                        } catch (cleanupError) {
+                            console.error('Error cleaning up server subscription:', cleanupError);
+                        }
+                    }
+                    
+                    // Update state menjadi false
                     isSubscribed = false;
                     currentSubscription = null;
                     saveStateToStorage();
@@ -287,22 +360,16 @@
                 console.error('Error checking subscription:', checkError);
             }
             
-            alert('Gagal menonaktifkan push notification: ' + error.message);
+            showErrorMessage('Gagal menonaktifkan push notification: ' + error.message);
             return false;
         }
     }
 
     // Show success message menggunakan toast container yang sama seperti profile
     function showSuccessMessage(message) {
-        // Cek apakah window.showToast tersedia (dari notif.js)
-        if (typeof window.showToast === 'function') {
-            window.showToast(message, 'success');
-            return;
-        }
-        
-        // Fallback: gunakan toast container notificationToast jika tersedia
+        // Pastikan Bootstrap tersedia
         if (typeof bootstrap === 'undefined') {
-            alert(message);
+            console.log('Bootstrap tidak tersedia:', message);
             return;
         }
         
@@ -311,10 +378,12 @@
         const toastTitle = document.getElementById('toast-title');
         
         if (!toastElement || !toastMessage || !toastTitle) {
-            alert(message);
+            console.log('Toast element tidak ditemukan:', message);
             return;
         }
         
+        // Langsung gunakan toast container tanpa bergantung pada window.showToast
+        // Ini memastikan tidak ada alert yang muncul
         const toastIconWrapper = toastElement.querySelector('.toast-icon-wrapper');
         const toastIcon = toastElement.querySelector('.toast-icon');
         
@@ -369,6 +438,56 @@
         });
         
         toast.show();
+    }
+
+    // Show error message menggunakan toast container yang sama
+    function showErrorMessage(message) {
+        // Pastikan Bootstrap tersedia
+        if (typeof bootstrap === 'undefined') {
+            console.error('Bootstrap tidak tersedia:', message);
+            return;
+        }
+        
+        const toastElement = document.getElementById('notificationToast');
+        const toastMessage = document.getElementById('toast-message');
+        const toastTitle = document.getElementById('toast-title');
+        
+        if (!toastElement || !toastMessage || !toastTitle) {
+            console.error('Toast element tidak ditemukan:', message);
+            return;
+        }
+        
+        // Langsung gunakan toast container tanpa bergantung pada window.showToast
+        // Ini memastikan tidak ada alert yang muncul
+        
+        const toastIconWrapper = toastElement.querySelector('.toast-icon-wrapper');
+        const toastIcon = toastElement.querySelector('.toast-icon');
+        
+        // Update message dan title
+        toastMessage.textContent = message;
+        toastTitle.textContent = 'Error';
+        
+        // Set styling untuk error
+        toastTitle.classList.add('error');
+        toastElement.classList.add('error');
+        toastElement.classList.remove('success');
+        
+        if (toastIconWrapper) {
+            toastIconWrapper.classList.add('error');
+        }
+        
+        if (toastIcon) {
+            toastIcon.className = 'toast-icon bi bi-x-circle-fill';
+        }
+        
+        // Hide toast yang sedang ditampilkan sebelumnya jika ada
+        const existingToast = bootstrap.Toast.getInstance(toastElement);
+        if (existingToast) {
+            existingToast.hide();
+            setTimeout(() => showToastNow(toastElement), 200);
+        } else {
+            showToastNow(toastElement);
+        }
     }
 
     // Update UI berdasarkan status subscription dengan debounce dan state comparison
@@ -523,10 +642,30 @@
                 isSubscribed = false;
                 
                 // Jika server masih mencatat sebagai subscribed tapi tidak ada di browser,
-                // ini berarti ada ketidaksesuaian, tapi kita set menjadi false karena
-                // subscription tidak bisa digunakan tanpa subscription di browser
+                // ini berarti ada ketidaksesuaian - bersihkan subscription di server
                 if (serverStatus) {
-                    console.warn('Server mencatat sebagai subscribed tapi tidak ada subscription di browser');
+                    console.warn('Server mencatat sebagai subscribed tapi tidak ada subscription di browser. Membersihkan subscription di server...');
+                    
+                    // Bersihkan subscription di server untuk sinkronisasi
+                    try {
+                        const cleanupResponse = await fetch('/notif/push/cleanup', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': getCsrfToken(),
+                                'Accept': 'application/json'
+                            }
+                        });
+                        
+                        const cleanupData = await cleanupResponse.json();
+                        if (cleanupData.success) {
+                            console.log('Subscription di server berhasil dibersihkan. Jumlah yang dihapus:', cleanupData.deleted_count || 0);
+                        } else {
+                            console.error('Gagal membersihkan subscription di server:', cleanupData.message);
+                        }
+                    } catch (cleanupError) {
+                        console.error('Error cleaning up server subscription:', cleanupError);
+                    }
                 }
             }
             
@@ -557,10 +696,15 @@
         const settingsElement = document.getElementById('push-notification-settings');
         if (!settingsElement) return;
         
-        // Gunakan event delegation untuk menghindari duplicate listeners
-        if (settingsElement.dataset.listenerSetup === 'true') return;
+        // Hapus listener lama jika ada (untuk mencegah duplicate listeners)
+        // Ini penting karena Turbo mungkin me-replace elemen dan kita perlu re-attach listener
+        if (settingsElement._toggleHandler) {
+            settingsElement.removeEventListener('change', settingsElement._toggleHandler, true);
+            settingsElement._toggleHandler = null;
+        }
         
-        settingsElement.addEventListener('change', async function(event) {
+        // Buat handler baru
+        settingsElement._toggleHandler = async function(event) {
             const toggleBtn = event.target;
             if (toggleBtn.id !== 'push-notification-toggle') return;
             
@@ -613,8 +757,12 @@
                 // Force update UI untuk memastikan sinkronisasi
                 updateUI(true);
             }
-        }, true); // Use capture phase
+        };
         
+        // Attach listener baru
+        settingsElement.addEventListener('change', settingsElement._toggleHandler, true);
+        
+        // Set flag untuk tracking (tapi akan di-reset di turbo:load)
         settingsElement.dataset.listenerSetup = 'true';
     }
 
@@ -632,8 +780,17 @@
     // Re-initialize saat Turbo load (untuk SPA behavior)
     // Skip jika elemen permanent sudah di-initialize dan state sama
     document.addEventListener('turbo:load', function() {
+        // Hanya aktifkan di halaman notif, jangan mengganggu navbar lain
+        if (window.location.pathname !== '/notif') {
+            return;
+        }
+        
         const settingsElement = document.getElementById('push-notification-settings');
         if (!settingsElement) return;
+        
+        // Reset flag listenerSetup untuk memungkinkan re-setup
+        // Ini penting karena Turbo mungkin me-replace elemen dan kita perlu re-attach listener
+        delete settingsElement.dataset.listenerSetup;
         
         // Untuk elemen permanent, check state dulu
         if (settingsElement.hasAttribute('data-turbo-permanent') && 
@@ -661,6 +818,9 @@
                         console.warn('Error verifying subscription status:', error);
                     });
                 }
+                
+                // Selalu setup toggle button saat turbo:load untuk memastikan listener ter-attach
+                setupToggleButton();
                 return;
             }
         }
@@ -668,6 +828,8 @@
         // Initialize jika belum atau state berbeda
         // Gunakan forceCheck untuk memastikan sinkronisasi dengan server
         initializePushNotification(true);
+        
+        // Selalu setup toggle button saat turbo:load untuk memastikan listener ter-attach
         setupToggleButton();
     });
 

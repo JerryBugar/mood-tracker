@@ -44,15 +44,69 @@ document.addEventListener('turbo:load', () => {
             // Tambahkan class untuk halaman dashboard
             document.body.classList.add('dashboard-page');
             
-            // Mencegah scroll pada mobile kecil saat splash aktif
-            if (window.innerWidth <= 375 && window.innerHeight <= 600) {
-                document.body.style.position = 'fixed';
-                document.body.style.overflow = 'hidden';
-                document.body.style.width = '100vw';
-                document.body.style.height = '100vh';
-                document.documentElement.style.overflow = 'hidden';
-                document.documentElement.style.height = '100vh';
-            }
+            // Simpan posisi scroll saat ini sebelum mencegah scroll
+            const scrollY = window.scrollY;
+            const scrollX = window.scrollX;
+            
+            // Mencegah scroll untuk semua ukuran layar saat splash aktif
+            document.body.style.position = 'fixed';
+            document.body.style.overflow = 'hidden';
+            document.body.style.width = '100vw';
+            document.body.style.height = '100vh';
+            document.body.style.top = `-${scrollY}px`;
+            document.body.style.left = `-${scrollX}px`;
+            document.documentElement.style.overflow = 'hidden';
+            document.documentElement.style.height = '100vh';
+            
+            // Fungsi untuk mencegah scroll behavior
+            const preventScroll = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+            };
+            
+            // Tambahkan event listener untuk mencegah scroll
+            const scrollEvents = ['wheel', 'touchmove', 'scroll', 'keydown'];
+            const scrollPreventers = [];
+            
+            scrollEvents.forEach(eventType => {
+                const preventer = (e) => {
+                    // Izinkan scroll hanya jika bukan arrow keys atau space/page up/down
+                    if (eventType === 'keydown') {
+                        const keys = ['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', ' '];
+                        if (keys.includes(e.key)) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            return false;
+                        }
+                    } else {
+                        preventScroll(e);
+                    }
+                };
+                document.addEventListener(eventType, preventer, { passive: false });
+                scrollPreventers.push({ eventType, preventer });
+            });
+            
+            // Fungsi untuk cleanup scroll prevention
+            const removeScrollPrevention = () => {
+                // Hapus semua event listener
+                scrollPreventers.forEach(({ eventType, preventer }) => {
+                    document.removeEventListener(eventType, preventer);
+                });
+                
+                // Kembalikan style body dan html
+                document.body.style.position = '';
+                document.body.style.overflow = '';
+                document.body.style.width = '';
+                document.body.style.height = '';
+                document.body.style.top = '';
+                document.body.style.left = '';
+                document.documentElement.style.overflow = '';
+                document.documentElement.style.height = '';
+                
+                // Kembalikan posisi scroll
+                window.scrollTo(scrollX, scrollY);
+            };
 
             requestAnimationFrame(() => {
                 // Pastikan logo final tersembunyi dulu sebelum menghitung posisi
@@ -88,6 +142,32 @@ document.addEventListener('turbo:load', () => {
                 `;
                 styleSheet.innerHTML = keyframes;
                 document.head.appendChild(styleSheet);
+
+                // Optimasi performa dengan will-change
+                splashLogo.style.willChange = 'transform, opacity';
+                
+                // Lock posisi viewport dengan menyimpan posisi scroll
+                // Pastikan viewport tidak berubah saat animasi berlangsung
+                const viewportLock = {
+                    scrollX: window.scrollX,
+                    scrollY: window.scrollY
+                };
+                
+                // Pastikan viewport tetap terkunci selama animasi
+                const lockViewport = () => {
+                    if (window.scrollX !== viewportLock.scrollX || window.scrollY !== viewportLock.scrollY) {
+                        window.scrollTo(viewportLock.scrollX, viewportLock.scrollY);
+                    }
+                };
+                
+                // Monitor dan lock viewport selama animasi
+                const viewportLockInterval = setInterval(lockViewport, 16); // ~60fps
+                
+                // Hapus viewport lock setelah animasi selesai
+                const removeViewportLock = () => {
+                    clearInterval(viewportLockInterval);
+                    splashLogo.style.willChange = '';
+                };
 
                 // Tampilkan splash logo dengan fade-in halus
                 // Gunakan cubic-bezier yang lebih dinamis untuk efek yang lebih menarik
@@ -125,6 +205,12 @@ document.addEventListener('turbo:load', () => {
                             document.getElementById('dynamic-splash-animation').remove();
                         }
                         
+                        // Hapus viewport lock setelah animasi selesai
+                        removeViewportLock();
+                        
+                        // Hapus scroll prevention setelah animasi selesai
+                        removeScrollPrevention();
+                        
                         // Cleanup sessionStorage setelah splash selesai (untuk next visit)
                         // Tapi jangan hapus jika masih di URL yang sama (untuk mencegah double load)
                         const splashKey = 'splash-screen-executed';
@@ -138,16 +224,6 @@ document.addEventListener('turbo:load', () => {
                                 sessionStorage.removeItem(splashKey);
                             }
                         }, 1000);
-                        
-                        // Kembalikan scroll pada mobile kecil setelah splash selesai
-                        if (window.innerWidth <= 375 && window.innerHeight <= 600) {
-                            document.body.style.position = '';
-                            document.body.style.overflow = '';
-                            document.body.style.width = '';
-                            document.body.style.height = '';
-                            document.documentElement.style.overflow = '';
-                            document.documentElement.style.height = '';
-                        }
                     });
                 });
             });

@@ -11,10 +11,8 @@ class CalendarController extends Controller
 {
     public function index(Request $request)
     {
+        // Middleware sudah memastikan user terautentikasi, tidak perlu pengecekan manual
         $user = Auth::user();
-        if (!$user) {
-            return redirect()->route('login');
-        }
 
         // Get year and month from request, default to current
         $year = $request->input('year', Carbon::now()->year);
@@ -114,10 +112,8 @@ class CalendarController extends Controller
     
     public function showDay(Request $request, $date)
     {
+        // Middleware sudah memastikan user terautentikasi, tidak perlu pengecekan manual
         $user = Auth::user();
-        if (!$user) {
-            return redirect()->route('login');
-        }
 
         $date = Carbon::createFromFormat('Y-m-d', $date);
         
