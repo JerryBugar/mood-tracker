@@ -11,7 +11,7 @@ Turbo.config.drive.progressBarDelay = 500; // Tunda progress bar untuk pengalama
 
 document.addEventListener('turbo:load', () => {
 
-    // Splash screen logic from original file
+    // Splash screen logic from original file - Optimized for mobile
     const splashLogo = document.getElementById('splash-logo-container');
     const mainContent = document.getElementById('main-content-wrapper');
     const finalLogo = document.getElementById('final-logo-position');
@@ -22,7 +22,7 @@ document.addEventListener('turbo:load', () => {
         const splashKey = 'splash-screen-executed';
         const currentUrl = window.location.href;
         const executedUrl = sessionStorage.getItem(splashKey);
-        
+
         // Jika splash sudah dieksekusi untuk URL yang sama, skip
         if (executedUrl === currentUrl && splashLogo.classList.contains('js-has-run')) {
             // Pastikan splash logo sudah dihapus jika sudah selesai
@@ -35,7 +35,7 @@ document.addEventListener('turbo:load', () => {
             }
             return;
         }
-        
+
         if (!splashLogo.classList.contains('js-has-run')) {
             // Tandai splash sudah dieksekusi untuk URL ini
             sessionStorage.setItem(splashKey, currentUrl);
@@ -43,11 +43,11 @@ document.addEventListener('turbo:load', () => {
 
             // Tambahkan class untuk halaman dashboard
             document.body.classList.add('dashboard-page');
-            
+
             // Simpan posisi scroll saat ini sebelum mencegah scroll
             const scrollY = window.scrollY;
             const scrollX = window.scrollX;
-            
+
             // Mencegah scroll untuk semua ukuran layar saat splash aktif
             document.body.style.position = 'fixed';
             document.body.style.overflow = 'hidden';
@@ -57,18 +57,18 @@ document.addEventListener('turbo:load', () => {
             document.body.style.left = `-${scrollX}px`;
             document.documentElement.style.overflow = 'hidden';
             document.documentElement.style.height = '100vh';
-            
+
             // Fungsi untuk mencegah scroll behavior
             const preventScroll = (e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 return false;
             };
-            
+
             // Tambahkan event listener untuk mencegah scroll
             const scrollEvents = ['wheel', 'touchmove', 'scroll', 'keydown'];
             const scrollPreventers = [];
-            
+
             scrollEvents.forEach(eventType => {
                 const preventer = (e) => {
                     // Izinkan scroll hanya jika bukan arrow keys atau space/page up/down
@@ -86,14 +86,14 @@ document.addEventListener('turbo:load', () => {
                 document.addEventListener(eventType, preventer, { passive: false });
                 scrollPreventers.push({ eventType, preventer });
             });
-            
+
             // Fungsi untuk cleanup scroll prevention
             const removeScrollPrevention = () => {
                 // Hapus semua event listener
                 scrollPreventers.forEach(({ eventType, preventer }) => {
                     document.removeEventListener(eventType, preventer);
                 });
-                
+
                 // Kembalikan style body dan html
                 document.body.style.position = '';
                 document.body.style.overflow = '';
@@ -103,16 +103,17 @@ document.addEventListener('turbo:load', () => {
                 document.body.style.left = '';
                 document.documentElement.style.overflow = '';
                 document.documentElement.style.height = '';
-                
+
                 // Kembalikan posisi scroll
                 window.scrollTo(scrollX, scrollY);
             };
 
+            // Optimasi splash screen untuk mobile: sederhanakan animasi dan pastikan transisi aman
             requestAnimationFrame(() => {
                 // Pastikan logo final tersembunyi dulu sebelum menghitung posisi
                 finalLogo.style.visibility = 'hidden';
                 finalLogo.style.opacity = '0';
-                
+
                 // Ambil posisi akhir logo sebelum menampilkannya
                 mainContent.classList.remove('hidden');
                 const finalRect = finalLogo.getBoundingClientRect();
@@ -127,16 +128,16 @@ document.addEventListener('turbo:load', () => {
                 styleSheet.id = 'dynamic-splash-animation';
                 const keyframes = `
                     @keyframes settleInPlace {
-                        0% { 
-                            transform: translate(-50%, -50%) scale(0.9); 
-                            opacity: 0; 
+                        0% {
+                            transform: translate(-50%, -50%) scale(0.9);
+                            opacity: 0;
                         }
                         15% {
                             opacity: 1;
                         }
-                        100% { 
-                            transform: translate(calc(-50% + ${finalX}px), calc(-50% + ${finalY}px)) scale(1.0); 
-                            opacity: 1; 
+                        100% {
+                            transform: translate(calc(-50% + ${finalX}px), calc(-50% + ${finalY}px)) scale(1.0);
+                            opacity: 1;
                         }
                     }
                 `;
@@ -145,86 +146,81 @@ document.addEventListener('turbo:load', () => {
 
                 // Optimasi performa dengan will-change
                 splashLogo.style.willChange = 'transform, opacity';
-                
-                // Lock posisi viewport dengan menyimpan posisi scroll
-                // Pastikan viewport tidak berubah saat animasi berlangsung
-                const viewportLock = {
-                    scrollX: window.scrollX,
-                    scrollY: window.scrollY
-                };
-                
-                // Pastikan viewport tetap terkunci selama animasi
-                const lockViewport = () => {
-                    if (window.scrollX !== viewportLock.scrollX || window.scrollY !== viewportLock.scrollY) {
-                        window.scrollTo(viewportLock.scrollX, viewportLock.scrollY);
-                    }
-                };
-                
-                // Monitor dan lock viewport selama animasi
-                const viewportLockInterval = setInterval(lockViewport, 16); // ~60fps
-                
-                // Hapus viewport lock setelah animasi selesai
-                const removeViewportLock = () => {
-                    clearInterval(viewportLockInterval);
-                    splashLogo.style.willChange = '';
-                };
 
                 // Tampilkan splash logo dengan fade-in halus
                 // Gunakan cubic-bezier yang lebih dinamis untuk efek yang lebih menarik
                 splashLogo.style.animation = 'settleInPlace 1.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards';
 
-                splashLogo.addEventListener('animationend', () => {
+                // Tambahkan fallback timeout sebagai cadangan jika animationend tidak terpicu
+                const animationDuration = 2000; // 1.8s + 0.2s buffer
+                const animationTimeout = setTimeout(() => {
+                    handleAnimationComplete();
+                }, animationDuration);
+
+                function handleAnimationComplete() {
+                    // Hapus timeout jika animationend terjadi lebih cepat
+                    if (animationTimeout) {
+                        clearTimeout(animationTimeout);
+                    }
+
                     // Tampilkan konten utama dengan fade-in halus
                     mainContent.classList.remove('hidden');
-                    
+
                     // Sembunyikan logo final sementara (sudah hidden dari awal)
                     finalLogo.style.visibility = 'hidden';
                     finalLogo.style.opacity = '0';
 
                     // Timing yang lebih seamless: langsung mulai fade-out splash logo
-                    // Gunakan requestAnimationFrame untuk timing yang lebih akurat
-                    requestAnimationFrame(() => {
-                        requestAnimationFrame(() => {
-                            // Fade-out splash logo dengan transisi yang halus
-                            splashLogo.style.opacity = '0';
-                            splashLogo.style.transition = 'opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
-                            
-                            // Tampilkan logo final dengan timing yang overlap untuk transisi seamless
-                            setTimeout(() => {
-                                finalLogo.style.visibility = 'visible';
-                                finalLogo.style.opacity = '1';
+                    // Gunakan setTimeout untuk timing yang lebih konsisten di mobile
+                    setTimeout(() => {
+                        // Fade-out splash logo dengan transisi yang halus
+                        splashLogo.style.opacity = '0';
+                        splashLogo.style.transition = 'opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+
+                        // Tampilkan logo final dengan timing yang overlap untuk transisi seamless
+                        setTimeout(() => {
+                            finalLogo.style.visibility = 'visible';
+                            finalLogo.style.opacity = '0'; // Mulai dari opacity 0 untuk transisi yang mulus
+
+                            // Beri sedikit delay sebelum menerapkan transisi untuk memastikan render
+                            requestAnimationFrame(() => {
                                 finalLogo.style.transition = 'opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
-                            }, 150); // Overlap sedikit dengan fade-out untuk transisi yang lebih halus
-                        });
-                    });
+                                finalLogo.style.opacity = '1';
+                            });
+                        }, 150); // Overlap sedikit dengan fade-out untuk transisi yang lebih halus
+                    }, 50); // Delay kecil sebelum mulai fade-out splash
 
                     // Setelah splash logo disembunyikan, hapus dari DOM
-                    splashLogo.addEventListener('transitionend', () => {
-                        splashLogo.remove();
+                    setTimeout(() => {
+                        if (splashLogo && splashLogo.parentNode) {
+                            splashLogo.remove();
+                        }
                         if (document.getElementById('dynamic-splash-animation')) {
                             document.getElementById('dynamic-splash-animation').remove();
                         }
-                        
-                        // Hapus viewport lock setelah animasi selesai
-                        removeViewportLock();
-                        
-                        // Hapus scroll prevention setelah animasi selesai
-                        removeScrollPrevention();
-                        
-                        // Cleanup sessionStorage setelah splash selesai (untuk next visit)
-                        // Tapi jangan hapus jika masih di URL yang sama (untuk mencegah double load)
-                        const splashKey = 'splash-screen-executed';
-                        const currentUrl = window.location.href;
-                        const executedUrl = sessionStorage.getItem(splashKey);
-                        
-                        // Hanya hapus jika URL berbeda (berarti sudah navigate ke halaman lain)
-                        // Atau hapus setelah delay untuk memastikan tidak ada double load
-                        setTimeout(() => {
-                            if (executedUrl !== currentUrl) {
-                                sessionStorage.removeItem(splashKey);
-                            }
-                        }, 1000);
-                    });
+                    }, 600); // Beri waktu untuk fade-out selesai sebelum dihapus
+
+                    // Hapus scroll prevention setelah animasi selesai
+                    removeScrollPrevention();
+
+                    // Cleanup sessionStorage setelah splash selesai (untuk next visit)
+                    // Tapi jangan hapus jika masih di URL yang sama (untuk mencegah double load)
+                    const splashKey = 'splash-screen-executed';
+                    const currentUrl = window.location.href;
+                    const executedUrl = sessionStorage.getItem(splashKey);
+
+                    // Hanya hapus jika URL berbeda (berarti sudah navigate ke halaman lain)
+                    // Atau hapus setelah delay untuk memastikan tidak ada double load
+                    setTimeout(() => {
+                        if (executedUrl !== currentUrl) {
+                            sessionStorage.removeItem(splashKey);
+                        }
+                    }, 1000);
+                }
+
+                // Event listener untuk animasi selesai
+                splashLogo.addEventListener('animationend', () => {
+                    handleAnimationComplete();
                 });
             });
         }
