@@ -58,10 +58,10 @@ class NotificationController extends Controller
     public function checkNew(Request $request)
     {
         $user = Auth::user();
-        
+
         // Ambil timestamp terakhir dari request (jika ada)
         $lastCheck = $request->get('last_check');
-        
+
         if (!$lastCheck) {
             // Jika tidak ada lastCheck, kembalikan semua notifikasi non-scheduled
             $user->load('notifications');
@@ -69,10 +69,10 @@ class NotificationController extends Controller
                 ->whereNull('scheduled_at') // Hanya notifikasi non-scheduled
                 ->orderBy('created_at', 'desc')
                 ->get();
-            
+
             if ($notifications->isNotEmpty()) {
                 $notificationsContent = view('notif._partials.notifications_list', compact('notifications'))->render();
-                
+
                 return response(
                     TurboStreamHelper::replace('notifications_frame', $notificationsContent),
                     200,
@@ -84,21 +84,25 @@ class NotificationController extends Controller
                     ]
                 );
             }
-            
+
             return response('', 204);
         }
-        
+
         // Convert timestamp dari seconds ke Carbon
         $lastCheckTime = \Carbon\Carbon::createFromTimestamp($lastCheck);
-        
+
         // Query notifikasi baru yang non-scheduled dan di-attach setelah lastCheck
-        // Gunakan wherePivot untuk mengecek created_at di pivot table
+        // Kita perlu memeriksa waktu di pivot table (kapan notifikasi di-attach ke user)
+        // DAN waktu pembuatan notifikasi itu sendiri
         $newNotifications = $user->notifications()
+            ->where(function($query) use ($lastCheckTime) {
+                $query->wherePivot('created_at', '>', $lastCheckTime) // Cek waktu attachment di pivot
+                      ->orWhere('notifications.created_at', '>', $lastCheckTime); // Cek waktu pembuatan notifikasi
+            })
             ->whereNull('scheduled_at') // Hanya notifikasi non-scheduled
-            ->wherePivot('created_at', '>', $lastCheckTime) // Cek waktu attachment di pivot table
             ->orderBy('created_at', 'desc')
             ->get();
-        
+
         // Jika ada notifikasi baru, kembalikan Turbo Stream untuk update frame
         if ($newNotifications->isNotEmpty()) {
             // Reload semua notifikasi untuk frame
@@ -106,9 +110,9 @@ class NotificationController extends Controller
             $allNotifications = $user->notifications()
                 ->orderBy('created_at', 'desc')
                 ->get();
-            
+
             $notificationsContent = view('notif._partials.notifications_list', compact('allNotifications'))->render();
-            
+
             return response(
                 TurboStreamHelper::replace('notifications_frame', $notificationsContent),
                 200,
@@ -120,7 +124,7 @@ class NotificationController extends Controller
                 ]
             );
         }
-        
+
         // Tidak ada notifikasi baru, kembalikan response kosong
         return response('', 204); // No Content
     }

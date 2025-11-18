@@ -366,7 +366,7 @@ document.addEventListener('turbo:frame-load', function(event) {
     if (event.target && event.target.id === 'notifications_frame') {
         // Update waktu terakhir frame dimuat
         lastFrameLoadTime = Date.now();
-        
+
         // Inisialisasi previousUnreadCount saat frame load
         previousUnreadCount = document.querySelectorAll('.notification-item.unread').length;
         updateUnreadCount();
@@ -382,32 +382,29 @@ document.addEventListener('turbo:frame-load', function(event) {
 document.addEventListener('turbo:load', function() {
     const currentUrl = window.location.href;
     const isNotifPage = window.location.pathname === '/notif';
-    
+
     // Cek apakah frame sudah ada
     const frame = document.getElementById('notifications_frame');
-    
+
     // Cek apakah ini navigasi baru ke halaman notif (bukan kembali dari navbar lain)
     if (isNotifPage && currentUrl !== lastNotifUrl) {
         lastNotifUrl = currentUrl;
-        
+
         // Inisialisasi previousUnreadCount saat navigasi baru
         previousUnreadCount = -1;
-        
-        // Hanya reload frame jika sudah lebih dari 60 detik sejak load terakhir
-        // Ini mencegah request berulang setiap kali navigasi
+
+        // Pastikan frame selalu mengarah ke route yang benar
         if (frame) {
-            const timeSinceLastLoad = Date.now() - lastFrameLoadTime;
-            const hasContent = frame.querySelector('.notifications-container:not(.empty-state)');
-            
-            // Jika frame sudah punya konten dan belum 60 detik, jangan reload
-            if (hasContent && timeSinceLastLoad < FRAME_RELOAD_INTERVAL) {
-                // Frame masih fresh, hanya update UI
-                updateUnreadCount();
-                return;
-            }
-            
-            // Reload frame hanya jika diperlukan (belum ada konten atau sudah lebih dari 60 detik)
-            // Turbo Frame dengan src akan otomatis memuat konten fresh
+            // Set ulang src frame ke route yang benar untuk menghindari cache atau state lama
+            const correctSrc = '/notif/list';
+            frame.setAttribute('src', correctSrc);
+
+            // Force reload frame content dengan mengganti src
+            // Tambahkan parameter cache-busting untuk memastikan konten baru dimuat
+            const newSrc = correctSrc + '?_t=' + Date.now();
+            frame.setAttribute('src', newSrc);
+
+            // Update lastFrameLoadTime untuk mencegah refresh berulang
             lastFrameLoadTime = Date.now();
         }
     } else if (!isNotifPage) {
@@ -416,7 +413,7 @@ document.addEventListener('turbo:load', function() {
         lastTurboStreamUpdate = 0;
         previousUnreadCount = -1;
     }
-    
+
     // Update unread count jika frame ada
     if (frame) {
         const hasFrameContent = frame.querySelector('.notifications-container');

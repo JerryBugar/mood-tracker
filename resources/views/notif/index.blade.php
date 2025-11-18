@@ -32,19 +32,18 @@
             </p>
         </div>
 
-        <turbo-frame id="notifications_frame" 
-                     src="{{ route('notif.list') }}" 
-                     data-turbo-action="replace" 
+        <turbo-frame id="notifications_frame"
+                     src="{{ route('notif.list') }}"
                      data-turbo-permanent
                      loading="lazy">
-    
+
             <div class="notifications-container empty-state">
                 <h3 class="no-notifications-title">Memuat Notifikasi...</h3>
                 <div class="spinner-border text-danger" role="status">
                     <span class="visually-hidden">Loading...</span>
                 </div>
             </div>
-            
+
         </turbo-frame>
     </div>
 
