@@ -190,12 +190,19 @@ document.addEventListener('click', async function(event) {
         }
         
         const button = document.querySelector('.btn-delete-all');
-    if (button) {
-        button.disabled = true;
+        if (button) {
+            button.disabled = true;
             button.innerHTML = '<i class="bi bi-hourglass-split"></i> Menghapus...';
-    }
+        }
 
         try {
+            // Tambahkan efek visual bahwa notifikasi sedang dihapus
+            const notificationItems = document.querySelectorAll('.notification-item');
+            notificationItems.forEach(item => {
+                item.style.opacity = '0.5';
+                item.style.transition = 'opacity 0.3s ease';
+            });
+
             const response = await fetch('/notif/delete-all', {
                 method: 'DELETE',
         headers: {
@@ -233,6 +240,12 @@ document.addEventListener('click', async function(event) {
             }
         } catch (error) {
             showToast('Terjadi kesalahan saat menghapus notifikasi', 'error');
+            // Kembalikan opacity notifikasi jika terjadi error
+            const notificationItems = document.querySelectorAll('.notification-item');
+            notificationItems.forEach(item => {
+                item.style.opacity = '1';
+            });
+
             if (button) {
                 button.disabled = false;
                 button.innerHTML = '<i class="bi bi-trash-fill"></i> Hapus Semua Notif';
