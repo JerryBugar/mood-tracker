@@ -229,10 +229,8 @@ class DashboardController extends Controller
             $scheduledAt = null;
             if ($request->scheduled_at) {
                 // Parse waktu dari input (format: YYYY-MM-DDTHH:mm)
-                // Asumsikan waktu input dalam timezone Asia/Jakarta (WIB/UTC+7)
-                $scheduledAt = \Carbon\Carbon::createFromFormat('Y-m-d\TH:i', $request->scheduled_at, 'Asia/Jakarta');
-                // Konversi ke UTC untuk disimpan di database
-                $scheduledAt = $scheduledAt->utc();
+                // Gunakan timezone aplikasi
+                $scheduledAt = \Carbon\Carbon::createFromFormat('Y-m-d\TH:i', $request->scheduled_at, config('app.timezone'));
             }
             $isScheduled = $scheduledAt && $scheduledAt->isFuture();
 

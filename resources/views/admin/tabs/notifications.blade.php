@@ -55,7 +55,7 @@
         </div>
 
         <div class="form-group mb-3">
-            <label for="schedule-time" class="form-label">Jadwal Kirim (opsional)</label>
+            <label for="schedule-time" class="form-label">Jadwal Kirim (opsional) - Waktu dalam WIB</label>
             <input type="datetime-local" id="schedule-time" class="form-control">
         </div>
 

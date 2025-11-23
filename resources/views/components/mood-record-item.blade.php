@@ -45,8 +45,8 @@ Props:
         @if($record->admin_response)
             <div class="admin-response-indicator mt-2">
                 <button type="button" 
-                        class="badge bg-info d-inline-flex align-items-center gap-1 border-0" 
-                        style="cursor: pointer;"
+                        class="badge d-inline-flex align-items-center gap-1 border-0" 
+                        style="cursor: pointer; background-color: #82272c; color: white;"
                         onclick="showAdminResponse({{ $record->id }}, {{ json_encode($record->admin_response) }}, {{ json_encode($record->admin_response_at ? \Carbon\Carbon::parse($record->admin_response_at)->locale('id_ID')->translatedFormat('l, j F Y H:i') : '') }})">
                     <i class="bi bi-check-circle-fill"></i>
                     Direspons oleh Admin/HRD
@@ -59,8 +59,8 @@ Props:
         {{ $formattedTime }}
         @if($record->admin_response)
             <div class="admin-response-badge mt-1">
-                <i class="bi bi-chat-dots-fill text-info" 
-                   style="font-size: 1.2rem; cursor: pointer;" 
+                <i class="bi bi-chat-dots-fill" 
+                   style="font-size: 1.2rem; cursor: pointer; color: #82272c;" 
                    title="Ada respons dari Admin/HRD"
                    onclick="showAdminResponse({{ $record->id }}, {{ json_encode($record->admin_response) }}, {{ json_encode($record->admin_response_at ? \Carbon\Carbon::parse($record->admin_response_at)->locale('id_ID')->translatedFormat('l, j F Y H:i') : '') }})"></i>
             </div>
@@ -73,7 +73,7 @@ Props:
 <div class="modal fade" id="adminResponseModal{{ $record->id }}" tabindex="-1" aria-labelledby="adminResponseModalLabel{{ $record->id }}" aria-hidden="true" data-turbo-permanent>
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header bg-info text-white">
+            <div class="modal-header text-white" style="background-color: #82272c;">
                 <h5 class="modal-title" id="adminResponseModalLabel{{ $record->id }}">
                     <i class="bi bi-chat-dots-fill me-2"></i>Respons dari Admin/HRD
                 </h5>
