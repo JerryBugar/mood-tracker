@@ -43,7 +43,7 @@ class NotificationController extends Controller
         
         $user->load('notifications');
         $notifications = $user->notifications()
-            ->orderBy('created_at', 'desc')
+            ->orderBy('notifications.created_at', 'desc')
             ->get();
 
         // Kembalikan view yang dibungkus dalam turbo-frame
@@ -64,10 +64,11 @@ class NotificationController extends Controller
 
         if (!$lastCheck) {
             // Jika tidak ada lastCheck, kembalikan semua notifikasi non-scheduled
+            // Ini fallback behavior, idealnya client selalu kirim lastCheck
             $user->load('notifications');
             $notifications = $user->notifications()
                 ->whereNull('scheduled_at') // Hanya notifikasi non-scheduled
-                ->orderBy('created_at', 'desc')
+                ->orderBy('notifications.created_at', 'desc')
                 ->get();
 
             if ($notifications->isNotEmpty()) {
@@ -92,29 +93,37 @@ class NotificationController extends Controller
         $lastCheckTime = \Carbon\Carbon::createFromTimestamp($lastCheck);
 
         // Query notifikasi baru yang non-scheduled dan di-attach setelah lastCheck
-        // Kita perlu memeriksa waktu di pivot table (kapan notifikasi di-attach ke user)
-        // DAN waktu pembuatan notifikasi itu sendiri
         $newNotifications = $user->notifications()
             ->where(function($query) use ($lastCheckTime) {
-                $query->wherePivot('created_at', '>', $lastCheckTime) // Cek waktu attachment di pivot
+                $query->where('notification_user.created_at', '>', $lastCheckTime) // Cek waktu attachment di pivot
                       ->orWhere('notifications.created_at', '>', $lastCheckTime); // Cek waktu pembuatan notifikasi
             })
-            ->whereNull('scheduled_at') // Hanya notifikasi non-scheduled
-            ->orderBy('created_at', 'desc')
+            ->whereNull('notifications.scheduled_at') // Hanya notifikasi non-scheduled
+            ->reorder() // Hapus default ordering dari model User
+            ->orderBy('notifications.created_at', 'asc') // Order ASC agar di-prepend dengan urutan yang benar
             ->get();
 
         // Jika ada notifikasi baru, kembalikan Turbo Stream untuk update frame
         if ($newNotifications->isNotEmpty()) {
-            // Reload semua notifikasi untuk frame
-            $user->load('notifications');
-            $allNotifications = $user->notifications()
-                ->orderBy('created_at', 'desc')
-                ->get();
-
-            $notificationsContent = view('notif._partials.notifications_list', compact('allNotifications'))->render();
+            $streamContent = '';
+            
+            // Loop setiap notifikasi baru dan buat stream prepend
+            foreach ($newNotifications as $notification) {
+                $itemHtml = view('notif._partials.notification_item', compact('notification'))->render();
+                
+                // Gunakan prepend untuk menambahkan ke atas list
+                // Target class .notification-list
+                $streamContent .= '<turbo-stream action="prepend" target=".notification-list">' .
+                                 '<template>' . $itemHtml . '</template>' .
+                                 '</turbo-stream>';
+            }
+            
+            // Tambahkan stream untuk menghapus "empty state" jika ada
+            $streamContent .= '<turbo-stream action="remove" target=".no-notifications"></turbo-stream>';
+            $streamContent .= '<turbo-stream action="remove" target=".empty-state"></turbo-stream>';
 
             return response(
-                TurboStreamHelper::replace('notifications_frame', $notificationsContent),
+                $streamContent,
                 200,
                 [
                     'Content-Type' => 'text/vnd.turbo-stream.html',
@@ -162,7 +171,7 @@ class NotificationController extends Controller
             // Reload user untuk memastikan relasi fresh
             $user->load('notifications');
             $notifications = $user->notifications()
-                ->orderBy('created_at', 'desc')
+                ->orderBy('notifications.created_at', 'desc')
                 ->get();
             
             $notificationsContent = view('notif._partials.notifications_list', compact('notifications'))->render();
@@ -211,7 +220,7 @@ class NotificationController extends Controller
             // Reload user untuk memastikan relasi fresh
             $user->load('notifications');
             $notifications = $user->notifications()
-                ->orderBy('created_at', 'desc')
+                ->orderBy('notifications.created_at', 'desc')
                 ->get();
             
             $notificationsContent = view('notif._partials.notifications_list', compact('notifications'))->render();
@@ -298,7 +307,7 @@ class NotificationController extends Controller
                 // Reload user untuk memastikan relasi fresh
                 $user->load('notifications');
                 $notifications = $user->notifications()
-                    ->orderBy('created_at', 'desc')
+                    ->orderBy('notifications.created_at', 'desc')
                     ->get();
                 
                 $notificationsContent = view('notif._partials.notifications_list', compact('notifications'))->render();

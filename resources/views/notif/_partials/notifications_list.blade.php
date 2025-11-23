@@ -21,9 +21,13 @@
         @endif
         @if($unreadCount == 0 && $totalNotifications > 0)
             <div class="mark-all-container">
-                <button type="button" class="btn-delete-all" data-action="delete-all" data-turbo-frame="notifications_frame">
-                    <i class="bi bi-trash-fill"></i> Hapus Semua Notif
-                </button>
+                <form action="{{ route('notif.delete-all') }}" method="POST" data-turbo-frame="notifications_frame" data-turbo-stream>
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="btn-delete-all">
+                        <i class="bi bi-trash-fill"></i> Hapus Semua Notif
+                    </button>
+                </form>
             </div>
         @endif
         <div class="notification-list">

@@ -16,7 +16,7 @@ function showToast(message, type = 'success') {
     const toastElement = document.getElementById('notificationToast');
     const toastMessage = document.getElementById('toast-message');
     const toastTitle = document.getElementById('toast-title');
-    
+
     if (!toastElement || !toastMessage || !toastTitle) {
         console.log('Toast element tidak ditemukan:', message);
         return;
@@ -26,13 +26,13 @@ function showToast(message, type = 'success') {
     const toastIcon = toastElement.querySelector('.toast-icon');
 
     toastMessage.textContent = message;
-    
+
     if (type === 'success') {
         toastTitle.textContent = 'Berhasil';
         toastTitle.classList.remove('error');
         toastElement.classList.remove('error');
         toastElement.classList.add('success');
-        
+
         if (toastIconWrapper) toastIconWrapper.classList.remove('error');
         if (toastIcon) toastIcon.className = 'toast-icon bi bi-check-circle-fill';
     } else {
@@ -40,7 +40,7 @@ function showToast(message, type = 'success') {
         toastTitle.classList.add('error');
         toastElement.classList.remove('success');
         toastElement.classList.add('error');
-        
+
         if (toastIconWrapper) toastIconWrapper.classList.add('error');
         if (toastIcon) toastIcon.className = 'toast-icon bi bi-exclamation-circle-fill';
     }
@@ -56,38 +56,38 @@ function showToast(message, type = 'success') {
 
 function showToastNow(toastElement) {
     toastElement.classList.remove('hiding', 'show');
-    
+
     const hideHandler = toastElement._hideHandler;
     if (hideHandler) {
         toastElement.removeEventListener('hide.bs.toast', hideHandler);
     }
-    
+
     const newHideHandler = () => toastElement.classList.add('hiding');
     toastElement._hideHandler = newHideHandler;
     toastElement.addEventListener('hide.bs.toast', newHideHandler);
-    
+
     const toastContainer = toastElement.closest('.toast-container');
     if (toastContainer) toastContainer.style.display = 'block';
-    
+
     const toast = new bootstrap.Toast(toastElement, {
         autohide: true,
         delay: 4000
     });
-    
+
     toast.show();
 }
 
 // Event delegation untuk tombol mark as read (menggunakan Turbo form)
-document.addEventListener('submit', async function(event) {
+document.addEventListener('submit', async function (event) {
     const form = event.target;
-    
+
     // Track Turbo Stream update saat form submit untuk notifications_frame
-    if (form && form.hasAttribute('data-turbo-frame') && 
+    if (form && form.hasAttribute('data-turbo-frame') &&
         form.getAttribute('data-turbo-frame') === 'notifications_frame') {
         // Track timestamp saat form submit untuk prevent double refresh
         lastTurboStreamUpdate = Date.now();
     }
-    
+
     // Handle mark as read form
     if (form.action && form.action.includes('/notif/') && form.action.includes('/read')) {
         const button = form.querySelector('button[type="submit"]');
@@ -96,7 +96,7 @@ document.addEventListener('submit', async function(event) {
             button.textContent = 'Memproses...';
         }
     }
-    
+
     // Handle mark all as read form
     if (form.action && form.action.includes('/notif/read-all')) {
         const button = form.querySelector('button[type="submit"]');
@@ -108,7 +108,7 @@ document.addEventListener('submit', async function(event) {
 });
 
 // Track saat Turbo Stream message diterima
-document.addEventListener('turbo:before-stream-render', function(event) {
+document.addEventListener('turbo:before-stream-render', function (event) {
     // Cek apakah target adalah notifications_frame
     // event.detail.render adalah function, kita perlu cek event.target
     const streamElement = event.target;
@@ -128,17 +128,17 @@ let lastFrameLoadTime = 0;
 const FRAME_RELOAD_INTERVAL = 60000; // 60 detik - hanya reload frame setiap 60 detik
 
 // Handle Turbo Stream render untuk update langsung
-document.addEventListener('turbo:frame-render', function(event) {
+document.addEventListener('turbo:frame-render', function (event) {
     // Cek apakah ini render dari notifications_frame
     if (event.target && event.target.id === 'notifications_frame') {
         // Update timestamp
         lastTurboStreamUpdate = Date.now();
-        
+
         // Update unread count langsung tanpa delay
         const currentUnreadCount = document.querySelectorAll('.notification-item.unread').length;
         const currentTotalCount = document.querySelectorAll('.notification-item').length;
         updateUnreadCount();
-        
+
         // Show toast untuk delete all (jika semua notifikasi dihapus)
         if (currentTotalCount === 0 && previousUnreadCount >= 0) {
             showToast('Semua notifikasi berhasil dihapus', 'success');
@@ -162,33 +162,33 @@ document.addEventListener('turbo:frame-render', function(event) {
 });
 
 // Handle delete all dengan Turbo
-document.addEventListener('click', async function(event) {
+document.addEventListener('click', async function (event) {
     const target = event.target.closest('[data-action="delete-all"]');
     if (!target) return;
-    
+
     event.preventDefault();
-    
+
     const modalElement = document.getElementById('deleteConfirmModal');
     if (!modalElement) {
         showToast('Modal tidak ditemukan', 'error');
         return;
     }
-    
+
     const confirmBtn = document.getElementById('confirmDeleteBtn');
     if (!confirmBtn) {
         showToast('Tombol konfirmasi tidak ditemukan', 'error');
         return;
     }
-    
-    // Clone button untuk reset event listener
+
+    // Clone button for fresh listener
     const newConfirmBtn = confirmBtn.cloneNode(true);
     confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
-    
-    newConfirmBtn.addEventListener('click', async function() {
+
+    newConfirmBtn.addEventListener('click', async function () {
         if (document.activeElement === newConfirmBtn) {
             newConfirmBtn.blur();
         }
-        
+
         const button = document.querySelector('.btn-delete-all');
         if (button) {
             button.disabled = true;
@@ -196,63 +196,57 @@ document.addEventListener('click', async function(event) {
         }
 
         try {
-            // Tambahkan efek visual bahwa notifikasi sedang dihapus
-            const notificationItems = document.querySelectorAll('.notification-item');
-            notificationItems.forEach(item => {
-                item.style.opacity = '0.5';
-                item.style.transition = 'opacity 0.3s ease';
-            });
-
             const response = await fetch('/notif/delete-all', {
                 method: 'DELETE',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': getCsrfToken(),
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': getCsrfToken(),
                     'Accept': 'text/vnd.turbo-stream.html, application/json',
                     'Turbo-Frame': 'notifications_frame'
-        }
+                }
             });
-            
+
             if (response.ok) {
                 const contentType = response.headers.get('content-type');
                 if (contentType && contentType.includes('text/vnd.turbo-stream.html')) {
                     const text = await response.text();
-                    // Track Turbo Stream update
-                    lastTurboStreamUpdate = Date.now();
-                    // Reset previousUnreadCount karena semua akan dihapus
-                    previousUnreadCount = 0;
+                    // Render Turbo Stream; UI will update via Turbo without manual reload
                     if (window.Turbo) {
                         window.Turbo.renderStreamMessage(text);
                     }
-                    // Toast akan muncul setelah frame render
+                    // Reset unread count after delete all
+                    previousUnreadCount = 0;
                 } else {
-                    const data = await response.json();
-                    if (data.success) {
-                        // Reload frame dengan Turbo
-                        const frame = document.getElementById('notifications_frame');
-                        if (frame) {
-                            lastTurboStreamUpdate = Date.now();
-                            previousUnreadCount = 0;
-                            frame.src = frame.src;
-                        }
+                    // Fallback: reload the notifications frame once
+                    const frame = document.getElementById('notifications_frame');
+                    if (frame) {
+                        frame.src = frame.src;
                     }
                 }
+                // Hide the modal after successful deletion
+                bootstrap.Modal.getInstance(modalElement).hide();
+            } else if (response.status === 419) {
+                console.log('CSRF token mismatch (419), reloading page...');
+                window.location.reload();
+                return;
+            } else {
+                // Try to read error message from JSON response
+                let data = {};
+                try {
+                    data = await response.json();
+                } catch (e) {
+                    // ignore parse error
+                }
+                showToast(data.message || 'Gagal menghapus notifikasi', 'error');
             }
         } catch (error) {
-            showToast('Terjadi kesalahan saat menghapus notifikasi', 'error');
-            // Kembalikan opacity notifikasi jika terjadi error
-            const notificationItems = document.querySelectorAll('.notification-item');
-            notificationItems.forEach(item => {
-                item.style.opacity = '1';
-            });
-
             if (button) {
                 button.disabled = false;
                 button.innerHTML = '<i class="bi bi-trash-fill"></i> Hapus Semua Notif';
             }
         }
     });
-    
+
     const modal = new bootstrap.Modal(modalElement);
     modal.show();
 });
@@ -262,24 +256,24 @@ function updateUnreadCount() {
     const unreadItems = document.querySelectorAll('.notification-item.unread');
     const allItems = document.querySelectorAll('.notification-item');
     const markAllContainer = document.querySelector('.mark-all-container');
-    
+
     if (!markAllContainer) return;
-    
-        const markAllButton = markAllContainer.querySelector('.btn-mark-all-read');
-        const deleteAllButton = markAllContainer.querySelector('.btn-delete-all');
-        
-        if (markAllButton && (unreadItems.length === 0 || unreadItems.length <= 1)) {
+
+    const markAllButton = markAllContainer.querySelector('.btn-mark-all-read');
+    const deleteAllButton = markAllContainer.querySelector('.btn-delete-all');
+
+    if (markAllButton && (unreadItems.length === 0 || unreadItems.length <= 1)) {
         markAllButton.closest('.mark-all-container').style.display = 'none';
+    }
+
+    if (unreadItems.length === 0 && allItems.length > 0) {
+        if (deleteAllButton) {
+            markAllContainer.style.display = 'flex';
+            deleteAllButton.style.display = 'inline-flex';
         }
-        
-        if (unreadItems.length === 0 && allItems.length > 0) {
-            if (deleteAllButton) {
-                markAllContainer.style.display = 'flex';
-                deleteAllButton.style.display = 'inline-flex';
-            }
-        } else {
-            if (deleteAllButton) {
-                deleteAllButton.style.display = 'none';
+    } else {
+        if (deleteAllButton) {
+            deleteAllButton.style.display = 'none';
         }
     }
 }
@@ -287,30 +281,30 @@ function updateUnreadCount() {
 // Setup modal handlers (hanya sekali)
 if (!window.deleteModalHandlersSetup) {
     window.deleteModalHandlersSetup = true;
-    
-    document.addEventListener('turbo:load', function() {
-    const modalElement = document.getElementById('deleteConfirmModal');
+
+    document.addEventListener('turbo:load', function () {
+        const modalElement = document.getElementById('deleteConfirmModal');
         if (!modalElement) return;
 
-    modalElement.addEventListener('hide.bs.modal', function() {
-        const activeElement = document.activeElement;
-        if (modalElement.contains(activeElement) && 
-            activeElement !== document.body && 
-            typeof activeElement.blur === 'function') {
-            activeElement.blur();
-        }
-    });
+        modalElement.addEventListener('hide.bs.modal', function () {
+            const activeElement = document.activeElement;
+            if (modalElement.contains(activeElement) &&
+                activeElement !== document.body &&
+                typeof activeElement.blur === 'function') {
+                activeElement.blur();
+            }
+        });
 
-    modalElement.addEventListener('show.bs.modal', function() {
-        modalElement.removeAttribute('aria-hidden');
-    });
+        modalElement.addEventListener('show.bs.modal', function () {
+            modalElement.removeAttribute('aria-hidden');
+        });
 
-    modalElement.addEventListener('shown.bs.modal', function() {
-        modalElement.removeAttribute('aria-hidden');
-    });
+        modalElement.addEventListener('shown.bs.modal', function () {
+            modalElement.removeAttribute('aria-hidden');
+        });
 
-    modalElement.addEventListener('hidden.bs.modal', function() {
-        modalElement.setAttribute('aria-hidden', 'true');
+        modalElement.addEventListener('hidden.bs.modal', function () {
+            modalElement.setAttribute('aria-hidden', 'true');
         });
     });
 }
@@ -331,12 +325,12 @@ async function refreshNotificationsFrame() {
     }
     const frame = document.getElementById('notifications_frame');
     if (!frame) return;
-    
+
     try {
         // Fetch fresh data dari server dengan cache busting
         const url = new URL('/notif', window.location.origin);
         url.searchParams.set('_t', Date.now());
-        
+
         const response = await fetch(url.toString(), {
             method: 'GET',
             headers: {
@@ -346,21 +340,21 @@ async function refreshNotificationsFrame() {
             },
             cache: 'no-store'
         });
-        
+
         if (response.ok) {
             const html = await response.text();
             // Extract content dari turbo-frame
             const parser = new DOMParser();
             const doc = parser.parseFromString(html, 'text/html');
-            
+
             // Ambil content dari turbo-frame
             const turboFrame = doc.querySelector('turbo-frame#notifications_frame');
             const notificationsContainer = doc.querySelector('.notifications-container');
-            
+
             // Gunakan content dari turbo-frame jika ada, atau langsung dari container
-            const content = turboFrame ? turboFrame.innerHTML : 
-                          (notificationsContainer ? notificationsContainer.outerHTML : null);
-            
+            const content = turboFrame ? turboFrame.innerHTML :
+                (notificationsContainer ? notificationsContainer.outerHTML : null);
+
             if (content && frame) {
                 // Replace content frame dengan data fresh
                 frame.innerHTML = content;
@@ -375,7 +369,7 @@ async function refreshNotificationsFrame() {
 }
 
 // Turbo events
-document.addEventListener('turbo:frame-load', function(event) {
+document.addEventListener('turbo:frame-load', function (event) {
     if (event.target && event.target.id === 'notifications_frame') {
         // Update waktu terakhir frame dimuat
         lastFrameLoadTime = Date.now();
@@ -392,7 +386,7 @@ document.addEventListener('turbo:frame-load', function(event) {
 });
 
 // Refresh frame saat kembali ke halaman notif
-document.addEventListener('turbo:load', function() {
+document.addEventListener('turbo:load', function () {
     const currentUrl = window.location.href;
     const isNotifPage = window.location.pathname === '/notif';
 
@@ -408,9 +402,11 @@ document.addEventListener('turbo:load', function() {
 
         // Pastikan frame selalu mengarah ke route yang benar
         if (frame) {
-            // Set ulang src frame ke route yang benar untuk menghindari cache atau state lama
             const correctSrc = '/notif/list';
-            frame.setAttribute('src', correctSrc);
+            // Hanya set src jika berbeda dari yang sudah ada
+            if (frame.getAttribute('src') !== correctSrc) {
+                frame.setAttribute('src', correctSrc);
+            }
 
             // Force reload frame content dengan mengganti src
             // Tambahkan parameter cache-busting untuk memastikan konten baru dimuat
@@ -439,7 +435,9 @@ document.addEventListener('turbo:load', function() {
 // Polling untuk notifikasi baru (non-scheduled) secara real-time
 let newNotificationPollInterval = null;
 let lastNotificationCheckTime = Date.now();
-const NEW_NOTIFICATION_POLL_INTERVAL = 3000; // 3 detik - check setiap 3 detik untuk real-time
+const NEW_NOTIFICATION_POLL_INTERVAL = 15000; // 15 detik - mengurangi beban server
+// Flag untuk menandai apakah polling sedang dijeda karena tab tidak aktif
+let pollingPaused = false;
 
 // Fungsi untuk check notifikasi baru
 async function checkNewNotifications() {
@@ -447,16 +445,16 @@ async function checkNewNotifications() {
     if (window.location.pathname !== '/notif') {
         return;
     }
-    
+
     const frame = document.getElementById('notifications_frame');
     if (!frame) {
         return;
     }
-    
+
     try {
         const url = new URL('/notif/check-new', window.location.origin);
         url.searchParams.set('last_check', Math.floor(lastNotificationCheckTime / 1000)); // Convert ke seconds
-        
+
         const response = await fetch(url.toString(), {
             method: 'GET',
             headers: {
@@ -465,10 +463,10 @@ async function checkNewNotifications() {
             },
             cache: 'no-store'
         });
-        
+
         if (response.ok) {
             const contentType = response.headers.get('content-type');
-            
+
             // Jika ada Turbo Stream response, render untuk update frame
             if (contentType && contentType.includes('text/vnd.turbo-stream.html')) {
                 const text = await response.text();
@@ -495,18 +493,29 @@ function startNewNotificationPolling() {
     if (newNotificationPollInterval) {
         clearInterval(newNotificationPollInterval);
     }
-    
+
     // Hanya start jika di halaman notif
     if (window.location.pathname === '/notif') {
         // Set initial timestamp saat pertama kali load
         lastNotificationCheckTime = Date.now();
-        
-        // Start polling setiap 3 detik
+
+        // Start polling dengan interval yang lebih lama
         newNotificationPollInterval = setInterval(() => {
+            // Jika tab tidak aktif, skip polling
+            if (document.hidden || pollingPaused) return;
             checkNewNotifications();
         }, NEW_NOTIFICATION_POLL_INTERVAL);
     }
 }
+
+// Listener untuk meng-pause polling saat tab tidak terlihat
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+        pollingPaused = true;
+    } else {
+        pollingPaused = false;
+    }
+});
 
 // Stop polling saat keluar dari halaman notif
 function stopNewNotificationPolling() {
@@ -517,9 +526,9 @@ function stopNewNotificationPolling() {
 }
 
 // Start polling saat turbo:load di halaman notif
-document.addEventListener('turbo:load', function() {
+document.addEventListener('turbo:load', function () {
     const isNotifPage = window.location.pathname === '/notif';
-    
+
     if (isNotifPage) {
         // Start polling untuk notifikasi baru
         startNewNotificationPolling();
@@ -530,22 +539,22 @@ document.addEventListener('turbo:load', function() {
 });
 
 // Stop polling saat sebelum navigate away
-document.addEventListener('turbo:before-visit', function() {
+document.addEventListener('turbo:before-visit', function () {
     stopNewNotificationPolling();
 });
 
 // Listen untuk message dari service worker untuk refresh frame saat notifikasi baru diterima
 if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.addEventListener('message', function(event) {
+    navigator.serviceWorker.addEventListener('message', function (event) {
         // Cek apakah message adalah notifikasi baru
         if (event.data && event.data.type === 'new-notification') {
             // Cek apakah user sedang di halaman notif
             const isNotifPage = window.location.pathname === '/notif';
-            
+
             if (isNotifPage) {
                 // Update timestamp karena sudah menerima notifikasi baru dari push
                 lastNotificationCheckTime = Date.now();
-                
+
                 // Cek apakah frame sudah ada
                 const frame = document.getElementById('notifications_frame');
                 if (frame) {

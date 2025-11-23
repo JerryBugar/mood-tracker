@@ -82,7 +82,7 @@ class User extends Authenticatable
         return $this->belongsToMany(Notification::class, 'notification_user')
                     ->withPivot('is_read', 'read_at')
                     ->withTimestamps()
-                    ->orderBy('created_at', 'desc');
+                    ->orderBy('notifications.created_at', 'desc');
     }
 
     /**

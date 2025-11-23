@@ -21,10 +21,10 @@ class NotificationService
         $errors = [];
 
         // Query notifikasi yang perlu diproses
-        // Gunakan UTC untuk konsistensi dengan database
-        $now = now()->utc();
+        // Gunakan timezone aplikasi (Asia/Jakarta)
+        $now = now()->timezone('Asia/Jakarta');
         $query = Notification::whereNotNull('scheduled_at')
-            ->whereRaw('scheduled_at <= ?', [$now])
+            ->where('scheduled_at', '<=', $now)
             ->whereDoesntHave('users');
 
         // Jika ada notificationId, proses hanya notifikasi tersebut
