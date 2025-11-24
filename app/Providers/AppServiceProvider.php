@@ -22,6 +22,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        if ($this->app->environment('production')) {
+            \Illuminate\Support\Facades\URL::forceScheme('https');
+        }
+
+
         // Rate limiter untuk verifikasi kode perusahaan
         // 3 attempts per 15 menit berdasarkan IP address
         RateLimiter::for('verification', function (Request $request) {
