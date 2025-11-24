@@ -344,6 +344,13 @@ class NotificationController extends Controller
      */
     public function subscribePush(Request $request)
     {
+        \Log::info('Subscribe push notification request received', [
+            'user_id' => Auth::id(),
+            'has_csrf' => $request->header('X-CSRF-TOKEN') !== null,
+            'csrf_token' => substr($request->header('X-CSRF-TOKEN'), 0, 10) . '...',
+            'session_token' => substr($request->session()->token(), 0, 10) . '...',
+        ]);
+
         $user = Auth::user();
 
         $request->validate([
@@ -377,6 +384,10 @@ class NotificationController extends Controller
                 'subscription' => $subscription
             ]);
         } catch (\Exception $e) {
+            \Log::error('Error subscribing push notification', [
+                'error' => $e->getMessage(),
+                'user_id' => Auth::id()
+            ]);
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal subscribe push notification: ' . $e->getMessage()

@@ -81,6 +81,15 @@
             });
         });
         
+        // Update CSRF token di setiap fetch request Turbo
+        document.addEventListener('turbo:before-fetch-request', function(event) {
+            // Ambil CSRF token terbaru dari cookie atau meta tag
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+            if (csrfToken) {
+                event.detail.fetchOptions.headers['X-CSRF-TOKEN'] = csrfToken;
+            }
+        });
+        
         // Konfigurasi perilaku Turbo
         document.addEventListener('turbo:before-visit', function(event) {
             // Mencegah kunjungan ke URL yang sama (mencegah reload tidak perlu)

@@ -9,7 +9,7 @@ function getCsrfToken() {
 // Fungsi untuk menampilkan toast notification
 function showToast(message, type = 'success') {
     if (typeof bootstrap === 'undefined') {
-        console.log('Toast tidak tersedia:', message);
+
         return;
     }
 
@@ -18,7 +18,7 @@ function showToast(message, type = 'success') {
     const toastTitle = document.getElementById('toast-title');
 
     if (!toastElement || !toastMessage || !toastTitle) {
-        console.log('Toast element tidak ditemukan:', message);
+
         return;
     }
 
@@ -226,7 +226,7 @@ document.addEventListener('click', async function (event) {
                 // Hide the modal after successful deletion
                 bootstrap.Modal.getInstance(modalElement).hide();
             } else if (response.status === 419) {
-                console.log('CSRF token mismatch (419), reloading page...');
+
                 window.location.reload();
                 return;
             } else {
@@ -364,7 +364,7 @@ async function refreshNotificationsFrame() {
             }
         }
     } catch (error) {
-        console.warn('Error refreshing notifications frame:', error);
+
     }
 }
 
@@ -483,7 +483,7 @@ async function checkNewNotifications() {
         }
     } catch (error) {
         // Silent fail - jangan ganggu user dengan error logging
-        console.warn('Error checking new notifications:', error);
+
     }
 }
 

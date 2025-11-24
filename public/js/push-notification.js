@@ -14,48 +14,94 @@
 
     // Cek apakah browser support push notification
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-        console.log('Browser tidak mendukung push notification');
+
         return;
     }
 
-    let currentSubscription = null;
-    let isSubscribed = false;
+    // Gunakan window object untuk state agar persist antar Turbo navigation
+    if (!window.pushNotificationState) {
+        window.pushNotificationState = {
+            currentSubscription: null,
+            isSubscribed: false
+        };
+    }
 
-    // Storage key untuk sessionStorage
+    // Storage key untuk localStorage
     const STORAGE_KEY = 'push_notification_state';
     let updateUITimeout = null;
 
-    // Get CSRF token
+    // Get CSRF token dari meta tag
     function getCsrfToken() {
         const metaTag = document.querySelector('meta[name="csrf-token"]');
         return metaTag ? metaTag.getAttribute('content') : '';
     }
 
-    // Simpan state ke sessionStorage
+    // Helper function untuk membaca cookie
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+        return null;
+    }
+
+    // Refresh CSRF token dari server
+    async function refreshCsrfToken() {
+        try {
+            const response = await fetch('/notif', {
+                method: 'GET',
+                headers: {
+                    'Accept': 'text/html',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin'
+            });
+
+            if (response.ok) {
+                const html = await response.text();
+                // Extract CSRF token dari response HTML
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const csrfMeta = doc.querySelector('meta[name="csrf-token"]');
+
+                if (csrfMeta) {
+                    const newToken = csrfMeta.getAttribute('content');
+                    // Update token di halaman saat ini
+                    const currentMeta = document.querySelector('meta[name="csrf-token"]');
+                    if (currentMeta) {
+                        currentMeta.setAttribute('content', newToken);
+
+                        return newToken;
+                    }
+                }
+            }
+        } catch (error) {
+
+        }
+        return getCsrfToken(); // Fallback ke token yang ada
+    }
+
+    // Simpan state ke localStorage (permanent)
     function saveStateToStorage() {
         try {
-            sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
-                isSubscribed: isSubscribed,
+            localStorage.setItem(STORAGE_KEY, JSON.stringify({
+                isSubscribed: window.pushNotificationState.isSubscribed,
                 timestamp: Date.now()
             }));
         } catch (e) {
-            console.warn('Tidak bisa menyimpan state ke sessionStorage:', e);
+
         }
     }
 
-    // Load state dari sessionStorage
+    // Load state dari localStorage
     function loadStateFromStorage() {
         try {
-            const stored = sessionStorage.getItem(STORAGE_KEY);
+            const stored = localStorage.getItem(STORAGE_KEY);
             if (stored) {
                 const state = JSON.parse(stored);
-                // State valid selama 5 menit
-                if (Date.now() - state.timestamp < 300000) {
-                    return state.isSubscribed;
-                }
+                return state.isSubscribed;
             }
         } catch (e) {
-            console.warn('Tidak bisa load state dari sessionStorage:', e);
+
         }
         return null;
     }
@@ -68,12 +114,13 @@
                 headers: {
                     'X-CSRF-TOKEN': getCsrfToken(),
                     'Accept': 'application/json'
-                }
+                },
+                credentials: 'same-origin'
             });
 
             if (!response.ok) {
                 if (response.status === 419) {
-                    console.log('CSRF token mismatch (419), reloading page...');
+
 
                     // Increment reload count
                     const currentCount = parseInt(sessionStorage.getItem('push_reload_count') || '0');
@@ -88,7 +135,7 @@
             const data = await response.json();
             return data.subscribed || false;
         } catch (error) {
-            console.error('Error checking subscription status:', error);
+
             return false;
         }
     }
@@ -160,14 +207,17 @@
                 applicationServerKey: urlBase64ToUint8Array(getVapidPublicKey())
             });
 
+
+
             // Kirim subscription ke server
             const response = await fetch('/notif/push/subscribe', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': getCsrfToken(),
+                    'X-CSRF-TOKEN': csrfToken,
                     'Accept': 'application/json'
                 },
+                credentials: 'same-origin',
                 body: JSON.stringify({
                     endpoint: subscription.endpoint,
                     keys: {
@@ -177,25 +227,40 @@
                 })
             });
 
+            // Cek apakah response berhasil
+            if (!response.ok) {
+
+                if (response.status === 419) {
+                    // CSRF token mismatch - jangan reload, tapi throw error
+                    throw new Error('CSRF token mismatch. Silakan refresh halaman dan coba lagi.');
+                }
+                const errorText = await response.text();
+
+                throw new Error(`Server error: ${response.status}`);
+            }
+
             const data = await response.json();
 
+
             if (data.success) {
-                currentSubscription = subscription;
-                isSubscribed = true;
+                window.pushNotificationState.currentSubscription = subscription;
+                window.pushNotificationState.isSubscribed = true;
                 saveStateToStorage();
                 updateUI(true);
                 showSuccessMessage('Push notification berhasil diaktifkan!');
-
-                // Re-initialize untuk memastikan state sinkron dengan server
-                // Ini penting untuk Turbo agar state ter-update tanpa perlu refresh manual
-                await initializePushNotification(true);
 
                 return true;
             } else {
                 throw new Error(data.message || 'Gagal subscribe');
             }
         } catch (error) {
-            console.error('Error subscribing to push:', error);
+
+
+            // Jika error karena CSRF token mismatch, jangan reload halaman
+            if (error.message && error.message.includes('CSRF')) {
+
+                // No reload here, just let the error propagate or handle it gracefully
+            }
 
             // Jangan tampilkan alert untuk error permission yang sudah jelas
             if (!error.message.includes('Permission') && !error.message.includes('dibatalkan')) {
@@ -210,7 +275,7 @@
     async function unsubscribeFromPush() {
         try {
             // Pastikan state awal sudah benar
-            let subscriptionToUnsubscribe = currentSubscription;
+            let subscriptionToUnsubscribe = window.pushNotificationState.currentSubscription;
 
             if (!subscriptionToUnsubscribe) {
                 // Coba dapatkan subscription yang ada dari browser
@@ -223,7 +288,7 @@
                     const serverStatus = await checkSubscriptionStatus();
                     if (serverStatus) {
                         // Masih ada di server, gunakan endpoint cleanup untuk menghapus semua
-                        console.log('Tidak ada subscription di browser, membersihkan subscription di server...');
+
                         try {
                             const cleanupResponse = await fetch('/notif/push/cleanup', {
                                 method: 'POST',
@@ -231,42 +296,39 @@
                                     'Content-Type': 'application/json',
                                     'X-CSRF-TOKEN': getCsrfToken(),
                                     'Accept': 'application/json'
-                                }
+                                },
+                                credentials: 'same-origin'
                             });
 
                             if (cleanupResponse.status === 419) {
-                                console.log('CSRF token mismatch during cleanup (419), reloading page...');
+
                                 window.location.reload();
                                 return;
                             }
 
                             const cleanupData = await cleanupResponse.json();
                             if (cleanupData.success) {
-                                console.log('Subscription di server berhasil dibersihkan. Jumlah yang dihapus:', cleanupData.deleted_count || 0);
+
                             } else {
-                                console.error('Gagal membersihkan subscription di server:', cleanupData.message);
+
                             }
                         } catch (cleanupError) {
-                            console.error('Error cleaning up server subscription:', cleanupError);
+
                         }
                     }
 
                     // Update state menjadi false
-                    isSubscribed = false;
-                    currentSubscription = null;
+                    window.pushNotificationState.isSubscribed = false;
+                    window.pushNotificationState.currentSubscription = null;
                     saveStateToStorage();
                     updateUI(true);
-
-                    // Re-initialize untuk memastikan state sinkron dengan server
-                    // Ini penting untuk Turbo agar state ter-update tanpa perlu refresh manual
-                    await initializePushNotification(true);
 
                     // Tampilkan success message
                     showSuccessMessage('Push notification berhasil dinonaktifkan');
                     return true;
                 }
 
-                currentSubscription = subscriptionToUnsubscribe;
+                window.pushNotificationState.currentSubscription = subscriptionToUnsubscribe;
             }
 
             // Hapus dari server terlebih dahulu
@@ -277,8 +339,9 @@
                     'X-CSRF-TOKEN': getCsrfToken(),
                     'Accept': 'application/json'
                 },
+                credentials: 'same-origin',
                 body: JSON.stringify({
-                    endpoint: currentSubscription.endpoint
+                    endpoint: window.pushNotificationState.currentSubscription.endpoint
                 })
             });
 
@@ -287,16 +350,16 @@
             if (data.success) {
                 // Unsubscribe dari browser
                 try {
-                    await currentSubscription.unsubscribe();
+                    await window.pushNotificationState.currentSubscription.unsubscribe();
                 } catch (unsubError) {
                     // Jika unsubscribe dari browser gagal, tetap lanjutkan
                     // karena sudah dihapus dari server
-                    console.warn('Error unsubscribing from browser:', unsubError);
+
                 }
 
                 // Pastikan state di-update dengan benar
-                currentSubscription = null;
-                isSubscribed = false;
+                window.pushNotificationState.currentSubscription = null;
+                window.pushNotificationState.isSubscribed = false;
 
                 // Simpan state ke storage
                 saveStateToStorage();
@@ -305,7 +368,7 @@
                 const verifiedStatus = await checkSubscriptionStatus();
                 if (verifiedStatus) {
                     // Masih terdeteksi sebagai subscribed, gunakan cleanup
-                    console.warn('Subscription masih terdeteksi setelah unsubscribe, menggunakan cleanup...');
+
                     try {
                         const cleanupResponse = await fetch('/notif/push/cleanup', {
                             method: 'POST',
@@ -313,32 +376,29 @@
                                 'Content-Type': 'application/json',
                                 'X-CSRF-TOKEN': getCsrfToken(),
                                 'Accept': 'application/json'
-                            }
+                            },
+                            credentials: 'same-origin'
                         });
 
                         if (cleanupResponse.status === 419) {
-                            console.log('CSRF token mismatch during cleanup (419), reloading page...');
+
                             window.location.reload();
                             return;
                         }
 
                         const cleanupData = await cleanupResponse.json();
                         if (cleanupData.success) {
-                            console.log('Subscription di server berhasil dibersihkan. Jumlah yang dihapus:', cleanupData.deleted_count || 0);
+
                         } else {
-                            console.error('Gagal membersihkan subscription di server:', cleanupData.message);
+
                         }
                     } catch (cleanupError) {
-                        console.error('Error cleaning up server subscription:', cleanupError);
+
                     }
                 }
 
                 // Update UI dengan force untuk memastikan UI refresh
                 updateUI(true);
-
-                // Re-initialize untuk memastikan state sinkron dengan server
-                // Ini penting untuk Turbo agar state ter-update tanpa perlu refresh manual
-                await initializePushNotification(true);
 
                 // Tampilkan success message
                 showSuccessMessage('Push notification berhasil dinonaktifkan');
@@ -347,7 +407,7 @@
                 throw new Error(data.message || 'Gagal unsubscribe');
             }
         } catch (error) {
-            console.error('Error unsubscribing from push:', error);
+
 
             // Meskipun ada error, coba update state jika subscription tidak ada di browser
             try {
@@ -364,32 +424,33 @@
                                     'Content-Type': 'application/json',
                                     'X-CSRF-TOKEN': getCsrfToken(),
                                     'Accept': 'application/json'
-                                }
+                                },
+                                credentials: 'same-origin'
                             });
 
                             if (cleanupResponse.status === 419) {
-                                console.log('CSRF token mismatch during cleanup (419), reloading page...');
+
                                 window.location.reload();
                                 return;
                             }
 
                             const cleanupData = await cleanupResponse.json();
                             if (cleanupData.success) {
-                                console.log('Subscription di server berhasil dibersihkan setelah error');
+
                             }
                         } catch (cleanupError) {
-                            console.error('Error cleaning up server subscription:', cleanupError);
+
                         }
                     }
 
                     // Update state menjadi false
-                    isSubscribed = false;
-                    currentSubscription = null;
+                    window.pushNotificationState.isSubscribed = false;
+                    window.pushNotificationState.currentSubscription = null;
                     saveStateToStorage();
                     updateUI(true);
                 }
             } catch (checkError) {
-                console.error('Error checking subscription:', checkError);
+
             }
 
             showErrorMessage('Gagal menonaktifkan push notification: ' + error.message);
@@ -401,7 +462,7 @@
     function showSuccessMessage(message) {
         // Pastikan Bootstrap tersedia
         if (typeof bootstrap === 'undefined') {
-            console.log('Bootstrap tidak tersedia:', message);
+
             return;
         }
 
@@ -410,7 +471,7 @@
         const toastTitle = document.getElementById('toast-title');
 
         if (!toastElement || !toastMessage || !toastTitle) {
-            console.log('Toast element tidak ditemukan:', message);
+
             return;
         }
 
@@ -476,7 +537,7 @@
     function showErrorMessage(message) {
         // Pastikan Bootstrap tersedia
         if (typeof bootstrap === 'undefined') {
-            console.error('Bootstrap tidak tersedia:', message);
+
             return;
         }
 
@@ -485,7 +546,7 @@
         const toastTitle = document.getElementById('toast-title');
 
         if (!toastElement || !toastMessage || !toastTitle) {
-            console.error('Toast element tidak ditemukan:', message);
+
             return;
         }
 
@@ -536,12 +597,14 @@
             if (!toggleBtn || !statusText) return;
 
             const permission = getNotificationPermission();
-            // Pastikan shouldBeChecked hanya true jika isSubscribed benar-benar true DAN permission granted
-            // Ini memastikan toggle state selalu sinkron dengan isSubscribed state
-            const shouldBeChecked = isSubscribed === true && permission === 'granted';
+            // Pastikan shouldBeChecked hanya true jika window.pushNotificationState.isSubscribed benar-benar true DAN permission granted
+            // Ini memastikan toggle state selalu sinkron dengan window.pushNotificationState.isSubscribed state
+            const shouldBeChecked = window.pushNotificationState.isSubscribed === true && permission === 'granted';
+
+
 
             // Selalu update toggle state jika force, atau jika state berbeda
-            // Pastikan toggle selalu sinkron dengan isSubscribed state
+            // Pastikan toggle selalu sinkron dengan window.pushNotificationState.isSubscribed state
             if (force || toggleBtn.checked !== shouldBeChecked) {
                 toggleBtn.checked = shouldBeChecked;
                 toggleBtn.disabled = permission === 'denied';
@@ -554,17 +617,17 @@
                 }
             }
 
-            // Update status text berdasarkan isSubscribed state, bukan hanya permission
+            // Update status text berdasarkan window.pushNotificationState.isSubscribed state, bukan hanya permission
             // Status text harus sinkron dengan toggle state
             if (permission === 'denied') {
                 statusText.textContent = 'Permission notifikasi ditolak';
                 statusText.className = 'text-danger';
-            } else if (isSubscribed === true) {
+            } else if (window.pushNotificationState.isSubscribed === true) {
                 // Hanya tampilkan "aktif" jika benar-benar subscribed
                 statusText.textContent = 'Push notification aktif';
                 statusText.className = 'text-success';
             } else {
-                // Pastikan status text menunjukkan "tidak aktif" jika isSubscribed false
+                // Pastikan status text menunjukkan "tidak aktif" jika window.pushNotificationState.isSubscribed false
                 statusText.textContent = 'Push notification tidak aktif';
                 statusText.className = 'text-muted';
             }
@@ -580,7 +643,7 @@
         }
 
         // Fallback: return empty string, akan error nanti
-        console.warn('VAPID public key tidak ditemukan. Pastikan meta tag dengan name="vapid-public-key" ada di layout.');
+
         return '';
     }
 
@@ -618,80 +681,92 @@
         const settingsElement = document.getElementById('push-notification-settings');
         if (!settingsElement) return;
 
-        // Untuk elemen permanent, check sessionStorage dulu
+        // Jika elemen permanent sudah di-initialize dan tidak ada forceCheck, skip
         if (settingsElement.hasAttribute('data-turbo-permanent') &&
             settingsElement.dataset.initialized === 'true' &&
             !forceCheck) {
-            const storedState = loadStateFromStorage();
-            if (storedState !== null) {
-                // Gunakan stored state jika ada
-                const previousState = isSubscribed;
-                isSubscribed = storedState;
-
-                // Hanya update UI jika state berbeda
-                if (previousState !== isSubscribed) {
-                    updateUI(true);
-                }
-                return;
+            // Hanya update UI jika ada perubahan state yang mungkin terjadi di background
+            updateUI(true);
+            // Tandai sebagai initialized untuk elemen permanent
+            if (settingsElement.hasAttribute('data-turbo-permanent')) {
+                settingsElement.dataset.initialized = 'true';
             }
+            return;
         }
 
         try {
-            // Tunggu service worker ready
+            // Dapatkan status permission notifikasi
+            const permission = getNotificationPermission();
+
+            // Jika permission ditolak, langsung update UI dan tandai sebagai initialized
+            if (permission === 'denied') {
+                window.pushNotificationState.isSubscribed = false;
+                window.pushNotificationState.currentSubscription = null;
+                saveStateToStorage();
+                updateUI(true);
+                settingsElement.dataset.initialized = 'true';
+                return;
+            }
+
+            // Dapatkan service worker registration
             const registration = await navigator.serviceWorker.ready;
 
-            // Cek subscription yang ada di browser
+            // Dapatkan subscription yang ada di browser
             const subscription = await registration.pushManager.getSubscription();
 
-            // Cek status dari server HANYA jika forceCheck = true
-            // Ini mencegah request berulang setiap kali turbo:load
-            let serverStatus = false;
-            if (forceCheck) {
-                serverStatus = await checkSubscriptionStatus();
-                lastStatusCheckTime = Date.now();
-            } else {
-                // Gunakan stored state jika ada, atau false sebagai default
-                const storedState = loadStateFromStorage();
-                serverStatus = storedState !== null ? storedState : false;
+
+
+            // Jika forceCheck false (initial load), gunakan subscription browser sebagai sumber kebenaran
+            if (!forceCheck) {
+                // SELALU gunakan subscription browser sebagai sumber kebenaran
+                // Stored state hanya sebagai fallback jika subscription browser tidak bisa diakses
+                window.pushNotificationState.currentSubscription = subscription;
+                window.pushNotificationState.isSubscribed = subscription !== null;
+
+
+
+                // Simpan state terbaru
+                saveStateToStorage();
+                updateUI(true);
+                settingsElement.dataset.initialized = 'true';
+                return;
             }
+
+            // Jika forceCheck true, lanjutkan dengan verifikasi server
+            const serverStatus = await checkSubscriptionStatus();
 
             if (subscription) {
                 // Ada subscription di browser
-                currentSubscription = subscription;
+                window.pushNotificationState.currentSubscription = subscription;
 
-                // Pastikan isSubscribed sesuai dengan server status
-                // Ini penting untuk sinkronisasi ketika browser permission ON tapi subscription tidak ada di server
-                isSubscribed = serverStatus;
+                // Jika server tidak mencatat sebagai subscribed, berarti ada ketidaksesuaian
+                if (!serverStatus) {
 
-                // Jika ada subscription di browser tapi tidak ada di server, hapus dari browser
-                if (!serverStatus && subscription) {
-                    console.warn('Subscription ada di browser tapi tidak ada di server, menghapus dari browser...');
                     try {
                         await subscription.unsubscribe();
-                        currentSubscription = null;
-                        isSubscribed = false;
+                        window.pushNotificationState.currentSubscription = null;
+                        window.pushNotificationState.isSubscribed = false;
+
                     } catch (unsubError) {
-                        console.error('Error removing orphaned subscription:', unsubError);
-                        // Tetap set state menjadi false
-                        currentSubscription = null;
-                        isSubscribed = false;
+
+                        // Jika gagal unsubscribe, tetap set state sebagai tidak subscribed
+                        window.pushNotificationState.currentSubscription = null;
+                        window.pushNotificationState.isSubscribed = false;
                     }
+                } else {
+                    // Subscription ada di browser dan di server
+                    window.pushNotificationState.isSubscribed = true;
                 }
             } else {
                 // Tidak ada subscription di browser
-                currentSubscription = null;
-
-                // Jika server masih mencatat sebagai subscribed, set menjadi false
-                // karena tidak ada subscription di browser
-                isSubscribed = false;
+                window.pushNotificationState.currentSubscription = null;
+                window.pushNotificationState.isSubscribed = false;
 
                 // Jika server masih mencatat sebagai subscribed tapi tidak ada di browser,
                 // ini berarti ada ketidaksesuaian - bersihkan subscription di server
-                // HANYA jika forceCheck = true untuk menghindari cleanup saat initial load
-                if (serverStatus && forceCheck) {
-                    console.warn('Server mencatat sebagai subscribed tapi tidak ada subscription di browser. Membersihkan subscription di server...');
+                if (serverStatus) {
 
-                    // Bersihkan subscription di server untuk sinkronisasi
+
                     try {
                         const cleanupResponse = await fetch('/notif/push/cleanup', {
                             method: 'POST',
@@ -699,11 +774,12 @@
                                 'Content-Type': 'application/json',
                                 'X-CSRF-TOKEN': getCsrfToken(),
                                 'Accept': 'application/json'
-                            }
+                            },
+                            credentials: 'same-origin'
                         });
 
                         if (cleanupResponse.status === 419) {
-                            console.log('CSRF token mismatch during cleanup (419), reloading page...');
+
 
                             // Increment reload count
                             const currentCount = parseInt(sessionStorage.getItem('push_reload_count') || '0');
@@ -740,8 +816,8 @@
         } catch (error) {
             console.error('Error initializing push notification:', error);
             // Set state menjadi false jika ada error
-            isSubscribed = false;
-            currentSubscription = null;
+            window.pushNotificationState.isSubscribed = false;
+            window.pushNotificationState.currentSubscription = null;
             saveStateToStorage();
             updateUI(true);
 
@@ -770,7 +846,7 @@
 
             // Simpan state awal untuk validasi
             const previousCheckedState = toggleBtn.checked;
-            const previousIsSubscribed = isSubscribed;
+            const previousIsSubscribed = window.pushNotificationState.isSubscribed;
 
             // Disable toggle selama proses
             toggleBtn.disabled = true;
@@ -783,8 +859,8 @@
                         // Jika subscribe gagal, kembalikan toggle ke posisi sebelumnya
                         toggleBtn.checked = false;
                         // Pastikan state konsisten
-                        if (isSubscribed !== previousIsSubscribed) {
-                            isSubscribed = previousIsSubscribed;
+                        if (window.pushNotificationState.isSubscribed !== previousIsSubscribed) {
+                            window.pushNotificationState.isSubscribed = previousIsSubscribed;
                             saveStateToStorage();
                         }
                     }
@@ -795,8 +871,8 @@
                         // Jika unsubscribe gagal, kembalikan toggle ke posisi sebelumnya
                         toggleBtn.checked = true;
                         // Pastikan state konsisten
-                        if (isSubscribed !== previousIsSubscribed) {
-                            isSubscribed = previousIsSubscribed;
+                        if (window.pushNotificationState.isSubscribed !== previousIsSubscribed) {
+                            window.pushNotificationState.isSubscribed = previousIsSubscribed;
                             saveStateToStorage();
                         }
                     }
@@ -807,8 +883,8 @@
                 // Kembalikan toggle ke posisi sebelumnya
                 toggleBtn.checked = previousCheckedState;
                 // Pastikan state konsisten
-                if (isSubscribed !== previousIsSubscribed) {
-                    isSubscribed = previousIsSubscribed;
+                if (window.pushNotificationState.isSubscribed !== previousIsSubscribed) {
+                    window.pushNotificationState.isSubscribed = previousIsSubscribed;
                     saveStateToStorage();
                 }
             } finally {
@@ -863,28 +939,13 @@
             const toggleBtn = document.getElementById('push-notification-toggle');
 
             // Jika stored state ada dan sama dengan current state, hanya update UI tanpa check server
-            if (storedState !== null && storedState === isSubscribed && toggleBtn) {
+            if (storedState !== null && storedState === window.pushNotificationState.isSubscribed && toggleBtn) {
                 const permission = getNotificationPermission();
-                const shouldBeChecked = isSubscribed && permission === 'granted';
+                const shouldBeChecked = window.pushNotificationState.isSubscribed && permission === 'granted';
 
                 // Hanya update UI jika toggle state berbeda
                 if (toggleBtn.checked !== shouldBeChecked) {
                     updateUI(true);
-                }
-
-                // Verifikasi dengan server HANYA jika sudah lebih dari 30 detik sejak check terakhir
-                const timeSinceLastCheck = Date.now() - lastStatusCheckTime;
-                if (timeSinceLastCheck >= STATUS_CHECK_INTERVAL) {
-                    // Lakukan verifikasi secara async tanpa blocking
-                    checkSubscriptionStatus().then(serverStatus => {
-                        lastStatusCheckTime = Date.now();
-                        if (serverStatus !== isSubscribed) {
-                            // Ada ketidaksesuaian, re-initialize untuk sinkronisasi
-                            initializePushNotification(true);
-                        }
-                    }).catch(error => {
-                        console.warn('Error verifying subscription status:', error);
-                    });
                 }
 
                 // Selalu setup toggle button saat turbo:load untuk memastikan listener ter-attach
@@ -893,15 +954,9 @@
             }
         }
 
-        // Initialize jika belum atau state berbeda
-        // HANYA gunakan forceCheck jika sudah lebih dari 30 detik sejak check terakhir
-        const timeSinceLastCheck = Date.now() - lastStatusCheckTime;
-        const shouldForceCheck = timeSinceLastCheck >= STATUS_CHECK_INTERVAL;
-
-        initializePushNotification(shouldForceCheck);
-        if (shouldForceCheck) {
-            lastStatusCheckTime = Date.now();
-        }
+        // Initialize dengan forceCheck=false untuk menghindari penghapusan subscription
+        // User harus manual toggle jika ingin sinkronisasi dengan server
+        initializePushNotification(false);
 
         // Selalu setup toggle button saat turbo:load untuk memastikan listener ter-attach
         setupToggleButton();

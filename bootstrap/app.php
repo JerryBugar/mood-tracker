@@ -43,8 +43,10 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->trustProxies(at: '*');
         $middleware->append(\Illuminate\Http\Middleware\HandleCors::class);
+        $middleware->append(\App\Http\Middleware\HandleTurboRedirect::class);
         $middleware->validateCsrfTokens(except: [
             // Exclude routes that need CORS
+            'notif/push/*', // Push notification routes - protected by auth middleware
         ]);
         
         // Tambahkan middleware untuk memproses scheduled notifications

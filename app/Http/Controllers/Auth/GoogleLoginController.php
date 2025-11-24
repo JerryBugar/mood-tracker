@@ -17,13 +17,11 @@ class GoogleLoginController extends \App\Http\Controllers\Controller
         Session::forget('google_user_data');
         
         $redirectResponse = Socialite::driver('google')->redirect();
+        $targetUrl = $redirectResponse->getTargetUrl();
         
-        // Tambahkan header Turbo-Location untuk mencegah Turbo intercept
-        // Header ini memberitahu Turbo untuk melakukan full page reload, bukan fetch request
-        // Ini penting untuk mencegah CORS error karena Google OAuth tidak mengizinkan CORS
-        $redirectResponse->headers->set('Turbo-Location', $redirectResponse->getTargetUrl());
-        
-        return $redirectResponse;
+        // Gunakan JS redirect untuk menghindari CORS error saat diakses via Turbo Drive
+        // Turbo Drive menggunakan fetch yang akan memblokir redirect ke domain berbeda (Google)
+        return view('auth.redirect', ['url' => $targetUrl]);
     }
 
     public function callback()
