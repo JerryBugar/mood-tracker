@@ -89,14 +89,14 @@ class MoodController extends Controller
     public function saveMood(StoreMoodRequest $request)
     {
         $moodRecord = $this->moodService->saveMood($request->validated());
-        
+
         if (!$moodRecord) {
             // Jika service mengembalikan null, kemungkinan karena pengguna sudah menyimpan mood hari ini
             // Tampilkan pesan bahwa sudah menyimpan mood hari ini
-            $replaceStream = TurboStreamHelper::replace('mood_modal_content', 
+            $replaceStream = TurboStreamHelper::replace('mood_modal_content',
                 view('components._partials.mood_modal_duplicate')->render()
             );
-            
+
             return response($replaceStream, 200, ['Content-Type' => 'text/vnd.turbo-stream.html']);
         }
 
@@ -109,15 +109,15 @@ class MoodController extends Controller
         ];
 
         $user = auth()->user();
-        
+
         // Hitung jumlah record SEBELUM menyimpan
         $recordCountBeforeSave = $user->moodRecords()->count();
-        
+
         // 2. AMBIL DATA HALAMAN PERTAMA (SETELAH DISIMPAN)
         // Ini adalah *satu-satunya* query paginasi yang kita perlukan.
         // Dia akan tahu kapan harus `hasPages()` (saat record > 5)
         $records = $user->moodRecords()->latest()->paginate(5);
-        
+
         // 3. RENDER KONTEN LIST BARU
         $recordsContent = '';
         if ($records->count() > 0) {
@@ -129,37 +129,75 @@ class MoodController extends Controller
                 ])->render();
             }
         }
-        
-        // 4. BUAT STREAM UNTUK MENGGANTI LIST (SELALU REPLACE)
+
+        // 4. BUAT KONTEN UNTUK UPDATE KALENDER (menambah emotikon di kotak kalender hari ini)
+        $today = now()->format('Y-m-d');
+        $jenisKelamin = $user->jenis_kelamin ?? '';
+        $isFemale = $jenisKelamin === 'Perempuan' || $jenisKelamin === 'Cewek';
+
+        $emoticonPaths = [
+            'netral' => $isFemale ? asset('logo/netral1.png') : asset('logo/netral.png'),
+            'senyum' => $isFemale ? asset('logo/senyum1.png') : asset('logo/senyum.png'),
+            'sedih' => $isFemale ? asset('logo/sedih1.png') : asset('logo/sedih.png'),
+            'lelah' => $isFemale ? asset('logo/lelah1.png') : asset('logo/lelah.png'),
+            'marah' => $isFemale ? asset('logo/marah1.png') : asset('logo/marah.png'),
+        ];
+
+        $emoticonPath = $emoticonPaths[$moodRecord->mood] ?? $emoticonPaths['netral'];
+        $tooltipText = $moodRecord->reason ?? 'Mood: ' . ($moodLabels[$moodRecord->mood] ?? $moodRecord->mood);
+        if ($moodRecord->admin_response) {
+            $tooltipText .= ' - Direspons oleh Admin/HRD';
+        }
+
+        $calendarDayKey = 'day_'.$today; // Tidak perlu mengganti tanda hubung lagi karena sekarang formatnya langsung Y-m-d
+        $calendarEmoticonHtml = '<div class="mood-emoticon-wrapper">'.
+                                    '<img src="'.$emoticonPath.'" '.
+                                         'alt="'.$moodRecord->mood.'" '.
+                                         'class="mood-emoticon '.$moodRecord->mood.'" '.
+                                         'data-bs-toggle="tooltip" '.
+                                         'title="'.$tooltipText.'" '.
+                                         'onclick="showDayRecords(\''.$today.'\')">'.
+                                    ($moodRecord->admin_response ?
+                                        '<span class="admin-response-indicator-calendar" '.
+                                              'data-bs-toggle="tooltip" '.
+                                              'title="Direspons oleh Admin/HRD">'.
+                                            '<i class="bi bi-check-circle-fill"></i>'.
+                                        '</span>' : '').
+                                '</div>';
+
+        $updateCalendarStream = TurboStreamHelper::append($calendarDayKey.' .day-records', $calendarEmoticonHtml);
+
+        // 5. BUAT STREAM UNTUK MENGGANTI LIST (SELALU REPLACE)
         // Kita selalu 'replace' list untuk memastikan halaman 1 (terbaru) ditampilkan
         $updateListStream = TurboStreamHelper::replace('record_container_list', $recordsContent);
-        
-        // 5. BUAT STREAM UNTUK MENGGANTI PAGINASI (SELALU REPLACE)
+
+        // 6. BUAT STREAM UNTUK MENGGANTI PAGINASI (SELALU REPLACE)
         // View ini akan otomatis menampilkan/menyembunyikan paginasi
-        $updatePaginationStream = TurboStreamHelper::replace('pagination-container', 
+        $updatePaginationStream = TurboStreamHelper::replace('pagination-container',
             view('components._partials.pagination', ['records' => $records])->render()
         );
 
-        // 6. BUAT STREAM UNTUK HAPUS PESAN "BELUM ADA CATATAN" (JIKA PERLU)
+        // 7. BUAT STREAM UNTUK HAPUS PESAN "BELUM ADA CATATAN" (JIKA PERLU)
         $removeMessageStream = '';
         $isFirstRecord = $recordCountBeforeSave === 0;
         if ($isFirstRecord) {
             $removeMessageStream = TurboStreamHelper::remove('no-records-message');
         }
-        
-        // 7. BUAT STREAM UNTUK MENGGANTI KONTEN MODAL (PESAN SUKSES)
-        $replaceStream = TurboStreamHelper::replace('mood_modal_content', 
+
+        // 8. BUAT STREAM UNTUK MENGGANTI KONTEN MODAL (PESAN SUKSES)
+        $replaceStream = TurboStreamHelper::replace('mood_modal_content',
             view('components._partials.mood_modal_success')->render()
         );
-        
-        // 8. GABUNGKAN SEMUA STREAM
+
+        // 9. GABUNGKAN SEMUA STREAM
         $streamContent = TurboStreamHelper::combine([
             $removeMessageStream,
             $updateListStream,
             $updatePaginationStream,
+            $updateCalendarStream,
             $replaceStream
         ]);
-        
+
         return response($streamContent, 200, ['Content-Type' => 'text/vnd.turbo-stream.html']);
     }
 }

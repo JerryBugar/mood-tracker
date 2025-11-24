@@ -15,11 +15,11 @@ return [
     |
     */
 
-    'paths' => ['api/*', 'sanctum/csrf-cookie', 'auth/google/*'],
+    'paths' => ['api/*', 'sanctum/csrf-cookie', 'auth/google/*', 'auth/google/callback'],
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => [env('APP_URL', 'https://ceremood.pp.ua'), 'https://ceremood.pp.ua:8000'],
+    'allowed_origins' => [env('APP_URL', 'https://ceremood.pp.ua'), 'https://ceremood.pp.ua', 'http://localhost', 'http://127.0.0.1', 'http://localhost:8000', 'https://localhost', 'https://127.0.0.1'],
 
     'allowed_origins_patterns' => [],
 
@@ -29,6 +29,6 @@ return [
 
     'max_age' => 0,
 
-    'supports_credentials' => false,
+    'supports_credentials' => true,
 
 ];

@@ -57,12 +57,12 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    
+
     <!-- VAPID Public Key untuk Push Notification -->
     @if(config('webpush.vapid.public_key'))
     <meta name="vapid-public-key" content="{{ config('webpush.vapid.public_key') }}">
     @endif
-    
+
     @stack('styles')
     @stack('head')
 </head>
@@ -70,6 +70,26 @@
     <div class="min-h-screen bg-gray-100">
         @yield('content')
     </div>
+
+    <!-- For Google OAuth redirect, make sure it bypasses Turbo -->
+    <script>
+        // If we're on the login page or initiating an OAuth flow, disable Turbo
+        document.addEventListener('turbo:load', function() {
+            if (window.location.pathname.includes('/login') ||
+                window.location.pathname.includes('/auth/google')) {
+                // Ensure this page doesn't use Turbo for OAuth flows
+                if (document.querySelector('[data-turbo="false"]')) {
+                    return;
+                }
+
+                // Set turbo to false on any OAuth links
+                const oauthLinks = document.querySelectorAll('a[href*="/auth/google"]');
+                oauthLinks.forEach(link => {
+                    link.setAttribute('data-turbo', 'false');
+                });
+            }
+        });
+    </script>
     
     <script>
         // Optimasi Turbo untuk mencegah reload yang tidak perlu

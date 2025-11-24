@@ -396,40 +396,40 @@
                 $user = Auth::user(); // Ambil user yang sedang login
                 $jenisKelamin = $user->jenis_kelamin ?? '';
             @endphp
-            <div class="calendar-day {{ !$isCurrentMonth ? 'other-month' : '' }} {{ $isToday ? 'today' : '' }}">
+            <div id="day_{{ $date->format('Y-m-d') }}" class="calendar-day {{ !$isCurrentMonth ? 'other-month' : '' }} {{ $isToday ? 'today' : '' }}">
                 <div class="calendar-day-number">{{ $date->day }}</div>
-                
+
                 <div class="day-records">
                     @foreach($records as $record)
                         @php
                             // Tentukan apakah user berjenis kelamin perempuan
                             $isFemale = $jenisKelamin === 'Perempuan' || $jenisKelamin === 'Cewek';
-                            
+
                             $emoticonPaths = [
                                 'netral' => $isFemale ? asset('logo/netral1.png') : asset('logo/netral.png'),
-                            
+
                                 'senyum' => $isFemale ? asset('logo/senyum1.png') : asset('logo/senyum.png'),
                                 'sedih' => $isFemale ? asset('logo/sedih1.png') : asset('logo/sedih.png'),
                                 'lelah' => $isFemale ? asset('logo/lelah1.png') : asset('logo/lelah.png'),
                                 'marah' => $isFemale ? asset('logo/marah1.png') : asset('logo/marah.png'),
                             ];
                             $emoticonPath = $emoticonPaths[$record->mood] ?? $emoticonPaths['netral'];
-                            
+
                             $tooltipText = $record->reason ?? 'Mood: ' . (['netral' => 'Biasa saja', 'senyum' => 'Senang', 'sedih' => 'Sedih', 'lelah' => 'Lelah', 'marah' => 'Marah'][$record->mood] ?? $record->mood);
                             if ($record->admin_response) {
                                 $tooltipText .= ' - Direspons oleh Admin/HRD';
                             }
                         @endphp
                         <div class="mood-emoticon-wrapper">
-                            <img src="{{ $emoticonPath }}" 
-                                 alt="{{ $record->mood }}" 
-                                 class="mood-emoticon {{ $record->mood }}" 
-                                 data-bs-toggle="tooltip" 
+                            <img src="{{ $emoticonPath }}"
+                                 alt="{{ $record->mood }}"
+                                 class="mood-emoticon {{ $record->mood }}"
+                                 data-bs-toggle="tooltip"
                                  title="{{ $tooltipText }}"
                                  onclick="showDayRecords('{{ $date->format('Y-m-d') }}')">
                             @if($record->admin_response)
-                                <span class="admin-response-indicator-calendar" 
-                                      data-bs-toggle="tooltip" 
+                                <span class="admin-response-indicator-calendar"
+                                      data-bs-toggle="tooltip"
                                       title="Direspons oleh Admin/HRD">
                                     <i class="bi bi-check-circle-fill"></i>
                                 </span>

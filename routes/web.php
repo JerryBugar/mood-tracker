@@ -40,10 +40,15 @@ Route::get('/favicon.ico', function () {
 // Route untuk serve logo dengan cache headers optimal
 Route::get('/logo/{filename}', [LogoController::class, 'serve'])->where('filename', '[a-zA-Z0-9._-]+\.(png|jpeg|jpg)')->name('logo.serve');
 
-Route::get('/auth/google/redirect', [GoogleLoginController::class, 'redirect']);
+// Route untuk Google OAuth redirect (untuk backward compatibility)
+Route::get('/auth/google/redirect', function() {
+    return redirect()->route('login');
+});
+
+// Route untuk Google OAuth callback
 Route::get('/auth/google/callback', [GoogleLoginController::class, 'callback']);
 
-// Route login mengarah ke Google OAuth redirect
+// Route login mengarah ke Google OAuth redirect langsung
 Route::get('/login', [GoogleLoginController::class, 'redirect'])->name('login');
 
 Route::post('/logout', function () {

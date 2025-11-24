@@ -15,15 +15,19 @@ class GoogleLoginController extends \App\Http\Controllers\Controller
     {
         \Log::info('Google OAuth redirect initiated');
         Session::forget('google_user_data');
-        
-        $redirectResponse = Socialite::driver('google')->redirect();
-        
-        // Tambahkan header Turbo-Location untuk mencegah Turbo intercept
-        // Header ini memberitahu Turbo untuk melakukan full page reload, bukan fetch request
-        // Ini penting untuk mencegah CORS error karena Google OAuth tidak mengizinkan CORS
-        $redirectResponse->headers->set('Turbo-Location', $redirectResponse->getTargetUrl());
-        
-        return $redirectResponse;
+
+        // Create the redirect response for Google OAuth
+        $response = Socialite::driver('google')->redirect();
+
+        // Add headers to prevent caching and ensure this is handled as a full redirect
+        $response->headers->set('Cache-Control', 'no-cache, no-store, must-revalidate');
+        $response->headers->set('Pragma', 'no-cache');
+        $response->headers->set('Expires', '0');
+
+        // Set header to indicate this should be a full page navigation, not a Turbo request
+        $response->headers->set('X-Turbo-Visit-Control', 'reload');
+
+        return $response;
     }
 
     public function callback()
@@ -47,7 +51,11 @@ class GoogleLoginController extends \App\Http\Controllers\Controller
             if ($user) {
                 \Log::info('Existing verified user logging in', ['user_id' => $user->id]);
                 Auth::login($user);
-                return redirect('/home'); // Langsung ke dashboard jika sudah terverifikasi
+
+                // Clear any previous session data that might interfere
+                Session::forget('google_user_data');
+
+                return redirect()->route('home'); // Langsung ke dashboard jika sudah terverifikasi
             }
 
             \Log::info('User not verified or not exist, redirecting to verification page', [
@@ -69,8 +77,11 @@ class GoogleLoginController extends \App\Http\Controllers\Controller
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
-            // You can log the error or redirect to an error page
-            return redirect('/')->with('error', 'Login with Google failed. Please try again.');
+            // Clear any partial session data
+            Session::forget('google_user_data');
+
+            // Redirect to login page with error message
+            return redirect()->route('login')->with('error', 'Login with Google failed. Please try again.');
         }
     }
 }
