@@ -47,18 +47,20 @@
             // This event is triggered when a Turbo Stream response is about to be rendered
         });
 
-        // Reinitialize tooltips after Turbo Stream renders
+        // Reinitialize tooltips after Turbo Stream renders - optimized for mobile
         document.addEventListener('turbo:render', function() {
-            // Reinitialize tooltips for any new elements
-            setTimeout(function() {
+            // Use requestAnimationFrame instead of setTimeout for better performance on mobile
+            requestAnimationFrame(function() {
                 const newTooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-                newTooltipTriggerList.map(function (tooltipTriggerEl) {
-                    // Check if tooltip instance already exists
-                    if (!tooltipTriggerEl.getAttribute('data-bs-original-title')) {
-                        return new bootstrap.Tooltip(tooltipTriggerEl);
+                newTooltipTriggerList.forEach(function (tooltipTriggerEl) {
+                    // Check if tooltip instance already exists by verifying Bootstrap data
+                    const tooltipInstance = bootstrap.Tooltip.getInstance(tooltipTriggerEl);
+                    if (!tooltipInstance) {
+                        // Only initialize tooltip if it doesn't already exist
+                        new bootstrap.Tooltip(tooltipTriggerEl);
                     }
                 });
-            }, 100); // Small delay to ensure elements are rendered
+            });
         });
     </script>
 @endsection

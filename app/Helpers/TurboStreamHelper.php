@@ -91,11 +91,12 @@ class TurboStreamHelper
         $stream .= '<template>';
 
         if ($action !== 'remove') {
-            // Untuk 'replace', konten digantikan secara langsung 
+            // Untuk 'replace', konten digantikan secara langsung
             if ($action === 'replace') {
                 $stream .= $content;
             } else {
-                $stream .= '<' . $templateWrapper . ' id="' . $target . '">' . $content . '</' . $templateWrapper . '>';
+                // Untuk 'prepend' dan 'append', konten ditambahkan langsung tanpa pembungkus tambahan
+                $stream .= $content;
             }
         }
 

@@ -165,7 +165,9 @@ class MoodController extends Controller
                                         '</span>' : '').
                                 '</div>';
 
-        $updateCalendarStream = TurboStreamHelper::append($calendarDayKey.' .day-records', $calendarEmoticonHtml);
+        // Update untuk memperbarui emotikon di hari ini menggunakan ID unik div dalam kotak kalender
+        // Kita tambahkan ID ke div .day-records juga agar bisa ditargetkan
+        $updateCalendarStream = TurboStreamHelper::append('day_'.$today.'_records', $calendarEmoticonHtml);
 
         // 5. BUAT STREAM UNTUK MENGGANTI LIST (SELALU REPLACE)
         // Kita selalu 'replace' list untuk memastikan halaman 1 (terbaru) ditampilkan

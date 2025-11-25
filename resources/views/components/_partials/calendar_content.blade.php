@@ -399,7 +399,7 @@
             <div id="day_{{ $date->format('Y-m-d') }}" class="calendar-day {{ !$isCurrentMonth ? 'other-month' : '' }} {{ $isToday ? 'today' : '' }}">
                 <div class="calendar-day-number">{{ $date->day }}</div>
 
-                <div class="day-records">
+                <div id="day_{{ $date->format('Y-m-d') }}_records" class="day-records">
                     @foreach($records as $record)
                         @php
                             // Tentukan apakah user berjenis kelamin perempuan
