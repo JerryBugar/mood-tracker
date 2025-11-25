@@ -2,14 +2,13 @@
 (function () {
     'use strict';
 
-    // Hanya aktifkan di halaman notif
+    // Hanya aktifkan di halaman terotentikasi, jangan di welcome page atau admin page
     const isWelcomePage = window.location.pathname === '/' || window.location.pathname === '/welcome';
     const isAdminPage = window.location.pathname.startsWith('/admin');
-    const isNotifPage = window.location.pathname === '/notif';
 
-    // Hanya aktifkan di halaman notif, jangan mengganggu navbar lain
-    if (isWelcomePage || isAdminPage || !isNotifPage) {
-        return; // Exit early
+    // Aktifkan di semua halaman terotentikasi, tidak hanya di halaman notif
+    if (isWelcomePage || isAdminPage) {
+        return; // Exit early hanya untuk halaman yang tidak relevan
     }
 
     // Cek apakah browser support push notification
@@ -844,8 +843,11 @@
     // Re-initialize saat Turbo load (untuk SPA behavior)
     // Skip jika elemen permanent sudah di-initialize dan state sama
     document.addEventListener('turbo:load', function () {
-        // Hanya aktifkan di halaman notif, jangan mengganggu navbar lain
-        if (window.location.pathname !== '/notif') {
+        // Hanya aktifkan di halaman terotentikasi, bukan di welcome page atau admin page
+        const isWelcomePage = window.location.pathname === '/' || window.location.pathname === '/welcome';
+        const isAdminPage = window.location.pathname.startsWith('/admin');
+
+        if (isWelcomePage || isAdminPage) {
             return;
         }
 
