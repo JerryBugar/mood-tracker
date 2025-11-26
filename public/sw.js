@@ -1,5 +1,5 @@
-const CACHE_NAME = 'mood-tracker-v6';
-const RUNTIME_CACHE = 'mood-tracker-runtime-v6';
+const CACHE_NAME = 'mood-tracker-v7';
+const RUNTIME_CACHE = 'mood-tracker-runtime-v7';
 
 // Halaman-halaman utama yang akan di-cache saat install
 // Profile dan Home tidak di-cache karena data bisa berubah dan perlu selalu fresh
@@ -21,7 +21,6 @@ const STATIC_ASSETS = [
 // Home tidak di-cache karena emoticons bergantung pada jenis kelamin user yang bisa berubah
 const PAGES_TO_CACHE = [
     '/auth/verify',
-    '/calendar',
     '/notif'
 ];
 
@@ -69,18 +68,21 @@ self.addEventListener('fetch', (event) => {
     const url = new URL(event.request.url);
     const isPageRequest = event.request.mode === 'navigate';
     const isPageToCache = PAGES_TO_CACHE.some(page => url.pathname === page);
-    
+
     // Jangan cache dashboard untuk user yang sudah login (selalu fetch dari network)
     // Dashboard akan redirect ke home jika user sudah login
     const isDashboard = url.pathname === '/dashboard';
-    
+
     // Jangan cache profile dengan query parameter atau setelah update (selalu fetch dari network)
     // Ini memastikan data terbaru selalu ditampilkan setelah update
     const isProfile = url.pathname === '/profile';
-    
+
     // Jangan cache home karena emoticons bergantung pada jenis kelamin user yang bisa berubah
     const isHome = url.pathname === '/home';
-    
+
+    // Jangan cache calendar agar update mood langsung terlihat
+    const isCalendar = url.pathname === '/calendar';
+
     // Jangan cache semua halaman admin (login, dashboard, dll) - selalu fetch dari network
     // Admin pages tidak boleh di-cache untuk keamanan dan memastikan data selalu fresh
     const isAdmin = url.pathname.startsWith('/admin');
@@ -104,7 +106,7 @@ self.addEventListener('fetch', (event) => {
                             return caches.match('/offline.html');
                         });
                 }
-                
+
                 // Untuk profile, selalu fetch dari network untuk memastikan data terbaru
                 // Ini penting karena profile bisa di-update dan kita perlu data terbaru
                 if (isProfile && isPageRequest) {
@@ -122,7 +124,7 @@ self.addEventListener('fetch', (event) => {
                             return caches.match('/offline.html');
                         });
                 }
-                
+
                 // Untuk home, selalu fetch dari network untuk memastikan emoticons terbaru
                 // Emoticons bergantung pada jenis kelamin user yang bisa berubah
                 if (isHome && isPageRequest) {
@@ -140,7 +142,22 @@ self.addEventListener('fetch', (event) => {
                             return caches.match('/offline.html');
                         });
                 }
-                
+
+                // Untuk calendar, selalu fetch dari network untuk memastikan data terbaru
+                // Kita hapus check isPageRequest karena Turbo mungkin menggunakan fetch biasa
+                if (isCalendar) {
+                    return fetch(event.request)
+                        .then((response) => {
+                            return response;
+                        })
+                        .catch(() => {
+                            if (cachedResponse) {
+                                return cachedResponse;
+                            }
+                            return caches.match('/offline.html');
+                        });
+                }
+
                 // Untuk admin pages, selalu fetch dari network untuk keamanan dan data fresh
                 // Admin pages tidak boleh di-cache sama sekali
                 if (isAdmin && isPageRequest) {
@@ -155,12 +172,12 @@ self.addEventListener('fetch', (event) => {
                             return caches.match('/offline.html');
                         });
                 }
-                
+
                 // Return cached version if available
                 if (cachedResponse) {
                     // Jika ini halaman yang perlu di-cache, update cache di background
-                    // Jangan update cache untuk dashboard, profile, home, dan admin
-                    if (isPageToCache && !isDashboard && !isProfile && !isHome && !isAdmin) {
+                    // Jangan update cache untuk dashboard, profile, home, calendar, dan admin
+                    if (isPageToCache && !isDashboard && !isProfile && !isHome && !isCalendar && !isAdmin) {
                         fetch(event.request)
                             .then((response) => {
                                 if (response && response.status === 200 && response.type === 'basic') {
@@ -189,8 +206,8 @@ self.addEventListener('fetch', (event) => {
                         // Clone the response
                         const responseToCache = response.clone();
 
-                        // Cache halaman utama dan assets penting (kecuali dashboard, profile, home, dan admin)
-                        if ((isPageToCache && !isDashboard && !isProfile && !isHome && !isAdmin) || url.pathname.startsWith('/logo/') || url.pathname === '/manifest.json') {
+                        // Cache halaman utama dan assets penting (kecuali dashboard, profile, home, calendar, dan admin)
+                        if ((isPageToCache && !isDashboard && !isProfile && !isHome && !isCalendar && !isAdmin) || url.pathname.startsWith('/logo/') || url.pathname === '/manifest.json') {
                             caches.open(RUNTIME_CACHE)
                                 .then((cache) => {
                                     cache.put(event.request, responseToCache);
@@ -252,7 +269,7 @@ self.addEventListener('push', (event) => {
     if (event.data) {
         try {
             const payload = event.data.json();
-            
+
             // Laravel WebPush mengirim data dalam format:
             // { title, body, icon, badge, data: { url, notification_id } }
             if (payload.title) {
@@ -298,9 +315,9 @@ self.addEventListener('push', (event) => {
                 return clients.matchAll({
                     type: 'window',
                     includeUncontrolled: true
-                }).then(function(clientList) {
+                }).then(function (clientList) {
                     // Kirim message ke semua client untuk trigger refresh notifikasi
-                    clientList.forEach(function(client) {
+                    clientList.forEach(function (client) {
                         client.postMessage({
                             type: 'new-notification',
                             data: notificationData.data
@@ -316,19 +333,19 @@ self.addEventListener('notificationclick', (event) => {
     event.notification.close();
 
     const urlToOpen = event.notification.data?.url || '/notif';
-    
+
     event.waitUntil(
         clients.matchAll({
             type: 'window',
             includeUncontrolled: true
-        }).then(function(clientList) {
+        }).then(function (clientList) {
             let foundClient = false;
-            
+
             // Cek apakah ada window yang sudah terbuka di halaman notif
             for (let i = 0; i < clientList.length; i++) {
                 const client = clientList[i];
                 const clientUrl = new URL(client.url);
-                
+
                 // Jika client sudah di halaman notif, focus dan kirim message untuk refresh
                 if (clientUrl.pathname === '/notif' && 'focus' in client) {
                     client.focus();
@@ -341,7 +358,7 @@ self.addEventListener('notificationclick', (event) => {
                     return;
                 }
             }
-            
+
             // Jika tidak ada window yang terbuka di halaman notif, buka window baru
             if (!foundClient && clients.openWindow) {
                 return clients.openWindow(urlToOpen);

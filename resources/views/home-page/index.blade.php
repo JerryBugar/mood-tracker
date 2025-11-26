@@ -13,7 +13,7 @@
         @include('components.record-container')
     </div>
 
-    @include('components.mood-modal')
+
 
     <script>
         // Fungsi untuk menentukan salam berdasarkan waktu

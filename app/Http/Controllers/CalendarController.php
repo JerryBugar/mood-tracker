@@ -77,29 +77,12 @@ class CalendarController extends Controller
         $monthName = $selectedMonth->locale('id_ID')->translatedFormat('F Y');
         
         // Check if this is a Turbo request
-        $acceptHeader = $request->header('Accept', '');
-        if (strpos($acceptHeader, 'text/vnd.turbo-stream') !== false) {
-            // Return Turbo Stream response with only the calendar content
-            $calendarContent = view('components._partials.calendar_content', [
-                'calendarDays' => $calendarDays,
-                'monthName' => $monthName,
-                'currentYear' => $year,
-                'currentMonth' => $month,
-                'previousMonth' => $previousMonth,
-                'nextMonth' => $nextMonth,
-                'currentDate' => $currentDate->format('Y-m-d'),
-            ])->render();
-            
-            $streamContent = '<turbo-stream action="replace" target="calendar_frame">'.PHP_EOL.
-                            '<template>'.PHP_EOL.
-                            '<div><h1 style="color: #82272c; margin-top: 20px;">Calendar Mood</h1>' . $calendarContent . '</div>'.PHP_EOL.
-                            '</template>'.PHP_EOL.
-                            '</turbo-stream>'.PHP_EOL;
-            
-            return response($streamContent, 200, ['Content-Type' => 'text/vnd.turbo-stream.html']);
-        }
+        // We should return the full view for Turbo Drive navigation to work correctly
+        // Turbo Drive expects an HTML response to replace the body, not a stream
+        // unless we are specifically targeting a frame update from within the calendar page.
+        // For navigation from other pages (like Home), we must return the view.
         
-        return view('calendar.index', [
+        return response(view('calendar.index', [
             'calendarDays' => $calendarDays,
             'monthName' => $monthName,
             'currentYear' => $year,
@@ -107,7 +90,9 @@ class CalendarController extends Controller
             'previousMonth' => $previousMonth,
             'nextMonth' => $nextMonth,
             'currentDate' => $currentDate->format('Y-m-d'),
-        ]);
+        ]))->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+           ->header('Pragma', 'no-cache')
+           ->header('Expires', 'Sat, 01 Jan 2000 00:00:00 GMT');
     }
     
     public function showDay(Request $request, $date)

@@ -60,6 +60,19 @@ class TurboStreamHelper
     }
 
     /**
+     * Membuat turbo stream untuk memperbarui konten elemen (innerHTML).
+     *
+     * @param string $target ID elemen target
+     * @param string $content Konten baru
+     * @param string $templateWrapper Wrapper untuk konten (default: 'div')
+     * @return string String berisi turbo stream untuk memperbarui konten elemen
+     */
+    public static function update(string $target, string $content, string $templateWrapper = 'div'): string
+    {
+        return self::buildStream('update', $target, $content, $templateWrapper);
+    }
+
+    /**
      * Membuat turbo stream untuk mengganti atribut elemen.
      *
      * @param string $target ID elemen target

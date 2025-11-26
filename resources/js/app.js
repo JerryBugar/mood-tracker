@@ -259,10 +259,10 @@ document.addEventListener('turbo:load', () => {
                     // Use getBoundingClientRect for more accurate positioning
                     const navRect = bottomNav.getBoundingClientRect();
                     const itemRect = activeItem.getBoundingClientRect();
-                    
+
                     const leftPosition = itemRect.left - navRect.left;
                     const itemWidth = itemRect.width;
-                    
+
                     if (!isNavInitialized) {
                         // On first load, just snap to position without animation
                         activeBackground.style.transition = 'none';
@@ -295,7 +295,7 @@ document.addEventListener('turbo:load', () => {
             }, 50);
         });
     });
-    
+
     // Update nav background on window resize dengan debounce
     let resizeTimeout;
     window.addEventListener('resize', () => {
@@ -307,7 +307,7 @@ document.addEventListener('turbo:load', () => {
 
     // Add click event listeners to update active state and background dengan efek visual
     navItems.forEach(item => {
-        item.addEventListener('click', function(e) {
+        item.addEventListener('click', function (e) {
             // Hapus active class dari semua items dengan efek fade/scale
             navItems.forEach(navItem => {
                 if (navItem.classList.contains('active')) {
@@ -325,19 +325,19 @@ document.addEventListener('turbo:load', () => {
             // Tambahkan active class ke item yang diklik dengan efek fade/scale
             this.style.opacity = '0.8';
             this.style.transform = 'scale(0.95)';
-            
+
             requestAnimationFrame(() => {
                 requestAnimationFrame(() => {
                     this.classList.add('active');
                     this.style.opacity = '';
                     this.style.transform = '';
-                    
+
                     // Update background position setelah CSS transition dimulai
                     requestAnimationFrame(() => {
                         const activeBackground = bottomNav.querySelector('.nav-active-background');
                         const navRect = bottomNav.getBoundingClientRect();
                         const itemRect = this.getBoundingClientRect();
-                        
+
                         if (activeBackground) {
                             const leftPosition = itemRect.left - navRect.left;
                             const itemWidth = itemRect.width;
@@ -385,3 +385,37 @@ document.addEventListener('turbo:load', () => {
         }
     }
 });
+
+// Function to handle opening edit modal - Global function
+window.openEditMoodModal = function (url) {
+    // 1. Reset frame content to loading state
+    const frameContent = document.getElementById('mood_modal_content');
+    if (frameContent) {
+        frameContent.innerHTML = `
+            <div class="text-center">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        `;
+        // 2. Set src to trigger fetch
+        frameContent.src = url;
+    }
+
+    // 3. Show modal safely
+    const modalElement = document.getElementById('moodModal');
+    if (modalElement) {
+        // Gunakan getOrCreateInstance untuk menghindari duplikasi instance yang bisa merusak state
+        const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+        modal.show();
+
+        // Pastikan event listener untuk cleanup ditambahkan
+        // Hapus class modal-open dari body secara manual saat modal tertutup
+        // Ini untuk mengatasi bug di mana scroll terkunci setelah update via Turbo
+        modalElement.addEventListener('hidden.bs.modal', function () {
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+            document.body.style.paddingRight = '';
+        }, { once: true });
+    }
+};

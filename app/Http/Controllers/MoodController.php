@@ -199,8 +199,14 @@ class MoodController extends Controller
             $updateCalendarStream,
             $replaceStream
         ]);
-
-        return response($streamContent, 200, ['Content-Type' => 'text/vnd.turbo-stream.html']);
+        
+        // Prevent caching of Turbo Stream response to ensure real-time updates
+        return response($streamContent, 200, [
+            'Content-Type' => 'text/vnd.turbo-stream.html',
+            'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+            'Pragma' => 'no-cache',
+            'Expires' => 'Sat, 01 Jan 2000 00:00:00 GMT'
+        ]);
     }
 
     public function edit(MoodRecord $moodRecord)
@@ -272,10 +278,12 @@ class MoodController extends Controller
 
         $updateListStream = TurboStreamHelper::replace('mood_record_' . $moodRecord->id, $updatedItemHtml);
 
-        // 2. UPDATE KALENDER (JIKA TANGGAL SAMA DENGAN HARI INI ATAU KITA CARI ID KALENDERNYA)
-        // Karena record bisa dari tanggal berapa saja, kita gunakan tanggal recordnya
-        $recordDate = $moodRecord->date_recorded->format('Y-m-d');
+        // 2. UPDATE KALENDER
+        // Kita refresh seluruh konten hari itu agar urutan dan data sesuai
+        $date = $moodRecord->date_recorded->format('Y-m-d');
+        $dayRecords = $user->moodRecords()->whereDate('date_recorded', $date)->get();
         
+        $calendarHtml = '';
         $jenisKelamin = $user->jenis_kelamin ?? '';
         $isFemale = $jenisKelamin === 'Perempuan' || $jenisKelamin === 'Cewek';
 
@@ -287,29 +295,47 @@ class MoodController extends Controller
             'marah' => $isFemale ? asset('logo/marah1.png') : asset('logo/marah.png'),
         ];
 
-        $emoticonPath = $emoticonPaths[$moodRecord->mood] ?? $emoticonPaths['netral'];
-        $tooltipText = $moodRecord->reason ?? 'Mood: ' . ($moodLabels[$moodRecord->mood] ?? $moodRecord->mood);
-        if ($moodRecord->admin_response) {
-            $tooltipText .= ' - Direspons oleh Admin/HRD';
+        foreach ($dayRecords as $dayRecord) {
+            $emoticonPath = $emoticonPaths[$dayRecord->mood] ?? $emoticonPaths['netral'];
+            $tooltipText = $dayRecord->reason ?? 'Mood: ' . ($moodLabels[$dayRecord->mood] ?? $dayRecord->mood);
+            if ($dayRecord->admin_response) {
+                $tooltipText .= ' - Direspons oleh Admin/HRD';
+            }
+            
+            $calendarHtml .= '<div class="mood-emoticon-wrapper">'.
+                                '<img src="'.$emoticonPath.'"'.
+                                     ' alt="'.$dayRecord->mood.'"'.
+                                     ' class="mood-emoticon '.$dayRecord->mood.'"'.
+                                     ' data-bs-toggle="tooltip"'.
+                                     ' title="'.$tooltipText.'"'.
+                                     ' onclick="showDayRecords(\''.$date.'\')">'.
+                                ($dayRecord->admin_response ?
+                                    '<span class="admin-response-indicator-calendar" '.
+                                          'data-bs-toggle="tooltip" '.
+                                          'title="Direspons oleh Admin/HRD">'.
+                                        '<i class="bi bi-check-circle-fill"></i>'.
+                                    '</span>' : '').
+                            '</div>';
         }
+        
+        $updateCalendarStream = TurboStreamHelper::replace('day_'.$date.'_records', $calendarHtml);
 
-        // Kita perlu mengganti konten emoticon di kalender. 
-        // Tapi karena struktur kalender agak kompleks (append), mungkin lebih aman jika kita replace seluruh konten hari itu
-        // Atau, kita asumsikan user hanya punya 1 mood per hari (sesuai logika saveMood).
-        // Jika user bisa punya banyak mood, logic ini harus disesuaikan.
-        // Untuk sekarang, kita update emoticon yang sesuai.
-        // TAPI, karena kita tidak punya ID unik per emoticon di kalender, kita update container hari itu.
-        // Namun, update container hari itu butuh fetch semua record hari itu.
-        
-        // Simplifikasi: Kita kirim update untuk menutup modal saja dulu.
-        // Update kalender mungkin butuh reload atau logic lebih kompleks jika ingin real-time update di kalender juga.
-        // Tapi user minta "edit catatan", biasanya di list view yang penting berubah.
-        
         // 3. TUTUP MODAL / GANTI DENGAN PESAN SUKSES
         $successModalStream = TurboStreamHelper::replace('mood_modal_content', 
-            view('components._partials.mood_modal_success_edit')->render()
-        );
+            view('components._partials.mood_modal_success_edit')->render());
 
-        return response($updateListStream . $successModalStream, 200, ['Content-Type' => 'text/vnd.turbo-stream.html']);
+        // Combine all streams and add cache‑control headers
+        $streamContent = TurboStreamHelper::combine([
+            $updateListStream,
+            $updateCalendarStream,
+            $successModalStream,
+        ]);
+
+        return response($streamContent, 200, [
+            'Content-Type' => 'text/vnd.turbo-stream.html',
+            'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+            'Pragma' => 'no-cache',
+            'Expires' => 'Sat, 01 Jan 2000 00:00:00 GMT',
+        ]);
     }
 }

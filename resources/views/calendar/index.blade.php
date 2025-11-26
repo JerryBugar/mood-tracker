@@ -1,7 +1,11 @@
 @extends('layouts.internal')
 
+@push('head')
+    <meta name="turbo-cache-control" content="no-cache">
+@endpush
+
 @section('main-content')
-    <turbo-frame id="calendar_frame">
+    <turbo-frame id="calendar_frame" data-turbo-cache="false" data-turbo-permanent>
         <div class="container-fluid">
             @if (Auth::check())
                 <h1 style="color: #82272c; margin-top: 20px; text-align: center;">Calendar Mood</h1>
