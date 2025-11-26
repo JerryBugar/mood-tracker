@@ -95,6 +95,8 @@ Route::put('/profile', [ProfileController::class, 'update'])->middleware(['auth'
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/mood/modal', [MoodController::class, 'showMoodModal'])->name('mood.modal');
     Route::post('/mood/save', [MoodController::class, 'saveMood'])->name('mood.save');
+    Route::get('/mood/{moodRecord}/edit', [MoodController::class, 'edit'])->name('mood.edit');
+    Route::put('/mood/{moodRecord}', [MoodController::class, 'update'])->name('mood.update');
     Route::get('/mood/quote', [MoodController::class, 'getRandomQuote'])->name('mood.quote');
 
     // Route untuk pagination mood records - sekarang menggunakan MoodRecordController

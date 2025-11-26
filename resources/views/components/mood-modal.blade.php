@@ -213,4 +213,38 @@ if (!window.moodModalInitialized) {
     // Setup ulang saat Turbo load (jika modal belum di-setup)
     document.addEventListener('turbo:load', setupMoodModalAriaHandlers);
 }
+
+// Function to handle opening edit modal
+window.openEditMoodModal = function(url) {
+    // 1. Reset frame content to loading state
+    const frameContent = document.getElementById('mood_modal_content');
+    if (frameContent) {
+        frameContent.innerHTML = `
+            <div class="text-center">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        `;
+        // 2. Set src to trigger fetch
+        frameContent.src = url;
+    }
+
+    // 3. Show modal safely
+    const modalElement = document.getElementById('moodModal');
+    if (modalElement) {
+        // Gunakan getOrCreateInstance untuk menghindari duplikasi instance yang bisa merusak state
+        const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+        modal.show();
+        
+        // Pastikan event listener untuk cleanup ditambahkan
+        // Hapus class modal-open dari body secara manual saat modal tertutup
+        // Ini untuk mengatasi bug di mana scroll terkunci setelah update via Turbo
+        modalElement.addEventListener('hidden.bs.modal', function () {
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+            document.body.style.paddingRight = '';
+        }, { once: true });
+    }
+};
 </script>

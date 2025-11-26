@@ -202,4 +202,114 @@ class MoodController extends Controller
 
         return response($streamContent, 200, ['Content-Type' => 'text/vnd.turbo-stream.html']);
     }
+
+    public function edit(MoodRecord $moodRecord)
+    {
+        // Pastikan user yang login adalah pemilik record
+        if ($moodRecord->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        $moodData = [
+            'netral' => ['title' => 'Biasa saja', 'explanation' => 'Ada hal yang lagi kamu pikirin belakangan ini? Kadang ngobrol dikit bisa bantu juga loh', 'suggestion' => 'Kira-kira apa ya yang bisa bikin kamu tambah semangat dikit?'],
+            'senyum' => ['title' => 'Senang', 'explanation' => 'Lagi happy banget nih! Cerita dong, apa sih yang bikin hari kamu secerah ini?', 'suggestion' => 'Menurut kamu, apa yang paling ampuh buat jaga mood biar tetap bagus?'],
+            'sedih' => ['title' => 'Sedih', 'explanation' => 'Lagi ada perasaan yang mengganggu di hati, ya? Gak usah ditahan sendiri, pelan-pelan aja diceritain', 'suggestion' => 'Kalau boleh tahu, hal kecil apa yang bisa bantu nyembuhin sedih kamu sekarang?'],
+            'lelah' => ['title' => 'Lelah', 'explanation' => 'Lagi drop energinya, ya? Kalau mau, ceritakan sedikit aja, biar lebih lega', 'suggestion' => 'Apa ya yang bisa bantu kamu balik semangat pelan-pelan?'],
+            'marah' => ['title' => 'Marah', 'explanation' => 'Lagi agak down ya? Cerita dikit dong, siapa tahu bisa bantu nyemangatin', 'suggestion' => 'Kalau lagi kayak gini, apa sih yang bisa bantu kamu merasa lebih baik lagi?']
+        ];
+
+        $user = Auth::user();
+        $jenisKelamin = $user->jenis_kelamin ?? '';
+        $isFemale = $jenisKelamin === 'Perempuan' || $jenisKelamin === 'Cewek';
+
+        $emoticonPaths = [
+            'netral' => $isFemale ? asset('logo/netral1.png') : asset('logo/netral.png'),
+            'senyum' => $isFemale ? asset('logo/senyum1.png') : asset('logo/senyum.png'),
+            'sedih' => $isFemale ? asset('logo/sedih1.png') : asset('logo/sedih.png'),
+            'lelah' => $isFemale ? asset('logo/lelah1.png') : asset('logo/lelah.png'),
+            'marah' => $isFemale ? asset('logo/marah1.png') : asset('logo/marah.png'),
+        ];
+
+        return view('components._partials.edit_mood_modal', [
+            'record' => $moodRecord,
+            'moodData' => $moodData,
+            'emoticonPaths' => $emoticonPaths
+        ]);
+    }
+
+    public function update(StoreMoodRequest $request, MoodRecord $moodRecord)
+    {
+        // Pastikan user yang login adalah pemilik record
+        if ($moodRecord->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        $validated = $request->validated();
+        
+        // Update record
+        $moodRecord->update([
+            'mood' => $validated['mood'],
+            'reason' => $validated['reason'],
+            'suggestion_action' => $validated['suggestion_action']
+        ]);
+
+        $moodLabels = [
+            'netral' => 'Biasa saja',
+            'senyum' => 'Senang',
+            'sedih' => 'Sedih',
+            'lelah' => 'Lelah',
+            'marah' => 'Marah'
+        ];
+
+        $user = Auth::user();
+
+        // 1. UPDATE ITEM DI LIST (REPLACE)
+        // Kita render ulang item yang diupdate saja
+        $updatedItemHtml = view('components.mood-record-item', [
+            'record' => $moodRecord,
+            'user' => $user
+        ])->render();
+
+        $updateListStream = TurboStreamHelper::replace('mood_record_' . $moodRecord->id, $updatedItemHtml);
+
+        // 2. UPDATE KALENDER (JIKA TANGGAL SAMA DENGAN HARI INI ATAU KITA CARI ID KALENDERNYA)
+        // Karena record bisa dari tanggal berapa saja, kita gunakan tanggal recordnya
+        $recordDate = $moodRecord->date_recorded->format('Y-m-d');
+        
+        $jenisKelamin = $user->jenis_kelamin ?? '';
+        $isFemale = $jenisKelamin === 'Perempuan' || $jenisKelamin === 'Cewek';
+
+        $emoticonPaths = [
+            'netral' => $isFemale ? asset('logo/netral1.png') : asset('logo/netral.png'),
+            'senyum' => $isFemale ? asset('logo/senyum1.png') : asset('logo/senyum.png'),
+            'sedih' => $isFemale ? asset('logo/sedih1.png') : asset('logo/sedih.png'),
+            'lelah' => $isFemale ? asset('logo/lelah1.png') : asset('logo/lelah.png'),
+            'marah' => $isFemale ? asset('logo/marah1.png') : asset('logo/marah.png'),
+        ];
+
+        $emoticonPath = $emoticonPaths[$moodRecord->mood] ?? $emoticonPaths['netral'];
+        $tooltipText = $moodRecord->reason ?? 'Mood: ' . ($moodLabels[$moodRecord->mood] ?? $moodRecord->mood);
+        if ($moodRecord->admin_response) {
+            $tooltipText .= ' - Direspons oleh Admin/HRD';
+        }
+
+        // Kita perlu mengganti konten emoticon di kalender. 
+        // Tapi karena struktur kalender agak kompleks (append), mungkin lebih aman jika kita replace seluruh konten hari itu
+        // Atau, kita asumsikan user hanya punya 1 mood per hari (sesuai logika saveMood).
+        // Jika user bisa punya banyak mood, logic ini harus disesuaikan.
+        // Untuk sekarang, kita update emoticon yang sesuai.
+        // TAPI, karena kita tidak punya ID unik per emoticon di kalender, kita update container hari itu.
+        // Namun, update container hari itu butuh fetch semua record hari itu.
+        
+        // Simplifikasi: Kita kirim update untuk menutup modal saja dulu.
+        // Update kalender mungkin butuh reload atau logic lebih kompleks jika ingin real-time update di kalender juga.
+        // Tapi user minta "edit catatan", biasanya di list view yang penting berubah.
+        
+        // 3. TUTUP MODAL / GANTI DENGAN PESAN SUKSES
+        $successModalStream = TurboStreamHelper::replace('mood_modal_content', 
+            view('components._partials.mood_modal_success_edit')->render()
+        );
+
+        return response($updateListStream . $successModalStream, 200, ['Content-Type' => 'text/vnd.turbo-stream.html']);
+    }
 }

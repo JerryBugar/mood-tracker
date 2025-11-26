@@ -33,7 +33,7 @@ Props:
     $emoticonPath = $emoticonPaths[$record->mood] ?? $emoticonPaths['netral'];
 @endphp
 
-<div class="record-item">
+<div class="record-item" id="mood_record_{{ $record->id }}">
     <div class="record-left">
         <img src="{{ $emoticonPath }}" alt="{{ $moodLabel }}" class="record-avatar">
         <span class="record-mood">{{ $moodLabel }}</span>
@@ -63,6 +63,18 @@ Props:
                    style="font-size: 1.2rem; cursor: pointer; color: #82272c;" 
                    title="Ada respons dari Admin/HRD"
                    onclick="showAdminResponse({{ $record->id }}, {{ json_encode($record->admin_response) }}, {{ json_encode($record->admin_response_at ? \Carbon\Carbon::parse($record->admin_response_at)->locale('id_ID')->translatedFormat('l, j F Y H:i') : '') }})"></i>
+            </div>
+        @endif
+        
+        @if($user && $record->user_id === $user->id)
+            <div class="edit-action mt-2">
+                <a href="javascript:void(0)" 
+                   class="text-decoration-none" 
+                   style="color: #6c757d; transition: color 0.2s;"
+                   onclick="openEditMoodModal('{{ route('mood.edit', $record->id) }}')"
+                   title="Edit Catatan">
+                    <i class="bi bi-pencil-square" style="font-size: 1.1rem;"></i>
+                </a>
             </div>
         @endif
     </div>
