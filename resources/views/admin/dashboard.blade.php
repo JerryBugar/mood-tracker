@@ -47,7 +47,20 @@
     </div>
 
     <div class="chart-container">
-        <h3 class="section-title">Tren Mood Karyawan</h3>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3 class="section-title mb-0">Tren Mood Karyawan</h3>
+            <div class="d-flex gap-2 align-items-center">
+                <select id="mood-chart-filter-type" class="form-select form-select-sm" style="width: auto;">
+                    <option value="">Minggu Ini</option>
+                    <option value="day">Per Hari</option>
+                    <option value="month">Per Bulan</option>
+                    <option value="year">Per Tahun</option>
+                </select>
+                <input type="date" id="mood-chart-filter-day" class="form-control form-control-sm" style="width: auto; display: none;" max="{{ date('Y-m-d') }}">
+                <input type="month" id="mood-chart-filter-month" class="form-control form-control-sm" style="width: auto; display: none;" max="{{ date('Y-m') }}">
+                <input type="number" id="mood-chart-filter-year" class="form-control form-control-sm" style="width: auto; display: none;" min="2020" max="{{ date('Y') }}" value="{{ date('Y') }}" placeholder="Tahun">
+            </div>
+        </div>
         <turbo-frame id="mood_chart_frame">
             <canvas id="moodChart" width="400" height="200"></canvas>
         </turbo-frame>

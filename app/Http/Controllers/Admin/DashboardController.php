@@ -70,9 +70,13 @@ class DashboardController extends Controller
         return view('admin.mood-monitoring', compact('moodRecords'));
     }
 
-    public function getChartData()
+    public function getChartData(Request $request)
     {
-        $chartData = $this->chartService->getAllChartData();
+        $filterType = $request->get('filter_type');
+        $filterValue = $request->get('filter_value');
+        $chartType = $request->get('chart_type');
+
+        $chartData = $this->chartService->getAllChartData($filterType, $filterValue, $chartType);
         return response()->json($chartData);
     }
 
