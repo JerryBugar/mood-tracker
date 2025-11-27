@@ -58,12 +58,7 @@ Props:
     <div class="record-right">
         {{ $formattedTime }}
         @if($record->admin_response)
-            <div class="admin-response-badge mt-1">
-                <i class="bi bi-chat-dots-fill" 
-                   style="font-size: 1.2rem; cursor: pointer; color: #82272c;" 
-                   title="Ada respons dari Admin/HRD"
-                   onclick="showAdminResponse({{ $record->id }}, {{ json_encode($record->admin_response) }}, {{ json_encode($record->admin_response_at ? \Carbon\Carbon::parse($record->admin_response_at)->locale('id_ID')->translatedFormat('l, j F Y H:i') : '') }})"></i>
-            </div>
+    
         @endif
         
         @if($user && $record->user_id === $user->id)
