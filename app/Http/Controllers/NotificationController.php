@@ -351,6 +351,7 @@ class NotificationController extends Controller
             'keys' => 'required|array',
             'keys.p256dh' => 'required|string',
             'keys.auth' => 'required|string',
+            'content_encoding' => 'nullable|string|in:aes128gcm,aesgcm',
         ]);
 
         try {
@@ -366,6 +367,7 @@ class NotificationController extends Controller
             // Set values
             $subscription->public_key = $request->keys['p256dh'];
             $subscription->auth_token = $request->keys['auth'];
+            $subscription->content_encoding = $request->input('content_encoding', 'aes128gcm'); // Default ke aes128gcm jika tidak ada
             $subscription->subscribable_type = get_class($user);
             $subscription->subscribable_id = $user->id;
             
@@ -422,6 +424,7 @@ class NotificationController extends Controller
 
     /**
      * Cek status push subscription
+     * Mengembalikan detail subscription dari database untuk sinkronisasi dengan toggle
      */
     public function checkPushStatus()
     {
@@ -434,7 +437,15 @@ class NotificationController extends Controller
         return response()->json([
             'success' => true,
             'subscribed' => $subscriptions->isNotEmpty(),
-            'count' => $subscriptions->count()
+            'count' => $subscriptions->count(),
+            'subscriptions' => $subscriptions->map(function($sub) {
+                return [
+                    'id' => $sub->id,
+                    'endpoint' => $sub->endpoint,
+                    'created_at' => $sub->created_at,
+                    'updated_at' => $sub->updated_at
+                ];
+            })
         ]);
     }
 

@@ -24,10 +24,41 @@
     const STORAGE_KEY = 'push_notification_state';
     let updateUITimeout = null;
 
-    // Get CSRF token
+    // Get CSRF token with automatic refresh capability
     function getCsrfToken() {
         const metaTag = document.querySelector('meta[name="csrf-token"]');
         return metaTag ? metaTag.getAttribute('content') : '';
+    }
+
+    // Refresh CSRF token dari server
+    async function refreshCsrfToken() {
+        try {
+            // Fetch halaman current untuk mendapatkan CSRF token baru
+            const response = await fetch(window.location.href, {
+                method: 'GET',
+                headers: { 'Accept': 'text/html' }
+            });
+
+            if (response.ok) {
+                const html = await response.text();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const newToken = doc.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+                if (newToken) {
+                    // Update meta tag di halaman current
+                    const metaTag = document.querySelector('meta[name="csrf-token"]');
+                    if (metaTag) {
+                        metaTag.setAttribute('content', newToken);
+                        console.log('✓ CSRF token refreshed');
+                        return newToken;
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Error refreshing CSRF token:', error);
+        }
+        return null;
     }
 
     // Simpan state ke sessionStorage
@@ -60,6 +91,7 @@
     }
 
     // Cek status subscription dari server
+    // Mengembalikan object dengan status dan detail subscription dari database
     async function checkSubscriptionStatus() {
         try {
             const response = await fetch('/notif/push/status', {
@@ -80,15 +112,21 @@
                     sessionStorage.setItem('push_last_reload', Date.now().toString());
 
                     window.location.reload();
-                    return false;
+                    return { subscribed: false, subscriptions: [] };
                 }
+                return { subscribed: false, subscriptions: [] };
             }
 
             const data = await response.json();
-            return data.subscribed || false;
+            // Kembalikan object lengkap dengan detail subscriptions dari database
+            return {
+                subscribed: data.subscribed || false,
+                subscriptions: data.subscriptions || [],
+                count: data.count || 0
+            };
         } catch (error) {
             console.error('Error checking subscription status:', error);
-            return false;
+            return { subscribed: false, subscriptions: [] };
         }
     }
 
@@ -159,8 +197,26 @@
                 applicationServerKey: urlBase64ToUint8Array(getVapidPublicKey())
             });
 
-            // Kirim subscription ke server
-            const response = await fetch('/notif/push/subscribe', {
+            // Deteksi content encoding dari subscription atau gunakan default
+            // Browser modern biasanya menggunakan 'aes128gcm', browser lama menggunakan 'aesgcm'
+            let contentEncoding = 'aes128gcm'; // Default untuk browser modern
+
+            // Coba deteksi dari subscription options jika tersedia
+            if (subscription.options && subscription.options.applicationServerKey) {
+                // Jika ada applicationServerKey, gunakan aes128gcm (standar modern)
+                contentEncoding = 'aes128gcm';
+            }
+
+            // Fallback: Deteksi dari user agent untuk browser lama
+            const userAgent = navigator.userAgent.toLowerCase();
+            if (userAgent.includes('chrome/') && parseInt(userAgent.match(/chrome\/(\d+)/)[1]) < 60) {
+                contentEncoding = 'aesgcm'; // Chrome < 60 menggunakan aesgcm
+            } else if (userAgent.includes('firefox/') && parseInt(userAgent.match(/firefox\/(\d+)/)[1]) < 63) {
+                contentEncoding = 'aesgcm'; // Firefox < 63 menggunakan aesgcm
+            }
+
+            // Kirim subscription ke server dengan retry untuk CSRF error
+            let response = await fetch('/notif/push/subscribe', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -172,9 +228,36 @@
                     keys: {
                         p256dh: arrayBufferToBase64(subscription.getKey('p256dh')),
                         auth: arrayBufferToBase64(subscription.getKey('auth'))
-                    }
+                    },
+                    content_encoding: contentEncoding
                 })
             });
+
+            // Jika error 419 (CSRF mismatch), refresh token dan retry
+            if (response.status === 419) {
+                console.log('CSRF token mismatch, refreshing token and retrying...');
+                const newToken = await refreshCsrfToken();
+
+                if (newToken) {
+                    // Retry request dengan token baru
+                    response = await fetch('/notif/push/subscribe', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': newToken,
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            endpoint: subscription.endpoint,
+                            keys: {
+                                p256dh: arrayBufferToBase64(subscription.getKey('p256dh')),
+                                auth: arrayBufferToBase64(subscription.getKey('auth'))
+                            },
+                            content_encoding: contentEncoding
+                        })
+                    });
+                }
+            }
 
             const data = await response.json();
 
@@ -644,87 +727,62 @@
 
             // Cek status dari server HANYA jika forceCheck = true
             // Ini mencegah request berulang setiap kali turbo:load
-            let serverStatus = false;
+            let serverStatus = { subscribed: false, subscriptions: [] };
             if (forceCheck) {
                 serverStatus = await checkSubscriptionStatus();
                 lastStatusCheckTime = Date.now();
+                console.log('Server subscription status (from database):', serverStatus);
             } else {
                 // Gunakan stored state jika ada, atau false sebagai default
                 const storedState = loadStateFromStorage();
-                serverStatus = storedState !== null ? storedState : false;
+                serverStatus = {
+                    subscribed: storedState !== null ? storedState : false,
+                    subscriptions: []
+                };
             }
 
             if (subscription) {
                 // Ada subscription di browser
                 currentSubscription = subscription;
 
-                // Pastikan isSubscribed sesuai dengan server status
+                // Pastikan isSubscribed sesuai dengan server status dari database
                 // Ini penting untuk sinkronisasi ketika browser permission ON tapi subscription tidak ada di server
-                isSubscribed = serverStatus;
+                isSubscribed = serverStatus.subscribed;
 
-                // Jika ada subscription di browser tapi tidak ada di server, hapus dari browser
-                if (!serverStatus && subscription) {
-                    console.warn('Subscription ada di browser tapi tidak ada di server, menghapus dari browser...');
-                    try {
-                        await subscription.unsubscribe();
-                        currentSubscription = null;
-                        isSubscribed = false;
-                    } catch (unsubError) {
-                        console.error('Error removing orphaned subscription:', unsubError);
-                        // Tetap set state menjadi false
-                        currentSubscription = null;
-                        isSubscribed = false;
+                // Jika ada subscription di browser, cek apakah endpoint sama dengan yang di database
+                if (serverStatus.subscribed && serverStatus.subscriptions.length > 0) {
+                    const dbEndpoint = serverStatus.subscriptions[0].endpoint;
+                    if (subscription.endpoint !== dbEndpoint) {
+                        console.warn('Endpoint di browser berbeda dengan database. Endpoint browser:', subscription.endpoint, 'Endpoint DB:', dbEndpoint);
+                        // Tetap gunakan status dari database sebagai sumber kebenaran
+                        isSubscribed = true;
+                    } else {
+                        console.log('✓ Subscription di browser sinkron dengan database');
+                        isSubscribed = true;
                     }
+                } else if (!serverStatus.subscribed && subscription) {
+                    // Ada subscription di browser tapi tidak ada di database
+                    // JANGAN auto-cleanup! Bisa jadi race condition, timing issue, atau browser cache
+                    // Gunakan database sebagai source of truth untuk UI saja
+                    console.warn('Subscription ada di browser tapi tidak ada di database. Setting toggle OFF berdasarkan database.');
+                    isSubscribed = false; // Toggle akan OFF sesuai database
+                    // Subscription di browser dibiarkan, bisa di-reuse saat user toggle ON lagi
                 }
             } else {
                 // Tidak ada subscription di browser
                 currentSubscription = null;
 
-                // Jika server masih mencatat sebagai subscribed, set menjadi false
-                // karena tidak ada subscription di browser
-                isSubscribed = false;
+                // Gunakan status dari database untuk set toggle
+                isSubscribed = serverStatus.subscribed;
 
-                // Jika server masih mencatat sebagai subscribed tapi tidak ada di browser,
-                // ini berarti ada ketidaksesuaian - bersihkan subscription di server
-                // HANYA jika forceCheck = true untuk menghindari cleanup saat initial load
-                if (serverStatus && forceCheck) {
-                    console.warn('Server mencatat sebagai subscribed tapi tidak ada subscription di browser. Membersihkan subscription di server...');
-
-                    // Bersihkan subscription di server untuk sinkronisasi
-                    try {
-                        const cleanupResponse = await fetch('/notif/push/cleanup', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': getCsrfToken(),
-                                'Accept': 'application/json'
-                            }
-                        });
-
-                        if (cleanupResponse.status === 419) {
-                            console.log('CSRF token mismatch during cleanup (419), reloading page...');
-
-                            // Increment reload count
-                            const currentCount = parseInt(sessionStorage.getItem('push_reload_count') || '0');
-                            sessionStorage.setItem('push_reload_count', (currentCount + 1).toString());
-                            sessionStorage.setItem('push_last_reload', Date.now().toString());
-
-                            window.location.reload();
-                            return;
-                        }
-
-                        const cleanupData = await cleanupResponse.json();
-                        if (cleanupData.success) {
-                            console.log('Subscription di server berhasil dibersihkan. Jumlah yang dihapus:', cleanupData.deleted_count || 0);
-                        } else {
-                            console.error('Gagal membersihkan subscription di server:', cleanupData.message);
-                        }
-                    } catch (cleanupError) {
-                        console.error('Error cleaning up server subscription:', cleanupError);
-                    }
-                } else if (serverStatus && !forceCheck) {
-                    // Jika initial load dan ada ketidaksesuaian, hanya log warning tanpa cleanup
-                    console.warn('Server mencatat sebagai subscribed tapi tidak ada subscription di browser. Akan dibersihkan saat user toggle.');
+                // Jika database bilang subscribed tapi tidak ada di browser
+                // Ini bisa terjadi karena clear browser data, ganti device, atau browser issue
+                if (serverStatus.subscribed && !subscription) {
+                    console.warn('Database mencatat subscribed tapi tidak ada di browser. User perlu toggle ON untuk re-subscribe.');
+                    // Set toggle OFF karena tidak ada subscription aktif di browser
+                    isSubscribed = false;
+                    // JANGAN cleanup database! Biarkan user yang decide dengan toggle
+                    // Data di database tetap ada sebagai history, bisa berguna untuk analytics
                 }
             }
 
@@ -826,13 +884,15 @@
     }
 
     // Initialize saat DOM ready
+    // PENTING: Selalu gunakan forceCheck=true saat initial load
+    // untuk memastikan toggle sinkron dengan database setelah logout/login
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', function () {
-            initializePushNotification();
+            initializePushNotification(true); // Force check database
             setupToggleButton();
         });
     } else {
-        initializePushNotification();
+        initializePushNotification(true); // Force check database
         setupToggleButton();
     }
 
@@ -880,8 +940,10 @@
                     // Lakukan verifikasi secara async tanpa blocking
                     checkSubscriptionStatus().then(serverStatus => {
                         lastStatusCheckTime = Date.now();
-                        if (serverStatus !== isSubscribed) {
-                            // Ada ketidaksesuaian, re-initialize untuk sinkronisasi
+                        // Bandingkan dengan status subscribed dari database
+                        if (serverStatus.subscribed !== isSubscribed) {
+                            console.log('Detected mismatch between local state and database, re-initializing...');
+                            // Ada ketidaksesuaian dengan database, re-initialize untuk sinkronisasi
                             initializePushNotification(true);
                         }
                     }).catch(error => {
