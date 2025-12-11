@@ -753,9 +753,46 @@
                 if (serverStatus.subscribed && serverStatus.subscriptions.length > 0) {
                     const dbEndpoint = serverStatus.subscriptions[0].endpoint;
                     if (subscription.endpoint !== dbEndpoint) {
-                        console.warn('Endpoint di browser berbeda dengan database. Endpoint browser:', subscription.endpoint, 'Endpoint DB:', dbEndpoint);
-                        // Tetap gunakan status dari database sebagai sumber kebenaran
-                        isSubscribed = true;
+                        console.warn('Endpoint di browser berbeda dengan database.');
+                        console.log('Endpoint browser:', subscription.endpoint);
+                        console.log('Endpoint DB:', dbEndpoint);
+                        console.log('Melakukan auto-sync: mengirim ulang subscription dengan endpoint browser yang baru...');
+
+                        // Auto-sync: Kirim ulang subscription dengan endpoint baru dari browser
+                        // Backend akan otomatis cleanup endpoint lama
+                        try {
+                            const contentEncoding = 'aes128gcm';
+                            const syncResponse = await fetch('/notif/push/subscribe', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': getCsrfToken(),
+                                    'Accept': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    endpoint: subscription.endpoint,
+                                    keys: {
+                                        p256dh: arrayBufferToBase64(subscription.getKey('p256dh')),
+                                        auth: arrayBufferToBase64(subscription.getKey('auth'))
+                                    },
+                                    content_encoding: contentEncoding
+                                })
+                            });
+
+                            if (syncResponse.ok) {
+                                const syncData = await syncResponse.json();
+                                if (syncData.success) {
+                                    console.log('✓ Auto-sync berhasil! Endpoint browser sekarang tersinkronisasi dengan database');
+                                    isSubscribed = true;
+                                } else {
+                                    console.error('Auto-sync gagal:', syncData.message);
+                                    isSubscribed = true; // Tetap tandai sebagai subscribed karena ada di database
+                                }
+                            }
+                        } catch (syncError) {
+                            console.error('Error saat auto-sync endpoint:', syncError);
+                            isSubscribed = true; // Tetap tandai sebagai subscribed
+                        }
                     } else {
                         console.log('✓ Subscription di browser sinkron dengan database');
                         isSubscribed = true;

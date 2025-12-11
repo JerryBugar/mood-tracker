@@ -355,6 +355,13 @@ class NotificationController extends Controller
         ]);
 
         try {
+            // Auto-cleanup: Hapus subscription lama dengan endpoint berbeda untuk user yang sama
+            // Ini memastikan hanya ada satu endpoint aktif per user per device
+            PushSubscription::where('subscribable_type', get_class($user))
+                ->where('subscribable_id', $user->id)
+                ->where('endpoint', '!=', $request->endpoint)
+                ->delete();
+            
             // Gunakan firstOrNew untuk memastikan semua field terisi saat insert
             $subscription = PushSubscription::firstOrNew(
                 [
