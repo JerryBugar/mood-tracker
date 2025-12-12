@@ -59,6 +59,27 @@ if (!window.moodModalInitialized) {
             } else {
                 sessionStorage.removeItem('moodModalWasOpen');
             }
+            
+            // PENTING: Reset Turbo Frame src saat navigasi
+            const frameContent = document.getElementById('mood_modal_content');
+            if (frameContent) {
+                frameContent.removeAttribute('src');
+            }
+        }
+    });
+
+    // Tambahkan reset pada turbo:load untuk memastikan state bersih
+    document.addEventListener('turbo:load', function() {
+        const frameContent = document.getElementById('mood_modal_content');
+        if (frameContent) {
+            // Reset src jika ada, kecuali modal sedang terbuka
+            const modalElement = document.getElementById('moodModal');
+            const modalInstance = modalElement ? bootstrap.Modal.getInstance(modalElement) : null;
+            
+            // Hanya reset jika modal TIDAK sedang terbuka
+            if (!modalInstance || !modalInstance._isShown) {
+                frameContent.removeAttribute('src');
+            }
         }
     });
 
@@ -118,6 +139,9 @@ if (!window.moodModalInitialized) {
             // Reset the frame content to loading state
             const frameContent = document.getElementById('mood_modal_content');
             if (frameContent) {
+                // PENTING: Reset src attribute dulu sebelum innerHTML
+                frameContent.removeAttribute('src');
+                
                 frameContent.innerHTML = `
                     <div class="text-center">
                         <div class="spinner-border text-primary" role="status">

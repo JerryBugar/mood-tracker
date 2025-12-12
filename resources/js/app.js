@@ -391,6 +391,9 @@ window.openEditMoodModal = function (url) {
     // 1. Reset frame content to loading state
     const frameContent = document.getElementById('mood_modal_content');
     if (frameContent) {
+        // PENTING: Reset src attribute terlebih dahulu untuk menghindari caching
+        frameContent.removeAttribute('src');
+
         frameContent.innerHTML = `
             <div class="text-center">
                 <div class="spinner-border text-primary" role="status">
@@ -398,8 +401,12 @@ window.openEditMoodModal = function (url) {
                 </div>
             </div>
         `;
-        // 2. Set src to trigger fetch
-        frameContent.src = url;
+
+        // 2. Set src SETELAH removeAttribute untuk memastikan fetch baru
+        // Gunakan setTimeout untuk memastikan removeAttribute sudah diproses
+        setTimeout(() => {
+            frameContent.setAttribute('src', url);
+        }, 0);
     }
 
     // 3. Show modal safely
